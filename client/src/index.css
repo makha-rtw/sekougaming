@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
+  html, body {
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #root {
+    min-height: 100%;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body {
+    background: radial-gradient(ellipse at 50% 35%, #131d38 0%, #090e1c 55%, #030712 100%);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+}
+
+/* Safe area padding utilities for iPhone notch / Dynamic Island / status bar / mobile browser */
+.pt-safe {
+  padding-top: 78px;
+  padding-top: max(calc(env(safe-area-inset-top, 0px) + 24px), 78px);
+}
+
+@media (min-width: 640px) {
+  .pt-safe {
+    padding-top: 16px;
+    padding-top: max(env(safe-area-inset-top, 0px), 16px);
+  }
+}
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 2px);
+}
+.pl-safe {
+  padding-left: max(env(safe-area-inset-left, 0px), 8px);
+}
+.pr-safe {
+  padding-right: max(env(safe-area-inset-right, 0px), 8px);
+}
+
+/* Tactile physical card 3D feel and shadows */
+.uno-card-shadow {
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.6), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+}
+
+.uno-card-shadow-active {
+  box-shadow: 0 10px 25px -2px rgba(245, 158, 11, 0.7), 0 0 16px 2px rgba(255, 255, 255, 0.4);
+}
+
+/* Hide scrollbar while preserving smooth scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* UNO oval styling */
+.uno-oval {
+  border-radius: 50%;
+  transform: rotate(-25deg);
+}
+
+/* Pulsing banner for penalties */
+@keyframes flamePulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
+    border-color: rgba(239, 68, 68, 0.9);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.9);
+    border-color: rgba(245, 158, 11, 1);
+  }
+}
+
+.flame-banner {
+  animation: flamePulse 1.5s infinite;
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 8s linear infinite;
+}
+
+@keyframes pulseFast {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.92;
+  }
+}
+
+.animate-pulse-fast {
+  animation: pulseFast 0.8s ease-in-out infinite;
+}
+
+/* Flying card animations */
+@keyframes flyFromDeckToHand {
+  0% {
+    transform: translate(0, 0) scale(0.9) rotate(0deg);
+    opacity: 0.9;
+  }
+  70% {
+    transform: translate(calc(var(--target-x, 100px) * 0.7), calc(var(--target-y, 200px) * 0.7)) scale(1.05) rotate(15deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--target-x, 120px), var(--target-y, 250px)) scale(1) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+.flying-draw-card {
+  animation: flyFromDeckToHand 0.4s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+}
+
+@keyframes flyFromHandToDiscard {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(calc(var(--fly-x, -50px) * 0.5), calc(var(--fly-y, -180px) * 0.5)) scale(1.1) rotate(-8deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--fly-x, -50px), var(--fly-y, -180px)) scale(1) rotate(2deg);
+    opacity: 0;
+  }
+}
+
+.flying-play-card {
+  animation: flyFromHandToDiscard 0.35s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+}
+
+/* Loup-Garou & Medieval Typography */
+.font-display {
+  font-family: 'Cinzel', 'Georgia', serif;
+}
+
+.font-body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}

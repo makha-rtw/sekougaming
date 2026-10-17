@@ -1,0 +1,60 @@
+{
+  "name": "sekou-gaming-sekouno",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Sekou-Gaming — Sekouno: Réplique multijoueur en temps réel de UNO (2 à 15 joueurs)",
+  "scripts": {
+    "dev:server": "tsx watch server/src/index.ts",
+    "dev:client": "vite --config client/vite.config.ts client",
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
+    "build:server": "tsc -p server/tsconfig.json",
+    "build:client": "vite build --config client/vite.config.ts client",
+    "build": "npm run build:server && npm run build:client",
+    "start": "node server/dist/server/src/index.js",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "uno",
+    "sekouno",
+    "multiplayer",
+    "socket.io",
+    "react",
+    "pwa"
+  ],
+  "author": "Sekou-Gaming",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "motion": "^14.3.0",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.3",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.4.27",
+    "canvas-confetti": "^1.9.4",
+    "concurrently": "^9.2.1",
+    "lucide-react": "^1.16.0",
+    "postcss": "^8.5.8",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "socket.io-client": "^4.8.3",
+    "tailwindcss": "^4.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.5"
+  }
+}

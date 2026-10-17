@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444"/>
+      <stop offset="50%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="36" fill="url(#bgGrad)" />
+  <circle cx="96" cy="96" r="75" fill="#0F172A" />
+  <ellipse cx="96" cy="96" rx="60" ry="40" transform="rotate(-30 96 96)" fill="#F59E0B" />
+  <text x="96" y="112" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="52" fill="#FFFFFF" text-anchor="middle" font-style="italic" letter-spacing="-2">UNO</text>
+  <text x="96" y="150" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="16" fill="#FDE047" text-anchor="middle">SEKOU-GAMING</text>
+</svg>
