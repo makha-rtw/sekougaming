@@ -12,7 +12,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['sekouG_logo.jpg', 'favicon.svg', 'logos/*.jpg'],
+      includeAssets: ['sekouG_logo.jpg', 'apple-touch-icon.png', 'favicon.svg', 'logos/*.jpg'],
       manifest: {
         name: 'Sekou-Gaming — Portail Multi-Jeux',
         short_name: 'SekouGaming',
@@ -23,21 +23,21 @@ export default defineConfig({
         orientation: 'any',
         icons: [
           {
-            src: '/sekouG_logo.jpg',
+            src: '/apple-touch-icon.png',
             sizes: '192x192',
-            type: 'image/jpeg',
+            type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/sekouG_logo.jpg',
+            src: '/apple-touch-icon.png',
             sizes: '512x512',
-            type: 'image/jpeg',
+            type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/sekouG_logo.jpg',
+            src: '/apple-touch-icon.png',
             sizes: '512x512',
-            type: 'image/jpeg',
+            type: 'image/png',
             purpose: 'maskable'
           }
         ]
