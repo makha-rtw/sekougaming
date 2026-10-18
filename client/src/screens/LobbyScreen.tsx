@@ -30,7 +30,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const connectedPlayers = publicState.players.filter(p => p.isConnected);
   const canStart = isHost && connectedPlayers.length >= 2 && connectedPlayers.length <= 15;
 
-  const joinUrl = `${window.location.origin}/?room=${publicState.roomCode}`;
+  const joinUrl = `${window.location.origin}/?game=sekouno&room=${publicState.roomCode}`;
 
   useEffect(() => {
     // Fetch QR Code data URL from server endpoint

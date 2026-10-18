@@ -5,6 +5,7 @@ import {
   saveSession,
   getSavedSession,
   clearSession,
+  getLastPlayerName,
 } from './socket.js';
 import { HomeScreen } from './screens/HomeScreen.js';
 import { LobbyScreen } from './screens/LobbyScreen.js';
@@ -26,6 +27,15 @@ export const App: React.FC = () => {
       if (params.get('game') === 'sekouno') return 'sekouno';
     }
     return 'hub';
+  });
+
+  const [invitedRoomCode, setInvitedRoomCode] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get('room');
+      return room ? room.trim().toUpperCase() : null;
+    }
+    return null;
   });
 
   const [gameState, setGameState] = useState<ClientGameState | null>(null);
@@ -59,6 +69,10 @@ export const App: React.FC = () => {
       setGameState(state);
       setIsLoading(false);
       setErrorMessage(null);
+      setInvitedRoomCode(null);
+      if (typeof window !== 'undefined' && window.location.search.includes('room=')) {
+        window.history.replaceState({}, '', `${window.location.pathname}?game=sekouno`);
+      }
     };
 
     const onRoomClosed = ({ message }: { message: string }) => {
@@ -263,6 +277,9 @@ export const App: React.FC = () => {
           onCreateRoom={handleCreateRoom}
           onJoinRoom={handleJoinRoom}
           onBackToHub={() => setActiveGame('hub')}
+          invitedRoomCode={invitedRoomCode}
+          savedPlayerName={getLastPlayerName()}
+          isConnected={isConnected}
           isLoading={isLoading}
           error={errorMessage}
         />

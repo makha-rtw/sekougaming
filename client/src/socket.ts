@@ -33,8 +33,27 @@ export interface SavedSession {
   playerName: string;
 }
 
+export const LAST_PLAYER_NAME_KEY = 'sekouno_last_player_name';
+
+export function saveLastPlayerName(name: string) {
+  try {
+    if (name && name.trim()) {
+      localStorage.setItem(LAST_PLAYER_NAME_KEY, name.trim());
+    }
+  } catch {}
+}
+
+export function getLastPlayerName(): string {
+  try {
+    return localStorage.getItem(LAST_PLAYER_NAME_KEY) || getSavedSession()?.playerName || '';
+  } catch {
+    return '';
+  }
+}
+
 export function saveSession(session: SavedSession) {
   localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  saveLastPlayerName(session.playerName);
 }
 
 export function getSavedSession(): SavedSession | null {
