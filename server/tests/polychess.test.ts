@@ -75,6 +75,30 @@ describe('POLYCHESS Database & User Accounts', () => {
     expect(res.error).toContain('Département invalide');
   });
 
+  it('rejects empty passwords and short passwords', () => {
+    const resEmpty = db.createUser('EmptyUser', '', 'INF');
+    expect(resEmpty.success).toBe(false);
+    expect(resEmpty.error).toContain('mot de passe');
+
+    const resSpaces = db.createUser('SpaceUser', '   ', 'INF');
+    expect(resSpaces.success).toBe(false);
+    expect(resSpaces.error).toContain('mot de passe');
+  });
+
+  it('strictly protects private data: password_hash is never exposed in UserPublic', () => {
+    const res = db.createUser('PrivacyCheck', 'secretPass99', 'G');
+    expect(res.success).toBe(true);
+    expect((res.user as any).password_hash).toBeUndefined();
+
+    const fetched = db.getUserById(res.user!.id);
+    expect((fetched as any)?.password_hash).toBeUndefined();
+
+    const leaderboard = db.getLeaderboard();
+    for (const u of leaderboard) {
+      expect((u as any).password_hash).toBeUndefined();
+    }
+  });
+
   it('Scenario E & F: Idempotent Elo finalization in database transactions', () => {
     const userA = db.createUser('Alice', 'pass123', 'INF').user!;
     const userB = db.createUser('Bob', 'pass123', 'MECA').user!;

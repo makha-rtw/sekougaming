@@ -194,7 +194,72 @@ describe('POLYCHESS Online Socket.IO Multiplayer & Matchmaking', () => {
     expect(gameState.isPrivate).toBe(true);
     expect(gameState.roomCode).toBe(createRes.roomCode);
 
+    // Third player attempts to join already full room -> refused
+    const db = getPolychessDB();
+    const loginData: any = await fetch(`http://localhost:${port}/api/polychess/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'Spectator', password: 'pass123' }),
+    }).then((r) => r.json());
+    const user3Token = loginData.token;
+
+    const thirdClient: ClientSocket = Client(`http://localhost:${port}`);
+    await new Promise<void>((resolve) => thirdClient.on('connect', resolve));
+
+    const thirdJoinRes = await new Promise<any>((resolve) => {
+      thirdClient.emit(
+        'chess_join_private_room',
+        { token: user3Token, roomCode: createRes.roomCode },
+        resolve
+      );
+    });
+    expect(thirdJoinRes.success).toBe(false);
+    expect(thirdJoinRes.error).toMatch(/invalide|expir/i);
+
+    thirdClient.disconnect();
     hostClient.disconnect();
     guestClient.disconnect();
+  });
+
+  it('allows a disconnected player to reconnect and resynchronize game state', async () => {
+    const c1: ClientSocket = Client(`http://localhost:${port}`);
+    const c2: ClientSocket = Client(`http://localhost:${port}`);
+
+    await Promise.all([
+      new Promise<void>((resolve) => c1.on('connect', resolve)),
+      new Promise<void>((resolve) => c2.on('connect', resolve)),
+    ]);
+
+    const statePromise = new Promise<any>((resolve) => {
+      c1.on('chess_state', resolve);
+    });
+
+    await new Promise<any>((resolve) => {
+      c1.emit('chess_find_match', { token: user1Token, timeControl: 'none' }, resolve);
+    });
+    await new Promise<any>((resolve) => {
+      c2.emit('chess_find_match', { token: user2Token, timeControl: 'none' }, resolve);
+    });
+
+    const activeState = await statePromise;
+    expect(activeState.gameId).toBeDefined();
+
+    // Client 1 disconnects
+    c1.disconnect();
+
+    // Client 1 reconnects on a new socket connection
+    const c1New: ClientSocket = Client(`http://localhost:${port}`);
+    await new Promise<void>((resolve) => c1New.on('connect', resolve));
+
+    const reconnectRes = await new Promise<any>((resolve) => {
+      c1New.emit('chess_reconnect', { token: user1Token }, resolve);
+    });
+
+    expect(reconnectRes.success).toBe(true);
+    expect(reconnectRes.gameId).toBe(activeState.gameId);
+    expect(reconnectRes.state.gameId).toBe(activeState.gameId);
+
+    c1New.disconnect();
+    c2.disconnect();
   });
 });

@@ -4,6 +4,9 @@
   "type": "module",
   "private": true,
   "description": "Sekou-Gaming — Sekouno: Réplique multijoueur en temps réel de UNO (2 à 15 joueurs)",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev:server": "tsx watch server/src/index.ts",
     "dev:client": "vite --config client/vite.config.ts client",
