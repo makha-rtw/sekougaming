@@ -305,22 +305,23 @@ export class PolychessGame {
     // Finalize in Database with Elo calculations
     const db = getPolychessDB();
     const dbWinner = winner === 'w' ? 'white' : winner === 'b' ? 'black' : 'draw';
-    const finRes = db.finalizeGame(
-      this.id,
-      dbWinner,
-      reason,
-      JSON.stringify(this.moves),
-      this.chess.fen()
-    );
-
-    if (finRes.success) {
-      this.whiteEloChange = finRes.whiteEloChange;
-      this.blackEloChange = finRes.blackEloChange;
-      if (finRes.whiteNewElo !== undefined) this.whitePlayer.user.elo = finRes.whiteNewElo;
-      if (finRes.blackNewElo !== undefined) this.blackPlayer.user.elo = finRes.blackNewElo;
-    }
-
-    this.notifyState();
+    Promise.resolve(
+      db.finalizeGame(
+        this.id,
+        dbWinner,
+        reason,
+        JSON.stringify(this.moves),
+        this.chess.fen()
+      )
+    ).then((finRes) => {
+      if (finRes && finRes.success) {
+        this.whiteEloChange = finRes.whiteEloChange;
+        this.blackEloChange = finRes.blackEloChange;
+        if (finRes.whiteNewElo !== undefined) this.whitePlayer.user.elo = finRes.whiteNewElo;
+        if (finRes.blackNewElo !== undefined) this.blackPlayer.user.elo = finRes.blackNewElo;
+      }
+      this.notifyState();
+    });
   }
 
   public toPublicState(): ChessGameStatePublic {

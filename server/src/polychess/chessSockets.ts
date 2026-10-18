@@ -6,12 +6,12 @@ import { TimeControlKey, UserPublic } from '../../../shared/chessTypes.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'polychess_super_secure_jwt_secret_2026';
 
-function verifyToken(token?: string): UserPublic | null {
+async function verifyToken(token?: string): Promise<UserPublic | null> {
   if (!token) return null;
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
     const db = getPolychessDB();
-    return db.getUserById(payload.userId);
+    return await db.getUserById(payload.userId);
   } catch {
     return null;
   }
@@ -26,11 +26,11 @@ export function setupPolychessSockets(io: Server): ChessManager {
     // 1. Quick Matchmaking
     socket.on(
       'chess_find_match',
-      (
+      async (
         { token, timeControl }: { token: string; timeControl: TimeControlKey },
         callback
       ) => {
-        const user = verifyToken(token);
+        const user = await verifyToken(token);
         if (!user) {
           return callback?.({ success: false, error: 'Authentification requise.' });
         }
@@ -50,8 +50,8 @@ export function setupPolychessSockets(io: Server): ChessManager {
       }
     );
 
-    socket.on('chess_cancel_match', ({ token }: { token: string }, callback) => {
-      const user = verifyToken(token);
+    socket.on('chess_cancel_match', async ({ token }: { token: string }, callback) => {
+      const user = await verifyToken(token);
       if (user) {
         chessManager.removeFromQueue(user.id);
       }
@@ -61,11 +61,11 @@ export function setupPolychessSockets(io: Server): ChessManager {
     // 2. Private Room Creation
     socket.on(
       'chess_create_private_room',
-      (
+      async (
         { token, timeControl }: { token: string; timeControl: TimeControlKey },
         callback
       ) => {
-        const user = verifyToken(token);
+        const user = await verifyToken(token);
         if (!user) {
           return callback?.({ success: false, error: 'Authentification requise.' });
         }
@@ -78,11 +78,11 @@ export function setupPolychessSockets(io: Server): ChessManager {
     // 3. Private Room Joining
     socket.on(
       'chess_join_private_room',
-      (
+      async (
         { token, roomCode }: { token: string; roomCode: string },
         callback
       ) => {
-        const user = verifyToken(token);
+        const user = await verifyToken(token);
         if (!user) {
           return callback?.({ success: false, error: 'Authentification requise.' });
         }
@@ -103,8 +103,8 @@ export function setupPolychessSockets(io: Server): ChessManager {
     );
 
     // 4. Reconnect Session
-    socket.on('chess_reconnect', ({ token }: { token: string }, callback) => {
-      const user = verifyToken(token);
+    socket.on('chess_reconnect', async ({ token }: { token: string }, callback) => {
+      const user = await verifyToken(token);
       if (!user) {
         return callback?.({ success: false, error: 'Non authentifié.' });
       }
@@ -121,7 +121,7 @@ export function setupPolychessSockets(io: Server): ChessManager {
     // 5. Make Move
     socket.on(
       'chess_move',
-      (
+      async (
         {
           token,
           gameId,
@@ -137,7 +137,7 @@ export function setupPolychessSockets(io: Server): ChessManager {
         },
         callback
       ) => {
-        const user = verifyToken(token);
+        const user = await verifyToken(token);
         if (!user) {
           return callback?.({ success: false, error: 'Non authentifié.' });
         }
@@ -155,8 +155,8 @@ export function setupPolychessSockets(io: Server): ChessManager {
     // 6. Resign
     socket.on(
       'chess_resign',
-      ({ token, gameId }: { token: string; gameId: string }, callback) => {
-        const user = verifyToken(token);
+      async ({ token, gameId }: { token: string; gameId: string }, callback) => {
+        const user = await verifyToken(token);
         if (!user) return callback?.({ success: false, error: 'Non authentifié.' });
 
         const game = chessManager.getGame(gameId);
@@ -170,8 +170,8 @@ export function setupPolychessSockets(io: Server): ChessManager {
     // 7. Draw Offer & Response
     socket.on(
       'chess_offer_draw',
-      ({ token, gameId }: { token: string; gameId: string }, callback) => {
-        const user = verifyToken(token);
+      async ({ token, gameId }: { token: string; gameId: string }, callback) => {
+        const user = await verifyToken(token);
         if (!user) return callback?.({ success: false, error: 'Non authentifié.' });
 
         const game = chessManager.getGame(gameId);
@@ -184,8 +184,8 @@ export function setupPolychessSockets(io: Server): ChessManager {
 
     socket.on(
       'chess_accept_draw',
-      ({ token, gameId }: { token: string; gameId: string }, callback) => {
-        const user = verifyToken(token);
+      async ({ token, gameId }: { token: string; gameId: string }, callback) => {
+        const user = await verifyToken(token);
         if (!user) return callback?.({ success: false, error: 'Non authentifié.' });
 
         const game = chessManager.getGame(gameId);
@@ -198,8 +198,8 @@ export function setupPolychessSockets(io: Server): ChessManager {
 
     socket.on(
       'chess_decline_draw',
-      ({ token, gameId }: { token: string; gameId: string }, callback) => {
-        const user = verifyToken(token);
+      async ({ token, gameId }: { token: string; gameId: string }, callback) => {
+        const user = await verifyToken(token);
         if (!user) return callback?.({ success: false, error: 'Non authentifié.' });
 
         const game = chessManager.getGame(gameId);

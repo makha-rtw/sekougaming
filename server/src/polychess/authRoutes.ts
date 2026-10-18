@@ -29,7 +29,7 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
 }
 
 // 1. Register
-router.post('/register', (req: Request, res: Response) => {
+router.post('/register', async (req: Request, res: Response) => {
   const { username, password, confirmPassword, department } = req.body;
 
   if (!username || !password || !confirmPassword || !department) {
@@ -47,7 +47,7 @@ router.post('/register', (req: Request, res: Response) => {
   }
 
   const db = getPolychessDB();
-  const createRes = db.createUser(username, password, department as DepartmentCode);
+  const createRes = await db.createUser(username, password, department as DepartmentCode);
 
   if (!createRes.success || !createRes.user) {
     return res.status(400).json({ error: createRes.error || 'Erreur lors de la création du compte.' });
@@ -67,7 +67,7 @@ router.post('/register', (req: Request, res: Response) => {
 });
 
 // 2. Login
-router.post('/login', (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -75,7 +75,7 @@ router.post('/login', (req: Request, res: Response) => {
   }
 
   const db = getPolychessDB();
-  const verifyRes = db.verifyUser(username, password);
+  const verifyRes = await db.verifyUser(username, password);
 
   if (!verifyRes.success || !verifyRes.user) {
     return res.status(401).json({ error: verifyRes.error || 'Identifiants incorrects.' });
@@ -95,31 +95,31 @@ router.post('/login', (req: Request, res: Response) => {
 });
 
 // 3. Me (Current User Profile)
-router.get('/me', authMiddleware, (req: AuthenticatedRequest, res: Response) => {
+router.get('/me', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   if (!req.userId) return res.status(401).json({ error: 'Non authentifié.' });
 
   const db = getPolychessDB();
-  const user = db.getUserById(req.userId);
+  const user = await db.getUserById(req.userId);
   if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
 
   return res.json({ success: true, user });
 });
 
 // 4. Leaderboard (General or by Department)
-router.get('/leaderboard', (req: Request, res: Response) => {
+router.get('/leaderboard', async (req: Request, res: Response) => {
   const dept = req.query.department as DepartmentCode | undefined;
   const db = getPolychessDB();
-  const leaderboard = db.getLeaderboard(dept);
+  const leaderboard = await db.getLeaderboard(dept);
 
   return res.json({ success: true, leaderboard });
 });
 
 // 5. Match History
-router.get('/history', authMiddleware, (req: AuthenticatedRequest, res: Response) => {
+router.get('/history', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   if (!req.userId) return res.status(401).json({ error: 'Non authentifié.' });
 
   const db = getPolychessDB();
-  const history = db.getUserMatchHistory(req.userId, 50);
+  const history = await db.getUserMatchHistory(req.userId, 50);
 
   return res.json({ success: true, history });
 });

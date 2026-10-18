@@ -35,11 +35,13 @@ describe('POLYCHESS Online Socket.IO Multiplayer & Matchmaking', () => {
 
     // Create 2 test users (or fetch if already created)
     const db = getPolychessDB();
-    const u1 = db.createUser('Magnus', 'pass123', 'INF');
-    const u2 = db.createUser('Hikaru', 'pass123', 'TR');
+    const u1 = await db.createUser('Magnus', 'pass123', 'INF');
+    const u2 = await db.createUser('Hikaru', 'pass123', 'TR');
+    const v1 = await db.verifyUser('Magnus', 'pass123');
+    const v2 = await db.verifyUser('Hikaru', 'pass123');
 
-    user1 = (u1.user || db.verifyUser('Magnus', 'pass123').user)!;
-    user2 = (u2.user || db.verifyUser('Hikaru', 'pass123').user)!;
+    user1 = (u1.user || v1.user)!;
+    user2 = (u2.user || v2.user)!;
 
     // Login to get tokens
     const res1: any = await fetch(`http://localhost:${port}/api/polychess/login`, {

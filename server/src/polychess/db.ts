@@ -6,6 +6,8 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { DepartmentCode, DEPARTMENTS, MatchHistoryItem, UserPublic } from '../../../shared/chessTypes.js';
 import { calculateElo } from './elo.js';
+import { IPolychessDatabase } from './dbInterface.js';
+import { PostgresPolychessDatabase } from './postgresDb.js';
 
 export interface UserRow {
   id: string;
@@ -42,7 +44,7 @@ export interface GameRow {
   ended_at: number | null;
 }
 
-export class PolychessDatabase {
+export class PolychessDatabase implements IPolychessDatabase {
   public db: DatabaseSync;
 
   constructor(dbPath?: string) {
@@ -492,11 +494,16 @@ export class PolychessDatabase {
 }
 
 // Global Singleton for the application
-let dbInstance: PolychessDatabase | null = null;
+let dbInstance: IPolychessDatabase | null = null;
 
-export function getPolychessDB(): PolychessDatabase {
+export function getPolychessDB(): IPolychessDatabase {
   if (!dbInstance) {
-    dbInstance = new PolychessDatabase();
+    if (process.env.DATABASE_URL) {
+      console.log('[POLYCHESS] Initializing persistent PostgreSQL database from DATABASE_URL');
+      dbInstance = new PostgresPolychessDatabase(process.env.DATABASE_URL);
+    } else {
+      dbInstance = new PolychessDatabase();
+    }
   }
   return dbInstance;
 }
