@@ -39,13 +39,19 @@ export async function registerUser(
         department,
       }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return { success: false, error: `Erreur serveur (${res.status})` };
+    }
     if (data.success && data.token) {
       saveStoredToken(data.token);
     }
     return data;
   } catch (err: any) {
-    return { success: false, error: 'Erreur réseau avec le serveur.' };
+    return { success: false, error: 'Impossible de joindre le serveur. Vérifiez votre connexion.' };
   }
 }
 
@@ -59,13 +65,19 @@ export async function loginUser(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password: passwordPlain }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return { success: false, error: `Erreur serveur (${res.status})` };
+    }
     if (data.success && data.token) {
       saveStoredToken(data.token);
     }
     return data;
   } catch (err: any) {
-    return { success: false, error: 'Erreur réseau avec le serveur.' };
+    return { success: false, error: 'Impossible de joindre le serveur. Vérifiez votre connexion.' };
   }
 }
 
