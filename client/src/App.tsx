@@ -13,10 +13,11 @@ import { GameScreen } from './screens/GameScreen.js';
 import { GameOverScreen } from './screens/GameOverScreen.js';
 import { HubScreen } from './screens/HubScreen.js';
 import LoupGarouApp from './games/loup-garou/LoupGarouApp.js';
+import PolychessApp from './games/polychess/PolychessApp.js';
 import { WifiOff } from 'lucide-react';
 import { sounds } from './utils/sound.js';
 
-export type ActiveGame = 'hub' | 'sekouno' | 'loup_garou';
+export type ActiveGame = 'hub' | 'sekouno' | 'loup_garou' | 'polychess';
 
 export const App: React.FC = () => {
   const [activeGame, setActiveGame] = useState<ActiveGame>(() => {
@@ -25,8 +26,18 @@ export const App: React.FC = () => {
       if (params.get('room')) return 'sekouno';
       if (params.get('game') === 'loup_garou') return 'loup_garou';
       if (params.get('game') === 'sekouno') return 'sekouno';
+      if (params.get('game') === 'polychess' || params.get('chessRoom')) return 'polychess';
     }
     return 'hub';
+  });
+
+  const [chessRoomCode, setChessRoomCode] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const chessRoom = params.get('chessRoom');
+      return chessRoom ? chessRoom.trim().toUpperCase() : null;
+    }
+    return null;
   });
 
   const [invitedRoomCode, setInvitedRoomCode] = useState<string | null>(() => {
@@ -260,7 +271,23 @@ export const App: React.FC = () => {
     return <LoupGarouApp onBackToHub={() => setActiveGame('hub')} />;
   }
 
-  // 3. Sekouno Flow
+  // 3. Polychess Game
+  if (activeGame === 'polychess') {
+    return (
+      <PolychessApp
+        socket={socket}
+        initialRoomCode={chessRoomCode}
+        onBackToHub={() => {
+          if (typeof window !== 'undefined' && window.location.search.includes('chessRoom=')) {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+          setActiveGame('hub');
+        }}
+      />
+    );
+  }
+
+  // 4. Sekouno Flow
   return (
     <div className="relative min-h-screen text-slate-100 flex flex-col justify-between">
       {/* Offline / Reconnecting banner for Sekouno multiplayer */}

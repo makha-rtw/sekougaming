@@ -1,13 +1,13 @@
 import React from 'react';
-import { Sparkles, Users, ArrowRight, Flame, Moon, Smartphone, ShieldCheck, Volume2 } from 'lucide-react';
+import { Sparkles, Users, ArrowRight, Flame, Moon, Smartphone, ShieldCheck, Volume2, Crown, Trophy } from 'lucide-react';
 
 interface HubScreenProps {
-  onSelectGame: (gameId: 'sekouno' | 'loup_garou') => void;
+  onSelectGame: (gameId: 'sekouno' | 'loup_garou' | 'polychess') => void;
 }
 
 export const HubScreen: React.FC<HubScreenProps> = ({ onSelectGame }) => {
   return (
-    <div className="min-h-[100dvh] w-full text-slate-100 flex flex-col justify-between p-3 sm:p-6 overflow-y-auto selection:bg-amber-500/30 selection:text-amber-200">
+    <div className="min-h-[100dvh] w-full text-slate-100 flex flex-col justify-between p-3 sm:p-5 overflow-y-auto selection:bg-amber-500/30 selection:text-amber-200">
       {/* Background Decorative Lighting */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[20%] w-[400px] h-[400px] bg-red-600/10 rounded-full blur-[130px]" />
@@ -16,17 +16,17 @@ export const HubScreen: React.FC<HubScreenProps> = ({ onSelectGame }) => {
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto my-auto flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-5xl mx-auto my-auto flex flex-col items-center">
         {/* Hub Header (Compact for 1-screen fit) */}
-        <header className="text-center mb-3 sm:mb-6 flex flex-col items-center">
-          <div className="flex items-center gap-3 mb-1.5">
+        <header className="text-center mb-2.5 sm:mb-5 flex flex-col items-center">
+          <div className="flex items-center gap-3 mb-1">
             {/* Studio Logo */}
             <div className="relative group">
               <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-500 to-indigo-600 opacity-70 blur-sm" />
               <img
                 src="/sekouG_logo.jpg"
                 alt="SekouGaming Logo"
-                className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl object-cover border border-amber-400/80 shadow-lg"
+                className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover border border-amber-400/80 shadow-lg"
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = 'none';
                 }}
@@ -46,8 +46,8 @@ export const HubScreen: React.FC<HubScreenProps> = ({ onSelectGame }) => {
           </div>
         </header>
 
-        {/* Game Selection Cards Grid (Both fully visible on 1st screen) */}
-        <section className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 max-w-3xl">
+        {/* Game Selection Cards Grid (3 Games: Sekouno, Loup-Garou, Polychess) */}
+        <section className="w-full grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 max-w-5xl">
           {/* 1. SEKOUNO CARD */}
           <div
             onClick={() => onSelectGame('sekouno')}
@@ -56,55 +56,54 @@ export const HubScreen: React.FC<HubScreenProps> = ({ onSelectGame }) => {
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') onSelectGame('sekouno');
             }}
-            className="group relative rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950/95 border-2 border-slate-800 hover:border-amber-400/80 transition-all duration-200 shadow-lg hover:shadow-amber-500/15 p-4 sm:p-5 flex flex-col justify-between cursor-pointer transform hover:-translate-y-0.5 overflow-hidden"
+            className="group relative rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950/95 border-2 border-slate-800 hover:border-amber-400/80 transition-all duration-200 shadow-lg hover:shadow-amber-500/15 p-3.5 sm:p-4 flex flex-col justify-between cursor-pointer transform hover:-translate-y-0.5 overflow-hidden"
           >
             {/* Ambient Glow */}
-            <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-red-600/20 via-amber-500/10 to-transparent rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-300" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-600/20 via-amber-500/10 to-transparent rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-300" />
 
             <div>
               {/* Card Top: Logo + Name + Player Count */}
-              <div className="flex items-center gap-3.5 mb-2.5">
+              <div className="flex items-center gap-3 mb-2">
                 <img
                   src="/logos/logo_sekouno.jpg"
                   alt="Logo Sekouno"
-                  className="w-13 h-13 sm:w-15 sm:h-15 rounded-xl object-cover border border-amber-400/50 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0"
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-amber-400/50 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0"
                   onError={(e) => {
-                    // Fallback if image fails to load
                     (e.currentTarget as HTMLElement).src = '/sekouG_logo.jpg';
                   }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-[9px] font-black text-red-300 uppercase tracking-wider">
+                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-[9px] font-black text-red-300 uppercase tracking-wider">
                       <Flame className="w-2.5 h-2.5 text-amber-400 fill-current" />
                       <span>Multijoueur</span>
                     </span>
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 shrink-0">
                       <Users className="w-3 h-3 text-amber-400" />
                       <span>2-15 j.</span>
                     </span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-white group-hover:text-amber-300 transition-colors truncate">
+                  <h2 className="text-lg sm:text-xl font-black text-white group-hover:text-amber-300 transition-colors truncate">
                     SEKOUNO
                   </h2>
                 </div>
               </div>
 
-              {/* Single Sentence Description (No check marks) */}
-              <p className="text-xs text-slate-300 leading-snug">
+              {/* Single Sentence Description */}
+              <p className="text-xs text-slate-300 leading-snug line-clamp-2">
                 Le jeu de cartes culte en multijoueur temps réel avec vos règles personnalisées.
               </p>
             </div>
 
             {/* CTA Button */}
-            <div className="mt-3.5 pt-2.5 border-t border-slate-800/80 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-400">Salons privés & QR Code</span>
+            <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-slate-400 truncate">Salons & QR Code</span>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-black text-xs uppercase tracking-wider text-white bg-gradient-to-r from-red-600 via-amber-500 to-orange-500 group-hover:brightness-110 shadow-md shadow-orange-500/25 transition-all transform active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-xs uppercase tracking-wider text-white bg-gradient-to-r from-red-600 via-amber-500 to-orange-500 group-hover:brightness-110 shadow-md shadow-orange-500/25 transition-all transform active:scale-95 shrink-0"
               >
                 <span>Jouer</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
           </div>
@@ -117,54 +116,131 @@ export const HubScreen: React.FC<HubScreenProps> = ({ onSelectGame }) => {
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') onSelectGame('loup_garou');
             }}
-            className="group relative rounded-2xl bg-gradient-to-b from-stone-900/95 via-stone-900/90 to-stone-950/95 border-2 border-stone-800 hover:border-amber-600/80 transition-all duration-200 shadow-lg hover:shadow-amber-700/15 p-4 sm:p-5 flex flex-col justify-between cursor-pointer transform hover:-translate-y-0.5 overflow-hidden"
+            className="group relative rounded-2xl bg-gradient-to-b from-stone-900/95 via-stone-900/90 to-stone-950/95 border-2 border-stone-800 hover:border-amber-600/80 transition-all duration-200 shadow-lg hover:shadow-amber-700/15 p-3.5 sm:p-4 flex flex-col justify-between cursor-pointer transform hover:-translate-y-0.5 overflow-hidden"
           >
             {/* Ambient Glow */}
-            <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-amber-700/20 via-stone-700/10 to-transparent rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-300" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-700/20 via-stone-700/10 to-transparent rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-300" />
 
             <div>
               {/* Card Top: Logo + Name + Player Count */}
-              <div className="flex items-center gap-3.5 mb-2.5">
+              <div className="flex items-center gap-3 mb-2">
                 <img
                   src="/logos/logo_loupG.jpg"
                   alt="Logo Loup-Garou"
-                  className="w-13 h-13 sm:w-15 sm:h-15 rounded-xl object-cover border border-amber-600/50 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0"
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-amber-600/50 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0"
                   onError={(e) => {
                     (e.currentTarget as HTMLElement).src = '/sekouG_logo.jpg';
                   }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-950/90 border border-amber-700/40 text-[9px] font-black text-amber-300 uppercase tracking-wider">
+                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-stone-950/90 border border-amber-700/40 text-[9px] font-black text-amber-300 uppercase tracking-wider">
                       <Moon className="w-2.5 h-2.5 text-amber-400" />
                       <span>Grimoire</span>
                     </span>
-                    <span className="text-[11px] font-bold text-stone-400 flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] font-bold text-stone-400 flex items-center gap-1 shrink-0">
                       <Users className="w-3 h-3 text-amber-500" />
                       <span>6-18 j.</span>
                     </span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-white group-hover:text-amber-200 transition-colors truncate">
+                  <h2 className="text-lg sm:text-xl font-black text-white group-hover:text-amber-200 transition-colors truncate">
                     LOUPS-GAROUS
                   </h2>
                 </div>
               </div>
 
-              {/* Single Sentence Description (No check marks) */}
-              <p className="text-xs text-stone-300 leading-snug">
+              {/* Single Sentence Description */}
+              <p className="text-xs text-stone-300 leading-snug line-clamp-2">
                 Jeu d'ambiance et de déduction sociale avec 13 rôles secrets et narration vocale.
               </p>
             </div>
 
             {/* CTA Button */}
-            <div className="mt-3.5 pt-2.5 border-t border-stone-800/80 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-stone-400">Pass & Play / Modérateur</span>
+            <div className="mt-3 pt-2 border-t border-stone-800/80 flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-stone-400 truncate">Pass & Play</span>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-black text-xs uppercase tracking-wider text-amber-100 bg-gradient-to-r from-stone-800 via-amber-900 to-stone-900 border border-amber-600/40 group-hover:brightness-125 shadow-md shadow-amber-950/40 transition-all transform active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-xs uppercase tracking-wider text-amber-100 bg-gradient-to-r from-stone-800 via-amber-900 to-stone-900 border border-amber-600/40 group-hover:brightness-125 shadow-md shadow-amber-950/40 transition-all transform active:scale-95 shrink-0"
               >
                 <span>Lancer</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-amber-300" />
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform text-amber-300" />
+              </button>
+            </div>
+          </div>
+
+          {/* 3. POLYCHESS CARD */}
+          <div
+            onClick={() => onSelectGame('polychess')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') onSelectGame('polychess');
+            }}
+            className="group relative rounded-2xl bg-gradient-to-b from-slate-900/95 via-emerald-950/30 to-slate-950/95 border-2 border-slate-800 hover:border-emerald-400/80 transition-all duration-200 shadow-lg hover:shadow-emerald-500/15 p-3.5 sm:p-4 flex flex-col justify-between cursor-pointer transform hover:-translate-y-0.5 overflow-hidden"
+          >
+            {/* Ambient Glow */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-600/20 via-teal-500/10 to-transparent rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-300" />
+
+            <div>
+              {/* Card Top: Chessboard Illustration + Name + Player Count */}
+              <div className="flex items-center gap-3 mb-2">
+                {/* Chessboard Illustration Badge */}
+                <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl border border-emerald-400/60 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0 overflow-hidden bg-slate-950 p-1 flex items-center justify-center">
+                  <div className="grid grid-cols-4 grid-rows-4 w-full h-full rounded-md overflow-hidden border border-emerald-500/30">
+                    <div className="bg-emerald-100/90" />
+                    <div className="bg-emerald-800" />
+                    <div className="bg-emerald-100/90" />
+                    <div className="bg-emerald-800" />
+                    <div className="bg-emerald-800" />
+                    <div className="bg-emerald-100/90" />
+                    <div className="bg-emerald-800" />
+                    <div className="bg-emerald-100/90" />
+                    <div className="bg-emerald-100/90" />
+                    <div className="bg-emerald-800" />
+                    <div className="bg-emerald-100/90" />
+                    <div className="bg-emerald-800" />
+                    <div className="bg-emerald-800" />
+                    <div className="bg-emerald-100/90" />
+                    <div className="bg-emerald-800" />
+                    <div className="bg-emerald-100/90" />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                    <Crown className="w-6 h-6 text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" />
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-500/40 text-[9px] font-black text-emerald-300 uppercase tracking-wider">
+                      <Trophy className="w-2.5 h-2.5 text-amber-400" />
+                      <span>Elo & FIDE</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 shrink-0">
+                      <Users className="w-3 h-3 text-emerald-400" />
+                      <span>2 joueurs</span>
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-white group-hover:text-emerald-300 transition-colors truncate">
+                    POLYCHESS
+                  </h2>
+                </div>
+              </div>
+
+              {/* Exact required single-sentence description */}
+              <p className="text-xs text-slate-300 leading-snug line-clamp-2">
+                Affronte tes amis aux échecs, en local ou en ligne.
+              </p>
+            </div>
+
+            {/* CTA Button */}
+            <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-emerald-400/90 truncate">Local & En Ligne</span>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-xs uppercase tracking-wider text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 group-hover:brightness-110 shadow-md shadow-emerald-500/25 transition-all transform active:scale-95 shrink-0"
+              >
+                <span>Jouer</span>
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform text-slate-950" />
               </button>
             </div>
           </div>

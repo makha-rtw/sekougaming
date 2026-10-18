@@ -9,6 +9,8 @@ import dotenv from 'dotenv';
 import QRCode from 'qrcode';
 import { RoomManager } from './rooms/roomManager.js';
 import { PlayableColor } from '../../shared/types.js';
+import polychessAuthRouter from './polychess/authRoutes.js';
+import { setupPolychessSockets } from './polychess/chessSockets.js';
 
 dotenv.config();
 
@@ -37,6 +39,9 @@ app.use(express.static(clientDistPath));
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
+
+// Polychess API routes
+app.use('/api/polychess', polychessAuthRouter);
 
 // QR Code generation endpoint
 app.get('/api/qrcode', async (req, res) => {
@@ -67,6 +72,8 @@ const io = new Server(server, {
   pingTimeout: 20000,
   pingInterval: 10000,
 });
+
+setupPolychessSockets(io);
 
 const roomManager = new RoomManager();
 
