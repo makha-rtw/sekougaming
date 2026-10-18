@@ -58,6 +58,19 @@ export class PolychessDatabase {
     }
 
     this.initSchema();
+    if (dbPath !== ':memory:') {
+      this.seedDefaultTestAccounts();
+    }
+  }
+
+  private seedDefaultTestAccounts() {
+    const checkStmt = this.db.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE');
+    if (!checkStmt.get('Joueur1')) {
+      this.createUser('Joueur1', 'test1234', 'INF');
+    }
+    if (!checkStmt.get('Joueur2')) {
+      this.createUser('Joueur2', 'test1234', 'TR');
+    }
   }
 
   private initSchema() {
