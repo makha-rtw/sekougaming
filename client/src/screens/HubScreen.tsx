@@ -1,272 +1,211 @@
 import React from 'react';
-import { Sparkles, Users, ArrowRight, Flame, Moon, Smartphone, ShieldCheck, Volume2, Crown, Trophy } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { ArrowUpRight, Users, Wifi, Smartphone, Trophy } from 'lucide-react';
+
+/*
+ * Hub "Nuit de jeu"
+ * Palette : nuit #0A0F1E · surface #121A2E · ivoire #F3EEE3 · brume #8E97AD · lampe (accent unique) #FFC93C
+ * Typo    : Bricolage Grotesque (titres) + Plus Jakarta Sans (texte)
+ * Rayons  : affiches 28px, boutons en pilule.
+ */
+
+type GameId = 'sekouno' | 'loup_garou' | 'polychess';
 
 interface HubScreenProps {
-  onSelectGame: (gameId: 'sekouno' | 'loup_garou' | 'polychess') => void;
+  onSelectGame: (gameId: GameId) => void;
 }
 
-export const HubScreen: React.FC<HubScreenProps> = ({ onSelectGame }) => {
-  return (
-    <div className="min-h-[100dvh] w-full text-slate-100 flex flex-col justify-between p-3 sm:p-5 overflow-y-auto selection:bg-amber-500/30 selection:text-amber-200">
-      {/* Background Decorative Lighting */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[20%] w-[400px] h-[400px] bg-red-600/10 rounded-full blur-[130px]" />
-        <div className="absolute top-[40%] right-[10%] w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[-10%] left-[30%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[150px]" />
-      </div>
+interface GameEntry {
+  id: GameId;
+  title: string;
+  pitch: string;
+  image: string;
+  fallback: string; // gradient affiché sous l'illustration (ou si elle manque)
+  shade: string; // teinte du voile de lisibilité
+  focus: string; // point focal de l'illustration (object-position)
+  meta: { icon: React.ElementType; label: string }[];
+}
 
-      {/* Main Content Area */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto my-auto flex flex-col items-center">
-        {/* Hub Header (Compact for 1-screen fit) */}
-        <header className="text-center mb-2.5 sm:mb-5 flex flex-col items-center">
-          <div className="flex items-center gap-3 mb-1">
-            {/* Studio Logo */}
-            <div className="relative group">
-              <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-500 to-indigo-600 opacity-70 blur-sm" />
+const GAMES: GameEntry[] = [
+  {
+    id: 'sekouno',
+    title: 'Sekouno',
+    pitch: 'Le jeu de cartes culte, en ligne, avec tes propres règles de pénalité.',
+    image: '/hub/sekouno.jpg',
+    fallback: 'linear-gradient(160deg,#e23b2e 0%,#f5b921 45%,#1f8f4e 75%,#1d4fd8 100%)',
+    shade: '10,6,6',
+    focus: '50% 42%',
+    meta: [
+      { icon: Users, label: '2 à 15 joueurs' },
+      { icon: Wifi, label: 'En ligne' },
+    ],
+  },
+  {
+    id: 'loup_garou',
+    title: 'Loups-Garous',
+    pitch: 'Le village s’endort. Rôles secrets, meneur guidé et voix qui raconte la nuit.',
+    image: '/hub/loupgarou.jpg',
+    fallback: 'radial-gradient(circle at 70% 20%,#e9e4c9 0 8%,#3b4f86 9%,#131c3d 55%,#070b18 100%)',
+    shade: '5,9,24',
+    focus: '55% 28%',
+    meta: [
+      { icon: Users, label: '6 à 18 joueurs' },
+      { icon: Smartphone, label: 'Un seul téléphone' },
+    ],
+  },
+  {
+    id: 'polychess',
+    title: 'Polychess',
+    pitch: 'Affronte tes amis aux échecs, en local ou en ligne, avec un vrai classement Elo.',
+    image: '/hub/polychess.jpg',
+    fallback: 'linear-gradient(160deg,#e9e2cf 0%,#3f7d5c 50%,#0b2418 100%)',
+    shade: '4,14,10',
+    focus: '50% 48%',
+    meta: [
+      { icon: Users, label: '2 joueurs' },
+      { icon: Trophy, label: 'Classement Elo' },
+    ],
+  },
+];
+
+const DISPLAY = "font-['Bricolage_Grotesque',_'Plus_Jakarta_Sans',_sans-serif]";
+
+export const HubScreen: React.FC<HubScreenProps> = ({ onSelectGame }) => {
+  const reduce = useReducedMotion();
+
+  const rise = (i: number) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, y: 28 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.7, delay: 0.08 + i * 0.09, ease: [0.16, 1, 0.3, 1] as const },
+        };
+
+  return (
+    <div
+      className="relative min-h-[100dvh] w-full overflow-x-hidden bg-[#0A0F1E] text-[#F3EEE3] font-['Plus_Jakarta_Sans',_sans-serif] selection:bg-[#FFC93C] selection:text-[#0A0F1E]"
+      style={{
+        paddingTop: 'max(env(safe-area-inset-top, 0px), 1rem)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 1rem)',
+      }}
+    >
+      {/* Lumière de lampe au-dessus de la table */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(60rem 36rem at 12% -8%, rgba(255,201,60,0.10), transparent 60%), radial-gradient(50rem 40rem at 110% 110%, rgba(64,96,190,0.14), transparent 60%)',
+        }}
+      />
+
+      <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-[1320px] flex-col px-4 sm:px-8">
+        {/* En-tête */}
+        <motion.header {...rise(0)} className="flex h-16 items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src="/sekouG_logo.jpg"
+              alt=""
+              className="h-9 w-9 rounded-xl object-cover ring-1 ring-white/15"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
+            />
+            <span className={`${DISPLAY} text-xl font-bold tracking-tight`}>SekouGaming</span>
+          </div>
+          <span className="hidden text-sm text-[#8E97AD] sm:block">Gratuit, sans installation</span>
+        </motion.header>
+
+        {/* Accroche */}
+        <section className="pt-6 pb-7 sm:pt-12 sm:pb-10">
+          <motion.h1
+            {...rise(1)}
+            className={`${DISPLAY} max-w-[14ch] text-[2.6rem] font-extrabold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-7xl`}
+          >
+            Ce soir, on joue à quoi&nbsp;?
+          </motion.h1>
+          <motion.p {...rise(2)} className="mt-4 max-w-[46ch] text-base leading-relaxed text-[#B7BDCC] sm:text-lg">
+            Trois jeux à lancer en un geste entre amis, sur téléphone comme sur ordinateur.
+          </motion.p>
+        </section>
+
+        {/* Affiches des jeux */}
+        <section
+          aria-label="Choisir un jeu"
+          className="grid flex-1 grid-cols-1 gap-3 sm:gap-4 lg:flex lg:min-h-[520px] lg:max-h-[640px]"
+        >
+          {GAMES.map((game, i) => (
+            <motion.button
+              key={game.id}
+              type="button"
+              {...rise(3 + i)}
+              onClick={() => onSelectGame(game.id)}
+              aria-label={`Jouer à ${game.title}`}
+              className="group relative isolate h-[15.5rem] overflow-hidden rounded-[28px] text-left ring-1 ring-white/10 outline-none transition-[flex-grow,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:ring-2 focus-visible:ring-[#FFC93C] active:scale-[0.99] sm:h-[19rem] lg:h-auto lg:flex-1 lg:hover:flex-[1.85] lg:focus-visible:flex-[1.85]"
+              style={{ background: game.fallback }}
+            >
+              {/* Illustration */}
               <img
-                src="/sekouG_logo.jpg"
-                alt="SekouGaming Logo"
-                className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover border border-amber-400/80 shadow-lg"
+                src={game.image}
+                alt=""
+                loading={i === 0 ? 'eager' : 'lazy'}
+                style={{ objectPosition: game.focus }}
+                className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = 'none';
                 }}
               />
-            </div>
 
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white drop-shadow">
-              SEKOU<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500">GAMING</span>
-            </h1>
-          </div>
+              {/* Voile de lisibilité */}
+              <div
+                aria-hidden
+                className="absolute inset-0 -z-10"
+                style={{
+                  background: `linear-gradient(to top, rgba(${game.shade},0.94) 0%, rgba(${game.shade},0.62) 38%, rgba(${game.shade},0.08) 72%, rgba(${game.shade},0) 100%)`,
+                }}
+              />
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-900/90 border border-slate-700/80 shadow-inner">
-            <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-300">
-              Choisissez votre jeu • Gratuit & sans installation
-            </span>
-          </div>
-        </header>
+              {/* Contenu */}
+              <div className="flex h-full flex-col justify-end p-5 sm:p-7">
+                <div className="flex items-end justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2
+                      className={`${DISPLAY} text-[2rem] font-extrabold leading-none tracking-[-0.03em] sm:text-[2.6rem] lg:text-5xl`}
+                    >
+                      {game.title}
+                    </h2>
 
-        {/* Game Selection Cards Grid (3 Games: Sekouno, Loup-Garou, Polychess) */}
-        <section className="w-full grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 max-w-5xl">
-          {/* 1. SEKOUNO CARD */}
-          <div
-            onClick={() => onSelectGame('sekouno')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') onSelectGame('sekouno');
-            }}
-            className="group relative rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950/95 border-2 border-slate-800 hover:border-amber-400/80 transition-all duration-200 shadow-lg hover:shadow-amber-500/15 p-3.5 sm:p-4 flex flex-col justify-between cursor-pointer transform hover:-translate-y-0.5 overflow-hidden"
-          >
-            {/* Ambient Glow */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-600/20 via-amber-500/10 to-transparent rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-300" />
+                    <p className="mt-2.5 max-w-[38ch] text-sm leading-snug text-[#E3E0D6]/90 line-clamp-2 sm:text-[0.95rem] lg:max-h-0 lg:opacity-0 lg:transition-all lg:duration-500 lg:group-hover:max-h-20 lg:group-hover:opacity-100 lg:group-focus-visible:max-h-20 lg:group-focus-visible:opacity-100">
+                      {game.pitch}
+                    </p>
 
-            <div>
-              {/* Card Top: Logo + Name + Player Count */}
-              <div className="flex items-center gap-3 mb-2">
-                <img
-                  src="/logos/logo_sekouno.jpg"
-                  alt="Logo Sekouno"
-                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-amber-400/50 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLElement).src = '/sekouG_logo.jpg';
-                  }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1 mb-0.5">
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-[9px] font-black text-red-300 uppercase tracking-wider">
-                      <Flame className="w-2.5 h-2.5 text-amber-400 fill-current" />
-                      <span>Multijoueur</span>
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 shrink-0">
-                      <Users className="w-3 h-3 text-amber-400" />
-                      <span>2-15 j.</span>
-                    </span>
+                    <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[0.8rem] font-medium text-[#C9CCD6]">
+                      {game.meta.map(({ icon: Icon, label }) => (
+                        <li key={label} className="inline-flex items-center gap-1.5">
+                          <Icon className="h-3.5 w-3.5 opacity-80" strokeWidth={2} />
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <h2 className="text-lg sm:text-xl font-black text-white group-hover:text-amber-300 transition-colors truncate">
-                    SEKOUNO
-                  </h2>
+
+                  <span className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-[#FFC93C] pl-4 pr-3 text-sm font-bold text-[#0A0F1E] shadow-[0_8px_24px_-8px_rgba(255,201,60,0.55)] transition-transform duration-300 group-hover:-translate-y-0.5">
+                    Jouer
+                    <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.4} />
+                  </span>
                 </div>
               </div>
-
-              {/* Single Sentence Description */}
-              <p className="text-xs text-slate-300 leading-snug line-clamp-2">
-                Le jeu de cartes culte en multijoueur temps réel avec vos règles personnalisées.
-              </p>
-            </div>
-
-            {/* CTA Button */}
-            <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-slate-400 truncate">Salons & QR Code</span>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-xs uppercase tracking-wider text-white bg-gradient-to-r from-red-600 via-amber-500 to-orange-500 group-hover:brightness-110 shadow-md shadow-orange-500/25 transition-all transform active:scale-95 shrink-0"
-              >
-                <span>Jouer</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
-          </div>
-
-          {/* 2. LOUP-GAROU CARD */}
-          <div
-            onClick={() => onSelectGame('loup_garou')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') onSelectGame('loup_garou');
-            }}
-            className="group relative rounded-2xl bg-gradient-to-b from-stone-900/95 via-stone-900/90 to-stone-950/95 border-2 border-stone-800 hover:border-amber-600/80 transition-all duration-200 shadow-lg hover:shadow-amber-700/15 p-3.5 sm:p-4 flex flex-col justify-between cursor-pointer transform hover:-translate-y-0.5 overflow-hidden"
-          >
-            {/* Ambient Glow */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-700/20 via-stone-700/10 to-transparent rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-300" />
-
-            <div>
-              {/* Card Top: Logo + Name + Player Count */}
-              <div className="flex items-center gap-3 mb-2">
-                <img
-                  src="/logos/logo_loupG.jpg"
-                  alt="Logo Loup-Garou"
-                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-amber-600/50 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLElement).src = '/sekouG_logo.jpg';
-                  }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1 mb-0.5">
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-stone-950/90 border border-amber-700/40 text-[9px] font-black text-amber-300 uppercase tracking-wider">
-                      <Moon className="w-2.5 h-2.5 text-amber-400" />
-                      <span>Grimoire</span>
-                    </span>
-                    <span className="text-[10px] font-bold text-stone-400 flex items-center gap-1 shrink-0">
-                      <Users className="w-3 h-3 text-amber-500" />
-                      <span>6-18 j.</span>
-                    </span>
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-black text-white group-hover:text-amber-200 transition-colors truncate">
-                    LOUPS-GAROUS
-                  </h2>
-                </div>
-              </div>
-
-              {/* Single Sentence Description */}
-              <p className="text-xs text-stone-300 leading-snug line-clamp-2">
-                Jeu d'ambiance et de déduction sociale avec 13 rôles secrets et narration vocale.
-              </p>
-            </div>
-
-            {/* CTA Button */}
-            <div className="mt-3 pt-2 border-t border-stone-800/80 flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-stone-400 truncate">Pass & Play</span>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-xs uppercase tracking-wider text-amber-100 bg-gradient-to-r from-stone-800 via-amber-900 to-stone-900 border border-amber-600/40 group-hover:brightness-125 shadow-md shadow-amber-950/40 transition-all transform active:scale-95 shrink-0"
-              >
-                <span>Lancer</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform text-amber-300" />
-              </button>
-            </div>
-          </div>
-
-          {/* 3. POLYCHESS CARD */}
-          <div
-            onClick={() => onSelectGame('polychess')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') onSelectGame('polychess');
-            }}
-            className="group relative rounded-2xl bg-gradient-to-b from-slate-900/95 via-emerald-950/30 to-slate-950/95 border-2 border-slate-800 hover:border-emerald-400/80 transition-all duration-200 shadow-lg hover:shadow-emerald-500/15 p-3.5 sm:p-4 flex flex-col justify-between cursor-pointer transform hover:-translate-y-0.5 overflow-hidden"
-          >
-            {/* Ambient Glow */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-600/20 via-teal-500/10 to-transparent rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-300" />
-
-            <div>
-              {/* Card Top: Chessboard Illustration + Name + Player Count */}
-              <div className="flex items-center gap-3 mb-2">
-                {/* Chessboard Illustration Badge */}
-                <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl border border-emerald-400/60 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0 overflow-hidden bg-slate-950 p-1 flex items-center justify-center">
-                  <div className="grid grid-cols-4 grid-rows-4 w-full h-full rounded-md overflow-hidden border border-emerald-500/30">
-                    <div className="bg-emerald-100/90" />
-                    <div className="bg-emerald-800" />
-                    <div className="bg-emerald-100/90" />
-                    <div className="bg-emerald-800" />
-                    <div className="bg-emerald-800" />
-                    <div className="bg-emerald-100/90" />
-                    <div className="bg-emerald-800" />
-                    <div className="bg-emerald-100/90" />
-                    <div className="bg-emerald-100/90" />
-                    <div className="bg-emerald-800" />
-                    <div className="bg-emerald-100/90" />
-                    <div className="bg-emerald-800" />
-                    <div className="bg-emerald-800" />
-                    <div className="bg-emerald-100/90" />
-                    <div className="bg-emerald-800" />
-                    <div className="bg-emerald-100/90" />
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                    <Crown className="w-6 h-6 text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" />
-                  </div>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1 mb-0.5">
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-500/40 text-[9px] font-black text-emerald-300 uppercase tracking-wider">
-                      <Trophy className="w-2.5 h-2.5 text-amber-400" />
-                      <span>Elo & FIDE</span>
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 shrink-0">
-                      <Users className="w-3 h-3 text-emerald-400" />
-                      <span>2 joueurs</span>
-                    </span>
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-black text-white group-hover:text-emerald-300 transition-colors truncate">
-                    POLYCHESS
-                  </h2>
-                </div>
-              </div>
-
-              {/* Exact required single-sentence description */}
-              <p className="text-xs text-slate-300 leading-snug line-clamp-2">
-                Affronte tes amis aux échecs, en local ou en ligne.
-              </p>
-            </div>
-
-            {/* CTA Button */}
-            <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-emerald-400/90 truncate">Local & En Ligne</span>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-xs uppercase tracking-wider text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 group-hover:brightness-110 shadow-md shadow-emerald-500/25 transition-all transform active:scale-95 shrink-0"
-              >
-                <span>Jouer</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform text-slate-950" />
-              </button>
-            </div>
-          </div>
+            </motion.button>
+          ))}
         </section>
 
-        {/* Compact 1-line Feature Pills */}
-        <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-[11px] text-slate-400">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800/80">
-            <Smartphone className="w-3.5 h-3.5 text-amber-400" />
-            <span>Mobile First & PWA</span>
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800/80">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>100% Libre & Gratuit</span>
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800/80">
-            <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Sound Design Intégré</span>
-          </div>
-        </div>
+        {/* Pied de page */}
+        <footer className="mt-8 flex flex-col gap-1 pb-2 text-xs text-[#6F7890] sm:flex-row sm:items-center sm:justify-between">
+          <span>© 2026 Sekou-Gaming Studio</span>
+          <span>Astuce iPhone : Partager, puis « Sur l’écran d’accueil » pour l’installer.</span>
+        </footer>
       </div>
-
-      {/* Bottom Studio Credit */}
-      <footer className="relative z-10 text-center py-1 text-[10px] text-slate-500 font-medium">
-        Sekou-Gaming Studio © 2026 — Plateforme unifiée de jeux
-      </footer>
     </div>
   );
 };
