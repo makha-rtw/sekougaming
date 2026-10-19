@@ -34,6 +34,8 @@ interface NightPhaseViewProps {
   onThiefAction: (targetPlayerId: string) => void;
   onCupidonAction: (lover1Id: string, lover2Id: string) => void;
   onRenardAction: (centerId: string, leftId: string, rightId: string) => void;
+  onChienLoupAction: (choice: 'villageois' | 'loup_garou') => void;
+  onEnfantSauvageAction: (modelPlayerId: string) => void;
   onNextStep: () => void;
   onPrevStep: () => void;
   onResolveNight: () => void;
@@ -45,6 +47,8 @@ export const NightPhaseView: React.FC<NightPhaseViewProps> = ({
   onThiefAction,
   onCupidonAction,
   onRenardAction,
+  onChienLoupAction,
+  onEnfantSauvageAction,
   onNextStep,
   onPrevStep,
   onResolveNight,
@@ -69,6 +73,8 @@ export const NightPhaseView: React.FC<NightPhaseViewProps> = ({
   const [renardRight, setRenardRight] = useState<string>(nightTargets.renardCheckedIds?.[2] || '');
   const [renardSkipped, setRenardSkipped] = useState<boolean>(false);
   const [loupBlancPassed, setLoupBlancPassed] = useState<boolean>(false);
+  const [corbeauPassed, setCorbeauPassed] = useState<boolean>(false);
+  const [necromancienPassed, setNecromancienPassed] = useState<boolean>(false);
   const [isPlayingVoice, setIsPlayingVoice] = useState<boolean>(false);
 
   // Sync voice playing state
@@ -108,12 +114,21 @@ export const NightPhaseView: React.FC<NightPhaseViewProps> = ({
       case 'voleur':
         return state.thiefActionDone === true;
 
+      case 'chien_loup':
+        return state.chienLoupActionDone === true;
+
+      case 'enfant_sauvage':
+        return state.enfantSauvageActionDone === true;
+
       case 'cupidon':
         return state.cupidonActionDone === true;
 
       case 'amoureux_reco':
         // Acknowledgment step: lovers look at each other
         return true;
+
+      case 'insomniaque':
+        return Boolean(nightTargets.insomniaqueTargetId);
 
       case 'salvateur':
         return Boolean(nightTargets.salvateurProtectedId);
@@ -124,8 +139,20 @@ export const NightPhaseView: React.FC<NightPhaseViewProps> = ({
       case 'renard':
         return nightTargets.renardResultHasWolf !== null || renardSkipped;
 
+      case 'corbeau':
+        return Boolean(nightTargets.corbeauTargetId) || corbeauPassed;
+
+      case 'necromancien':
+        return (
+          Boolean(nightTargets.necromancienCommunicatedDeadId || nightTargets.necromancienRevivedId) ||
+          necromancienPassed
+        );
+
       case 'loups_garous':
         return Boolean(nightTargets.werewolfTargetId);
+
+      case 'infect_pere_des_loups':
+        return true;
 
       case 'grand_mechant_loup':
         return Boolean(nightTargets.gmlTargetId);
@@ -1074,6 +1101,393 @@ export const NightPhaseView: React.FC<NightPhaseViewProps> = ({
                 </p>
               )}
             </div>
+          </div>
+        );
+      }
+
+      case 'chien_loup': {
+        const chienLoupPlayer = alivePlayers.find(
+          p => p.initialRole === 'chien_loup' || p.currentRole === 'chien_loup'
+        );
+        const currentChoice = nightTargets.chienLoupChoice;
+
+        return (
+          <div className="space-y-4 bg-[#fcf9f2] border border-[#d8c5aa] rounded-2xl p-4 shadow-sm">
+            <div className="text-xs text-[#433120] font-semibold">
+              Quel camp le Chien-Loup ({chienLoupPlayer?.name || 'Chien-Loup'}) choisit-il pour le reste de la partie ?
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => onChienLoupAction('villageois')}
+                className={`p-3 rounded-xl border text-center text-xs transition-all cursor-pointer ${
+                  currentChoice === 'villageois'
+                    ? 'bg-[#1b4d27] border-[#0f3017] text-[#f2faf3] font-bold shadow-sm ring-1 ring-[#0f3017]'
+                    : 'bg-[#f8f3e7] border-[#d8c6aa] text-[#362719] hover:bg-[#f3ebd9]'
+                }`}
+              >
+                <div className="font-bold text-sm">🛡️ Villageois</div>
+                <div className={`text-[10px] mt-1 ${currentChoice === 'villageois' ? 'text-[#b8deb9]' : 'text-[#78644e]'}`}>
+                  Fidèle au Village
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onChienLoupAction('loup_garou')}
+                className={`p-3 rounded-xl border text-center text-xs transition-all cursor-pointer ${
+                  currentChoice === 'loup_garou'
+                    ? 'bg-[#7a1818] border-[#4a0b0b] text-[#fdf4f4] font-bold shadow-sm ring-1 ring-[#4a0b0b]'
+                    : 'bg-[#f8f3e7] border-[#d8c6aa] text-[#362719] hover:bg-[#f3ebd9]'
+                }`}
+              >
+                <div className="font-bold text-sm">🐺 Loup-Garou</div>
+                <div className={`text-[10px] mt-1 ${currentChoice === 'loup_garou' ? 'text-[#f5c6c6]' : 'text-[#78644e]'}`}>
+                  Rejoint la Meute
+                </div>
+              </button>
+            </div>
+
+            {state.chienLoupActionDone && (
+              <div className="p-3 rounded-xl bg-[#edf5ee] border border-[#a7cca9] text-xs text-[#1d592b] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#256c35] shrink-0" />
+                <span>
+                  Allégeance enregistrée :{' '}
+                  <strong>
+                    {currentChoice === 'loup_garou' ? 'Camp des Loups-Garous' : 'Camp des Villageois'}
+                  </strong>
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      case 'enfant_sauvage': {
+        const esPlayer = alivePlayers.find(p => p.currentRole === 'enfant_sauvage');
+        const availableModels = alivePlayers.filter(p => p.id !== esPlayer?.id);
+
+        return (
+          <div className="space-y-4 bg-[#fcf9f2] border border-[#d8c5aa] rounded-2xl p-4 shadow-sm">
+            <div className="text-xs text-[#433120] font-semibold">
+              Sélectionnez le modèle secret de l'Enfant Sauvage ({esPlayer?.name || 'Enfant Sauvage'}) :
+            </div>
+            <p className="text-[11px] text-[#6b553e] leading-relaxed">
+              Tant que ce modèle est en vie, l'Enfant Sauvage est un Villageois. Dès que ce modèle meurt, il se transforme en Loup-Garou !
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {availableModels.map(p => {
+                const isSelected =
+                  nightTargets.enfantSauvageModelId === p.id ||
+                  state.enfantSauvageState?.modelPlayerId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => onEnfantSauvageAction(p.id)}
+                    className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#284a23] border-[#162b13] text-[#f2faf0] font-bold shadow-sm ring-1 ring-[#162b13]'
+                        : 'bg-[#f8f3e7] border-[#d8c6aa] text-[#362719] hover:bg-[#f3ebd9]'
+                    }`}
+                  >
+                    <div className="font-semibold truncate">{p.name}</div>
+                    <div className={`text-[10px] ${isSelected ? 'text-[#bce0b6]' : 'text-[#78644e]'}`}>
+                      Siège {p.seatNumber}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {state.enfantSauvageActionDone && (
+              <div className="p-3 rounded-xl bg-[#edf5ee] border border-[#a7cca9] text-xs text-[#1d592b] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#256c35] shrink-0" />
+                <span>Modèle secret enregistré pour toute la partie.</span>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      case 'insomniaque': {
+        const insPlayer = alivePlayers.find(p => p.currentRole === 'insomniaque');
+        const lastBlockedId = state.insomniaqueState?.lastBlockedId;
+
+        return (
+          <div className="space-y-4 bg-[#fcf9f2] border border-[#d8c5aa] rounded-2xl p-4 shadow-sm">
+            <div className="text-xs text-[#433120] font-semibold">
+              Sélectionnez le joueur que l'Insomniaque visite cette nuit pour bloquer son pouvoir :
+            </div>
+            <p className="text-[11px] text-[#6b553e] leading-relaxed">
+              Le joueur visité ne pourra pas activer son pouvoir nocturne cette nuit. L'Insomniaque doit obligatoirement changer de cible chaque nuit.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {alivePlayers
+                .filter(p => p.id !== insPlayer?.id)
+                .map(p => {
+                  const isSelected = nightTargets.insomniaqueTargetId === p.id;
+                  const isForbidden = p.id === lastBlockedId;
+
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={isForbidden}
+                      onClick={() =>
+                        onUpdateNightTargets({
+                          insomniaqueTargetId: isSelected ? null : p.id,
+                        })
+                      }
+                      className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#1a3c54] border-[#0d2230] text-[#f0f7fc] font-bold shadow-sm ring-1 ring-[#0d2230]'
+                          : isForbidden
+                          ? 'bg-[#f0e8d9]/50 border-[#dfd0bb] text-[#9f8d77] opacity-60 cursor-not-allowed'
+                          : 'bg-[#f8f3e7] border-[#d8c6aa] text-[#362719] hover:bg-[#f3ebd9]'
+                      }`}
+                    >
+                      <div className="font-semibold truncate">{p.name}</div>
+                      <div className={`text-[10px] ${isSelected ? 'text-[#aed3eb]' : 'text-[#78644e]'}`}>
+                        {isForbidden ? 'Visité hier (Interdit)' : `Siège ${p.seatNumber}`}
+                      </div>
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        );
+      }
+
+      case 'corbeau': {
+        return (
+          <div className="space-y-4 bg-[#fcf9f2] border border-[#d8c5aa] rounded-2xl p-4 shadow-sm">
+            <div className="text-xs text-[#433120] font-semibold">
+              Sélectionnez le suspect désigné par le Corbeau (+2 votes d'office demain matin) :
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {alivePlayers.map(p => {
+                const isSelected = nightTargets.corbeauTargetId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setCorbeauPassed(false);
+                      onUpdateNightTargets({
+                        corbeauTargetId: isSelected ? null : p.id,
+                      });
+                    }}
+                    className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#25254d] border-[#14142b] text-[#f2f2fa] font-bold shadow-sm ring-1 ring-[#14142b]'
+                        : 'bg-[#f8f3e7] border-[#d8c6aa] text-[#362719] hover:bg-[#f3ebd9]'
+                    }`}
+                  >
+                    <div className="font-semibold truncate">{p.name}</div>
+                    <div className={`text-[10px] ${isSelected ? 'text-[#c2c2eb]' : 'text-[#78644e]'}`}>
+                      Siège {p.seatNumber}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCorbeauPassed(true);
+                onUpdateNightTargets({ corbeauTargetId: null });
+              }}
+              className={`w-full py-2.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                corbeauPassed && !nightTargets.corbeauTargetId
+                  ? 'bg-[#25254d] border-[#14142b] text-[#f2f2fa] font-bold shadow-xs'
+                  : 'bg-[#eee4cf] border-[#cdbda0] text-[#54402e] hover:bg-[#e4d7bf]'
+              }`}
+            >
+              Ne maudire personne cette nuit (Passer)
+            </button>
+          </div>
+        );
+      }
+
+      case 'necromancien': {
+        const deadPlayers = players.filter(p => !p.isAlive);
+        const canRevive = state.necromancienState?.hasRevivePower !== false;
+
+        return (
+          <div className="space-y-4 bg-[#fcf9f2] border border-[#d8c5aa] rounded-2xl p-4 shadow-sm">
+            <div className="text-xs text-[#433120] font-semibold">
+              Pouvoir du Nécromancien auprès des âmes défuntes ({deadPlayers.length} mort(s)) :
+            </div>
+
+            {deadPlayers.length === 0 ? (
+              <p className="text-xs text-[#6b553e] italic">
+                Aucun joueur n'est encore mort. Vous pouvez passer cette étape.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-bold text-[#4a1d78]">
+                    1. Communiquer avec un mort (Voir son rôle / interroger son esprit) :
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {deadPlayers.map(p => {
+                      const isSelected = nightTargets.necromancienCommunicatedDeadId === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setNecromancienPassed(false);
+                            onUpdateNightTargets({
+                              necromancienCommunicatedDeadId: p.id,
+                            });
+                            setRevealedCardPlayerId(p.id);
+                          }}
+                          className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#4a1d78] border-[#2b0f47] text-[#f7f0fc] font-bold shadow-sm'
+                              : 'bg-[#f8f3e7] border-[#d8c6aa] text-[#362719] hover:bg-[#f3ebd9]'
+                          }`}
+                        >
+                          <div className="font-semibold truncate">{p.name}</div>
+                          <div className={`text-[10px] ${isSelected ? 'text-[#dfc2fa]' : 'text-[#78644e]'}`}>
+                            {ROLE_DEFINITIONS[p.currentRole].name}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-2 border-t border-[#e2d3bd]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#1d592b]">
+                      2. Réanimer une âme défunte (1 fois par partie) :
+                    </span>
+                    <span className="text-[10px] font-semibold text-[#5c4936]">
+                      {canRevive ? 'Disponible' : 'Déjà utilisé'}
+                    </span>
+                  </div>
+
+                  {canRevive ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {deadPlayers.map(p => {
+                        const isRevived = nightTargets.necromancienRevivedId === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setNecromancienPassed(false);
+                              onUpdateNightTargets({
+                                necromancienRevivedId: isRevived ? null : p.id,
+                              });
+                            }}
+                            className={`p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                              isRevived
+                                ? 'bg-[#1b4d27] border-[#0f3017] text-[#f2faf3] font-bold shadow-sm'
+                                : 'bg-[#edf5ee] border-[#a7cca9] text-[#1d592b] hover:bg-[#dfeee1]'
+                            }`}
+                          >
+                            <div className="font-semibold truncate">✨ {p.name}</div>
+                            <div className={`text-[10px] ${isRevived ? 'text-[#b8deb9]' : 'text-[#396e45]'}`}>
+                              {isRevived ? 'Sera réanimé(e) !' : 'Toucher pour réanimer'}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-[#78644e] italic">
+                      Le pouvoir de résurrection a déjà été utilisé lors d'une nuit précédente.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setNecromancienPassed(true);
+                onUpdateNightTargets({
+                  necromancienCommunicatedDeadId: null,
+                  necromancienRevivedId: null,
+                });
+              }}
+              className={`w-full py-2.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                necromancienPassed &&
+                !nightTargets.necromancienCommunicatedDeadId &&
+                !nightTargets.necromancienRevivedId
+                  ? 'bg-[#4a1d78] border-[#2b0f47] text-[#f7f0fc] font-bold shadow-xs'
+                  : 'bg-[#eee4cf] border-[#cdbda0] text-[#54402e] hover:bg-[#e4d7bf]'
+              }`}
+            >
+              Passer sans utiliser la nécromancie cette nuit
+            </button>
+          </div>
+        );
+      }
+
+      case 'infect_pere_des_loups': {
+        const wolfVictim = alivePlayers.find(p => p.id === nightTargets.werewolfTargetId);
+        const isInfected = nightTargets.infectUsedThisNight === true;
+
+        return (
+          <div className="space-y-4 bg-[#fcf9f2] border border-[#d8c5aa] rounded-2xl p-4 shadow-sm">
+            <div className="p-3 rounded-xl bg-[#faecea] border border-[#dea299] text-xs">
+              <span className="text-[#6d3e38] font-medium">Victime désignée par les Loups-Garous :</span>
+              <div className="font-bold text-[#871c1c] text-sm mt-0.5">
+                {wolfVictim ? `${wolfVictim.name} (Siège ${wolfVictim.seatNumber})` : 'Aucune victime désignée'}
+              </div>
+            </div>
+
+            {wolfVictim ? (
+              <div className="space-y-2.5">
+                <div className="text-xs text-[#433120] font-semibold">
+                  L'Infect Père des Loups souhaite-t-il utiliser son unique infection de la partie ?
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onUpdateNightTargets({ infectUsedThisNight: !isInfected })}
+                  className={`w-full py-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    isInfected
+                      ? 'bg-[#611010] border-[#380707] text-[#fff5f5] shadow-md ring-1 ring-[#380707]'
+                      : 'bg-[#faecea] border-[#dea299] text-[#871c1c] hover:bg-[#f4d8d3]'
+                  }`}
+                >
+                  <Skull className="w-4 h-4" />
+                  <span>
+                    {isInfected
+                      ? `🩸 Infection activée : ${wolfVictim.name} devient Loup-Garou !`
+                      : `Infecter ${wolfVictim.name} (Transformer en Loup-Garou)`}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onUpdateNightTargets({ infectUsedThisNight: false })}
+                  className={`w-full py-2.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                    !isInfected
+                      ? 'bg-[#3b342e] border-[#201c18] text-[#fdfbf7] font-bold'
+                      : 'bg-[#eee4cf] border-[#cdbda0] text-[#54402e] hover:bg-[#e4d7bf]'
+                  }`}
+                >
+                  Ne pas infecter cette nuit (Conserver le pouvoir)
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-[#6b553e] italic">
+                Aucune victime n'a été désignée par les loups cette nuit.
+              </p>
+            )}
           </div>
         );
       }

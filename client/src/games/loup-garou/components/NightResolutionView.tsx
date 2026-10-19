@@ -106,6 +106,58 @@ export const NightResolutionView: React.FC<NightResolutionViewProps> = ({
         )}
       </div>
 
+      {/* Special Nocturnal Events (Montreur d'Ours, Corbeau, Nécromancien, Infect Père des Loups) */}
+      {(resolution.bearGrowled ||
+        resolution.corbeauTargetedPlayerName ||
+        resolution.revivedPlayerName ||
+        resolution.infectedPlayerName) && (
+        <div className="space-y-3">
+          {resolution.infectedPlayerName && (
+            <div className="p-3.5 rounded-2xl bg-[#f5e1de] border border-[#dba7a0] space-y-1 shadow-2xs">
+              <div className="text-xs font-bold text-[#611010] uppercase tracking-wider font-display">
+                🩸 Infection secrète (Infect Père des Loups)
+              </div>
+              <p className="text-xs text-[#4a1818]">
+                <strong>{resolution.infectedPlayerName}</strong> a été infecté(e) au lieu d'être dévoré(e) ! Ce joueur survit mais fait désormais secrètement partie du camp des <strong>Loups-Garous</strong> (ne pas l'annoncer publiquement au village).
+              </p>
+            </div>
+          )}
+
+          {resolution.revivedPlayerName && (
+            <div className="p-3.5 rounded-2xl bg-[#efe6f7] border border-[#bfa5db] space-y-1 shadow-2xs">
+              <div className="text-xs font-bold text-[#4a1d78] uppercase tracking-wider font-display">
+                ✨ Résurrection du Nécromancien
+              </div>
+              <p className="text-xs text-[#3b185e]">
+                L'âme de <strong>{resolution.revivedPlayerName}</strong> a été ramenée parmi les vivants cette nuit !
+              </p>
+            </div>
+          )}
+
+          {resolution.bearGrowled && (
+            <div className="p-3.5 rounded-2xl bg-[#faefe3] border border-[#dbbe9d] space-y-1 shadow-2xs">
+              <div className="text-xs font-bold text-[#784212] uppercase tracking-wider font-display">
+                🐻 Grognement de l'Ours (Montreur d'Ours)
+              </div>
+              <p className="text-xs text-[#59310d]">
+                <strong>GROARRR !</strong> L'ours du Montreur d'Ours grogne ce matin : au moins l'un de ses deux voisins directs en vie est un Loup-Garou !
+              </p>
+            </div>
+          )}
+
+          {resolution.corbeauTargetedPlayerName && (
+            <div className="p-3.5 rounded-2xl bg-[#eaeaf2] border border-[#b5b5cf] space-y-1 shadow-2xs">
+              <div className="text-xs font-bold text-[#25254d] uppercase tracking-wider font-display">
+                🪶 Malédiction du Corbeau (+2 votes)
+              </div>
+              <p className="text-xs text-[#1d1d3b]">
+                Le Corbeau a désigné <strong>{resolution.corbeauTargetedPlayerName}</strong> : ce joueur démarre le conseil du village avec <strong>2 voix contre lui d'office</strong>.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Moderator Action Log */}
       {resolution.logs.length > 0 && (
         <div className="p-4 rounded-2xl bg-[#f8f3e7] border border-[#d8c6aa] space-y-2 shadow-2xs">

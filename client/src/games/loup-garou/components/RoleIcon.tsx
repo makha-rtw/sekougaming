@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Swords,
   Skull,
+  Biohazard,
   Ghost,
   User,
   Eye,
@@ -9,11 +10,19 @@ import {
   ScanSearch,
   FlaskConical,
   ShieldPlus,
+  Crown,
+  Bird,
+  Trees,
+  Smile,
+  PawPrint,
+  Wand2,
+  MoonStar,
   Feather,
   Target,
   Heart,
   VenetianMask,
   Flame,
+  Dog,
   HelpCircle,
 } from 'lucide-react';
 import { RoleId } from '../types/game';
@@ -32,6 +41,8 @@ export const RoleIcon: React.FC<RoleIconProps> = ({ roleId, className = 'w-5 h-5
       return <Swords {...iconProps} />;
     case 'grand_mechant_loup':
       return <Skull {...iconProps} />;
+    case 'infect_pere_des_loups':
+      return <Biohazard {...iconProps} />;
     case 'loup_blanc':
       return <Ghost {...iconProps} />;
     case 'villageois':
@@ -46,6 +57,20 @@ export const RoleIcon: React.FC<RoleIconProps> = ({ roleId, className = 'w-5 h-5
       return <FlaskConical {...iconProps} />;
     case 'salvateur':
       return <ShieldPlus {...iconProps} />;
+    case 'ancien':
+      return <Crown {...iconProps} />;
+    case 'corbeau':
+      return <Bird {...iconProps} />;
+    case 'enfant_sauvage':
+      return <Trees {...iconProps} />;
+    case 'idiot_du_village':
+      return <Smile {...iconProps} />;
+    case 'montreur_ours':
+      return <PawPrint {...iconProps} />;
+    case 'necromancien':
+      return <Wand2 {...iconProps} />;
+    case 'insomniaque':
+      return <MoonStar {...iconProps} />;
     case 'ange':
       return <Feather {...iconProps} />;
     case 'chasseur':
@@ -56,7 +81,10 @@ export const RoleIcon: React.FC<RoleIconProps> = ({ roleId, className = 'w-5 h-5
       return <VenetianMask {...iconProps} />;
     case 'pyromane':
       return <Flame {...iconProps} />;
+    case 'chien_loup':
+      return <Dog {...iconProps} />;
     default:
       return <HelpCircle {...iconProps} />;
   }
 };
+

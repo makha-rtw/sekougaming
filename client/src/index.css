@@ -38,10 +38,26 @@
   padding-top: max(calc(env(safe-area-inset-top, 0px) + 24px), 78px);
 }
 
+.pt-safe-header {
+  padding-top: 60px;
+  padding-top: max(calc(env(safe-area-inset-top, 0px) + 16px), 60px);
+}
+
+@media all and (display-mode: standalone) {
+  .pt-safe-header {
+    padding-top: 66px;
+    padding-top: max(calc(env(safe-area-inset-top, 0px) + 20px), 66px);
+  }
+}
+
 @media (min-width: 640px) {
   .pt-safe {
     padding-top: 16px;
     padding-top: max(env(safe-area-inset-top, 0px), 16px);
+  }
+  .pt-safe-header {
+    padding-top: 12px;
+    padding-top: max(env(safe-area-inset-top, 0px), 12px);
   }
 }
 .pb-safe {

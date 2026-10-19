@@ -27,8 +27,10 @@ export const LobbyConfigView: React.FC<LobbyConfigViewProps> = ({
   // Werewolf count
   const werewolfCount = roleConfig.loup_garou || 0;
   const gmlCount = roleConfig.grand_mechant_loup || 0;
+  const infectCount = roleConfig.infect_pere_des_loups || 0;
   const loupBlancCount = roleConfig.loup_blanc || 0;
-  const totalWolfCamp = werewolfCount + gmlCount + loupBlancCount;
+  const chienLoupCount = roleConfig.chien_loup || 0;
+  const totalWolfCamp = werewolfCount + gmlCount + infectCount + loupBlancCount + chienLoupCount;
 
   // Validation
   const isValid = totalCards === totalPlayers && totalWolfCamp > 0;
@@ -88,15 +90,24 @@ export const LobbyConfigView: React.FC<LobbyConfigViewProps> = ({
   // Special roles list
   const specialRoles: RoleId[] = [
     'grand_mechant_loup',
+    'infect_pere_des_loups',
     'loup_blanc',
     'voyante',
     'sorciere',
     'salvateur',
+    'ancien',
+    'corbeau',
+    'enfant_sauvage',
+    'idiot_du_village',
+    'montreur_ours',
+    'necromancien',
+    'insomniaque',
     'renard',
     'petite_fille',
-    'ange',
     'chasseur',
     'cupidon',
+    'chien_loup',
+    'ange',
     'voleur',
     'pyromane',
   ];

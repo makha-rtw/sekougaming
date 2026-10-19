@@ -7,12 +7,14 @@ import { narration } from '../utils/narrationAudio';
 interface DayVoteViewProps {
   round: number;
   players: Player[];
+  corbeauTargetId?: string | null;
   onConfirmElimination: (targetPlayerId: string | null) => void;
 }
 
 export const DayVoteView: React.FC<DayVoteViewProps> = ({
   round,
   players,
+  corbeauTargetId,
   onConfirmElimination,
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -192,6 +194,7 @@ export const DayVoteView: React.FC<DayVoteViewProps> = ({
         <div className="grid grid-cols-2 gap-2">
           {alivePlayers.map(p => {
             const isSelected = selectedPlayerId === p.id;
+            const isCorbeauTarget = corbeauTargetId === p.id;
             return (
               <button
                 key={p.id}
@@ -200,6 +203,8 @@ export const DayVoteView: React.FC<DayVoteViewProps> = ({
                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-[#7a1818] border-[#4a0b0b] text-[#fdf4f4] font-bold shadow-sm ring-1 ring-[#4a0b0b]'
+                    : isCorbeauTarget
+                    ? 'bg-[#eaeaf2] border-[#9696bd] text-[#25254d] hover:bg-[#dfdfe8]'
                     : 'bg-[#fcf9f2] border-[#d8c5aa] text-[#362719] hover:bg-[#f6efe1]'
                 }`}
               >
@@ -209,6 +214,16 @@ export const DayVoteView: React.FC<DayVoteViewProps> = ({
                     Siège {p.seatNumber}
                   </span>
                 </div>
+                {isCorbeauTarget && (
+                  <span className={`text-[10px] font-extrabold mt-1 block ${isSelected ? 'text-[#ffd799]' : 'text-[#25254d]'}`}>
+                    🪶 +2 votes (Corbeau)
+                  </span>
+                )}
+                {p.hasLostVoteRight && (
+                  <span className={`text-[10px] font-bold mt-0.5 block ${isSelected ? 'text-[#f5c6c6]' : 'text-[#8c5215]'}`}>
+                    🚫 Sans droit de vote (Idiot)
+                  </span>
+                )}
                 {isSelected && (
                   <span className="text-[10px] text-[#ffdada] font-extrabold mt-1 block">
                     ● Désigné pour l'exécution

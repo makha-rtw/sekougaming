@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DepartmentCode, VALID_DEPARTMENT_CODES, DEPARTMENTS, UserPublic } from '../../../../../shared/chessTypes.js';
-import { loginUser, registerUser } from '../services/api.js';
-import { ShieldCheck, User, Lock, ArrowLeft, Crown, Sparkles, Building2 } from 'lucide-react';
+import { loginUser, registerUser, loginAsGuest } from '../services/api.js';
+import { User, Lock, ArrowLeft, Crown, Sparkles, Building2, UserPlus } from 'lucide-react';
 
 interface AuthScreenProps {
   onSuccess: (user: UserPublic) => void;
@@ -16,6 +16,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
   const [department, setDepartment] = useState<DepartmentCode>('INF');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,7 +26,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
 
     try {
       if (tab === 'login') {
-        const res = await loginUser(username, password);
+        const res = await loginUser(username.trim(), password);
         if (res.success && res.user) {
           onSuccess(res.user);
         } else {
@@ -38,7 +39,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
           return;
         }
 
-        const res = await registerUser(username, password, confirmPassword, department);
+        const res = await registerUser(username.trim(), password, confirmPassword, department);
         if (res.success && res.user) {
           onSuccess(res.user);
         } else {
@@ -49,6 +50,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
       setError('Une erreur réseau est survenue.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGuestPlay = async () => {
+    setError(null);
+    setIsGuestLoading(true);
+    try {
+      const res = await loginAsGuest();
+      if (res.success && res.user) {
+        onSuccess(res.user);
+      } else {
+        setError(res.error || 'Impossible de lancer le mode invité.');
+      }
+    } catch {
+      setError('Une erreur réseau est survenue.');
+    } finally {
+      setIsGuestLoading(false);
     }
   };
 
@@ -67,8 +85,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
       </div>
 
       {/* Brand Header */}
-      <header className="text-center my-auto py-4 flex flex-col items-center">
-        <div className="relative mb-3 group">
+      <header className="text-center my-auto py-3 flex flex-col items-center">
+        <div className="relative mb-2.5 group">
           <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-600 opacity-60 blur-md" />
           <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-900 border-2 border-amber-400/80 flex items-center justify-center shadow-xl">
             <Crown className="w-8 h-8 text-amber-400" />
@@ -82,15 +100,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
           <Sparkles className="w-3 h-3 text-amber-400" />
           <span>Échecs en Ligne & Classement Elo</span>
         </div>
-        <p className="text-xs text-slate-400 mt-2 max-w-xs leading-relaxed">
-          Connectez-vous avec votre département pour affronter vos camarades et grimper dans le classement Elo.
+        <p className="text-xs text-slate-400 mt-1.5 max-w-xs leading-relaxed">
+          Connectez-vous avec votre département ou jouez immédiatement en mode invité.
         </p>
       </header>
 
       {/* Main Auth Card */}
       <main className="bg-slate-900/95 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-md relative overflow-hidden my-auto">
         {/* Toggle Mode */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-950 rounded-2xl mb-5 border border-slate-800">
+        <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-950 rounded-2xl mb-4 border border-slate-800">
           <button
             type="button"
             onClick={() => {
@@ -143,6 +161,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
                 placeholder="Ex: Magnus_75"
                 minLength={3}
                 maxLength={20}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 required
                 className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm font-medium shadow-inner"
               />
@@ -185,6 +206,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 minLength={6}
+                autoCapitalize="none"
+                autoCorrect="off"
                 required
                 className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm font-medium shadow-inner"
               />
@@ -205,6 +228,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
                   minLength={6}
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   required
                   className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm font-medium shadow-inner"
                 />
@@ -216,7 +241,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
           {/* Submit CTA */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isGuestLoading}
             className="w-full mt-2 py-3 px-6 rounded-xl font-black text-sm uppercase tracking-wider text-white bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 hover:brightness-110 active:scale-95 shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ring-2 ring-white/10"
           >
             {isLoading ? (
@@ -231,10 +256,29 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
             )}
           </button>
         </form>
+
+        {/* Guest Mode Separator & Button */}
+        <div className="relative my-4 flex items-center justify-center">
+          <div className="border-t border-slate-800 w-full" />
+          <span className="bg-slate-900 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500 shrink-0">
+            Ou accès rapide
+          </span>
+          <div className="border-t border-slate-800 w-full" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGuestPlay}
+          disabled={isLoading || isGuestLoading}
+          className="w-full py-2.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider text-amber-300 bg-slate-950/90 hover:bg-slate-800 border border-amber-500/40 hover:border-amber-400 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-md"
+        >
+          <UserPlus className="w-4 h-4 text-amber-400" />
+          <span>{isGuestLoading ? 'Création du pseudo...' : 'Jouer en Mode Invité (Pseudo aléatoire)'}</span>
+        </button>
       </main>
 
       {/* Footer Info */}
-      <footer className="mt-4 text-center text-[11px] text-slate-500 font-medium">
+      <footer className="mt-3 text-center text-[11px] text-slate-500 font-medium">
         Tous les nouveaux joueurs commencent à 1200 Elo • Système officiel FIDE (K=32)
       </footer>
     </div>

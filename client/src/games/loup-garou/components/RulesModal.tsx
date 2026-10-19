@@ -46,7 +46,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
                 tab === 'roles' ? 'bg-[#824716] text-[#fffdf8] shadow-xs' : 'text-[#5c4733] hover:text-[#22160c]'
               }`}
             >
-              Rôles (14)
+              Rôles ({roleList.length})
             </button>
             <button
               type="button"
@@ -106,16 +106,21 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
                   </div>
                   <ol className="list-decimal pl-5 space-y-1 text-[#453322]">
                     <li><strong>Voleur</strong> (dérobe un rôle, la cible devient Simple Villageois)</li>
+                    <li><strong>Chien-Loup</strong> (choisit d'être Villageois ou Loup-Garou)</li>
+                    <li><strong>Enfant Sauvage</strong> (choisit son modèle secret)</li>
                     <li><strong>Cupidon</strong> (désigne les 2 Amoureux)</li>
                     <li><strong>Reconnaissance des Amoureux</strong> (ouverture discrète des yeux)</li>
+                    <li><strong>Insomniaque</strong> (rend visite à un joueur pour bloquer son pouvoir nocturne)</li>
                     <li><strong>Salvateur</strong> (protège 1 joueur)</li>
                     <li><strong>Voyante</strong> (sonde 1 joueur)</li>
                     <li><strong>Renard</strong> (flaire le trio de voisins physiques)</li>
+                    <li><strong>Corbeau</strong> (ajoute 2 votes contre un suspect pour demain)</li>
                     <li><strong>Loups-Garous</strong> (Petite Fille peut espionner)</li>
+                    <li><strong>Infect Père des Loups</strong> (peut infecter la victime des loups 1x/partie)</li>
                     <li><strong>Grand Méchant Loup</strong> (si aucun loup n'est mort)</li>
                     <li><strong>Pyromane</strong> (huile obligatoirement 1 joueur)</li>
                     <li><strong>Sorcière</strong> (potions de vie et/ou de mort)</li>
-                    <li><strong>Résolution & Annonce du Réveil</strong></li>
+                    <li><strong>Résolution & Annonce du Réveil (Montreur d'Ours, Corbeau)</strong></li>
                   </ol>
                 </div>
 
@@ -125,15 +130,19 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
                     <span>Nuits Suivantes (Nuit 2+)</span>
                   </div>
                   <ol className="list-decimal pl-5 space-y-1 text-[#453322]">
+                    <li><strong>Insomniaque</strong> (doit changer de cible chaque nuit)</li>
                     <li><strong>Salvateur</strong> (cible différente de la veille obligatoire)</li>
                     <li><strong>Voyante</strong></li>
                     <li><strong>Renard</strong> (si flair conservé)</li>
+                    <li><strong>Corbeau</strong> (ajoute 2 votes contre un suspect)</li>
+                    <li><strong>Nécromancien</strong> (communique avec un mort ou réanime 1x/partie)</li>
                     <li><strong>Loups-Garous</strong></li>
+                    <li><strong>Infect Père des Loups</strong> (si infection non utilisée)</li>
                     <li><strong>Grand Méchant Loup</strong> (si actif)</li>
                     <li><strong>Loup Blanc</strong> (une nuit sur deux, nuits paires 2, 4...)</li>
                     <li><strong>Pyromane</strong> (huiler ou brûler)</li>
                     <li><strong>Sorcière</strong> (si potions restantes)</li>
-                    <li><strong>Résolution des morts & Réveil</strong></li>
+                    <li><strong>Résolution des morts & Réveil (Montreur d'Ours, Corbeau)</strong></li>
                   </ol>
                 </div>
               </div>

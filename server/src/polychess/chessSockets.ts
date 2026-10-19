@@ -2,16 +2,39 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { ChessManager, PolychessGame } from './chessManager.js';
 import { getPolychessDB } from './db.js';
-import { TimeControlKey, UserPublic } from '../../../shared/chessTypes.js';
+import { DepartmentCode, DEPARTMENTS, TimeControlKey, UserPublic } from '../../../shared/chessTypes.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'polychess_super_secure_jwt_secret_2026';
 
 async function verifyToken(token?: string): Promise<UserPublic | null> {
   if (!token) return null;
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const payload = jwt.verify(token, JWT_SECRET) as {
+      userId: string;
+      username?: string;
+      department?: DepartmentCode;
+    };
     const db = getPolychessDB();
-    return await db.getUserById(payload.userId);
+    let user = await db.getUserById(payload.userId);
+    if (!user && payload.username) {
+      user = await db.getUserByUsername(payload.username);
+    }
+    if (!user && payload.username) {
+      const dept: DepartmentCode = payload.department && DEPARTMENTS[payload.department] ? payload.department : 'INF';
+      user = {
+        id: payload.userId,
+        username: payload.username,
+        department: dept,
+        departmentName: DEPARTMENTS[dept],
+        elo: 1200,
+        rankedGames: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        createdAt: Date.now(),
+      };
+    }
+    return user;
   } catch {
     return null;
   }

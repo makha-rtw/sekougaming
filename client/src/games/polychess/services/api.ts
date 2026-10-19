@@ -63,7 +63,34 @@ export async function loginUser(
     const res = await fetch('/api/polychess/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password: passwordPlain }),
+      body: JSON.stringify({ username: username.trim(), password: passwordPlain }),
+    });
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return { success: false, error: `Erreur serveur (${res.status})` };
+    }
+    if (data.success && data.token) {
+      saveStoredToken(data.token);
+    }
+    return data;
+  } catch (err: any) {
+    return { success: false, error: 'Impossible de joindre le serveur. Vérifiez votre connexion.' };
+  }
+}
+
+export async function loginAsGuest(): Promise<{
+  success: boolean;
+  token?: string;
+  user?: UserPublic;
+  error?: string;
+}> {
+  try {
+    const res = await fetch('/api/polychess/guest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
     });
     const text = await res.text();
     let data: any;

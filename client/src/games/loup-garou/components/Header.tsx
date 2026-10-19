@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-[#f6efe1]/92 backdrop-blur-md border-b border-[#d8c5aa] shadow-xs px-4 py-3">
+    <header className="sticky top-0 z-30 w-full bg-[#f6efe1]/95 backdrop-blur-md border-b border-[#d8c5aa] shadow-xs px-4 pt-safe-header pb-3">
       <div className="max-w-md mx-auto flex items-center justify-between gap-3">
         {/* Brand Wordmark & Phase badge */}
         <div className="flex items-center gap-2 min-w-0">

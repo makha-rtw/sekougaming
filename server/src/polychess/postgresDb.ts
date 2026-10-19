@@ -27,14 +27,13 @@ export class PostgresPolychessDatabase implements IPolychessDatabase {
     });
 
     this.pool.on('error', (err) => {
-      console.error('[POLYCHESS POSTGRES POOL ERROR]:', err.message);
-      this.isFallbackMode = true;
+      // Idle client closed by Supabase pooler — do NOT switch to fallback mode!
+      console.warn('[POLYCHESS POSTGRES IDLE CLIENT WARNING]:', err.message);
     });
   }
 
   private getFallback(): PolychessDatabase {
     if (!this.fallbackDb) {
-      console.warn('[POLYCHESS] Using SQLite fallback database');
       this.fallbackDb = new PolychessDatabase();
     }
     return this.fallbackDb;
@@ -186,14 +185,16 @@ export class PostgresPolychessDatabase implements IPolychessDatabase {
         [id, cleanUsername, passwordHash, department, now]
       );
 
-      return { success: true, user: this.toPublicUser(insertRes.rows[0]) };
+      const publicUser = this.toPublicUser(insertRes.rows[0]);
+      // Mirror into local SQLite fallback so user is always available
+      this.getFallback().upsertUserMirror(publicUser, passwordPlain);
+
+      return { success: true, user: publicUser };
     } catch (err: any) {
       if (err.code === '23505') { // Postgres unique_violation
         return { success: false, error: 'Ce pseudo est déjà utilisé.' };
       }
       console.error('[POLYCHESS POSTGRES CREATE USER ERROR]:', err);
-      // Fallback
-      this.isFallbackMode = true;
       return this.getFallback().createUser(username, passwordPlain, department);
     }
   }
@@ -215,18 +216,26 @@ export class PostgresPolychessDatabase implements IPolychessDatabase {
       );
       const row = res.rows[0];
       if (!row) {
+        // Also check local SQLite fallback in case account was created during a temporary fallback
+        const fallbackRes = this.getFallback().verifyUser(username, passwordPlain);
+        if (fallbackRes.success && fallbackRes.user) {
+          return fallbackRes;
+        }
         return { success: false, error: 'Identifiants incorrects.' };
       }
 
-      const match = bcrypt.compareSync(passwordPlain, row.password_hash);
+      const match =
+        bcrypt.compareSync(passwordPlain, row.password_hash) ||
+        bcrypt.compareSync(passwordPlain.trim(), row.password_hash);
       if (!match) {
         return { success: false, error: 'Identifiants incorrects.' };
       }
 
-      return { success: true, user: this.toPublicUser(row) };
+      const publicUser = this.toPublicUser(row);
+      this.getFallback().upsertUserMirror(publicUser, passwordPlain);
+      return { success: true, user: publicUser };
     } catch (err: any) {
       console.error('[POLYCHESS POSTGRES VERIFY ERROR]:', err.message);
-      this.isFallbackMode = true;
       return this.getFallback().verifyUser(username, passwordPlain);
     }
   }
@@ -240,10 +249,12 @@ export class PostgresPolychessDatabase implements IPolychessDatabase {
 
     try {
       const res = await this.pool.query('SELECT * FROM users WHERE id = $1', [id]);
-      return res.rows[0] ? this.toPublicUser(res.rows[0]) : null;
+      if (res.rows[0]) {
+        return this.toPublicUser(res.rows[0]);
+      }
+      return this.getFallback().getUserById(id);
     } catch (err: any) {
       console.error('[POLYCHESS POSTGRES GET USER ERROR]:', err.message);
-      this.isFallbackMode = true;
       return this.getFallback().getUserById(id);
     }
   }
@@ -260,10 +271,12 @@ export class PostgresPolychessDatabase implements IPolychessDatabase {
         'SELECT * FROM users WHERE LOWER(username) = LOWER($1)',
         [username.trim()]
       );
-      return res.rows[0] ? this.toPublicUser(res.rows[0]) : null;
+      if (res.rows[0]) {
+        return this.toPublicUser(res.rows[0]);
+      }
+      return this.getFallback().getUserByUsername(username);
     } catch (err: any) {
       console.error('[POLYCHESS POSTGRES GET USERNAME ERROR]:', err.message);
-      this.isFallbackMode = true;
       return this.getFallback().getUserByUsername(username);
     }
   }

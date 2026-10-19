@@ -1,6 +1,7 @@
 export type RoleId =
   | 'loup_garou'
   | 'grand_mechant_loup'
+  | 'infect_pere_des_loups'
   | 'loup_blanc'
   | 'villageois'
   | 'voyante'
@@ -8,11 +9,19 @@ export type RoleId =
   | 'renard'
   | 'sorciere'
   | 'salvateur'
+  | 'ancien'
+  | 'corbeau'
+  | 'enfant_sauvage'
+  | 'idiot_du_village'
+  | 'montreur_ours'
+  | 'necromancien'
+  | 'insomniaque'
   | 'ange'
   | 'chasseur'
   | 'cupidon'
   | 'voleur'
-  | 'pyromane';
+  | 'pyromane'
+  | 'chien_loup';
 
 export type CampType = 'loups_garous' | 'villageois' | 'independant';
 
@@ -70,6 +79,8 @@ export interface Player {
   isOiled: boolean;
   isLover: boolean;
   loverPartnerId: string | null;
+  hasLostVoteRight?: boolean;
+  isInfected?: boolean;
 }
 
 export interface SorciereState {
@@ -89,21 +100,54 @@ export interface RenardState {
   hasPower: boolean; // Lost if scan reveals 0 werewolves
 }
 
+export interface InfectState {
+  hasInfected: boolean; // Once per game
+}
+
+export interface AncienState {
+  hasSurvivedFirstWolfAttack: boolean;
+  villagePowersLost: boolean;
+}
+
+export interface EnfantSauvageState {
+  modelPlayerId: string | null;
+  actionDone: boolean;
+}
+
+export interface IdiotState {
+  isRevealedAndGraced: boolean;
+}
+
+export interface NecromancienState {
+  hasUsedRevive: boolean;
+}
+
+export interface InsomniaqueState {
+  lastBlockedId: string | null;
+}
+
 export interface NightTargets {
   voleurTargetId: string | null;
   cupidonLover1Id: string | null;
   cupidonLover2Id: string | null;
+  chienLoupChoice: 'villageois' | 'loup_garou' | null;
+  enfantSauvageModelId: string | null;
+  insomniaqueTargetId: string | null;
   salvateurProtectedId: string | null;
   voyanteRevealedPlayerId: string | null;
   renardCheckedIds: [string, string, string] | null;
   renardResultHasWolf: boolean | null;
   werewolfTargetId: string | null;
+  infectUsedThisNight: boolean;
   gmlTargetId: string | null;
   loupBlancTargetId: string | null;
   pyromaneAction: 'oil' | 'burn' | 'none' | null;
   pyromaneOiledTargetId: string | null;
   sorciereSavedId: string | null;
   sorciereKilledId: string | null;
+  corbeauTargetId: string | null;
+  necromancienAction: 'commune' | 'revive' | 'none' | null;
+  necromancienTargetId: string | null;
 }
 
 export interface DeadAnnouncement {
@@ -118,6 +162,11 @@ export interface DeadAnnouncement {
 export interface NightResolutionResult {
   deaths: DeadAnnouncement[];
   logs: string[];
+  bearGrowled?: boolean | null;
+  corbeauTargetedPlayerId?: string | null;
+  corbeauTargetedPlayerName?: string | null;
+  revivedPlayerName?: string | null;
+  infectedPlayerName?: string | null;
 }
 
 export type WinType =
@@ -151,6 +200,8 @@ export type GamePhase =
 
 export interface VoteResolutionInfo {
   eliminatedPlayer: Player | null;
+  idiotGracedPlayer?: Player | null;
+  ancienPowerLossTriggered?: boolean;
   cascadePartner: Player | null;
   chasseurShotVictim?: Player | null;
   chasseurShotLover?: Player | null;
@@ -193,10 +244,18 @@ export interface GameState {
   salvateurState: SalvateurState;
   grandMechantLoupState: GrandMechantLoupState;
   renardState: RenardState;
+  infectState: InfectState;
+  ancienState: AncienState;
+  enfantSauvageState: EnfantSauvageState;
+  idiotState: IdiotState;
+  necromancienState: NecromancienState;
+  insomniaqueState: InsomniaqueState;
+  chienLoupActionDone: boolean;
   thiefActionDone: boolean;
   cupidonActionDone: boolean;
   pendingChasseurShot: { hunterPlayerId: string } | null;
   winner: WinResult | null;
   gameLog: GameLogEntry[];
 }
+
 

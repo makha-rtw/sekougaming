@@ -20,11 +20,13 @@ export const DayResolutionView: React.FC<DayResolutionViewProps> = ({
   onProceedToGameOver,
 }) => {
   const eliminated = resolution?.eliminatedPlayer;
+  const idiotGraced = resolution?.idiotGracedPlayer;
+  const ancienPowerLoss = resolution?.ancienPowerLossTriggered;
   const cascadePartner = resolution?.cascadePartner;
   const hunterVictim = resolution?.chasseurShotVictim;
   const hunterLover = resolution?.chasseurShotLover;
 
-  const hasAnyElimination = Boolean(eliminated || hunterVictim);
+  const hasAnyElimination = Boolean(eliminated || hunterVictim || idiotGraced);
 
   return (
     <div className="w-full max-w-md mx-auto p-4 space-y-6 pb-28">
@@ -57,6 +59,41 @@ export const DayResolutionView: React.FC<DayResolutionViewProps> = ({
           </div>
         )}
 
+        {/* Case 1b: Idiot du Village pardoned */}
+        {idiotGraced && (
+          <div className="p-4 rounded-2xl bg-[#fbf5e3] border border-[#deca96] shadow-sm space-y-3 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between text-xs text-[#785610] border-b border-[#e8dab5] pb-2 font-display">
+              <span className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5" /> Grâce de l'Idiot du Village !
+              </span>
+              <span className="text-[#785610]">Siège {idiotGraced.seatNumber}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#f5e7be] border border-[#deca96] flex items-center justify-center text-[#785610]">
+                  <RoleIcon roleId="idiot_du_village" className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-display font-bold text-base text-[#22160c]">
+                    {idiotGraced.name}
+                  </div>
+                  <div className="text-xs font-bold text-[#785610]">
+                    Idiot du Village (Révélé)
+                  </div>
+                </div>
+              </div>
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#edf5ee] text-[#1d592b] border border-[#a7cca9]">
+                Gracié (Survit)
+              </span>
+            </div>
+
+            <p className="text-xs text-[#5c420c] leading-relaxed">
+              Le village réalise la bêtise de <strong>{idiotGraced.name}</strong> au dernier instant et l'épargne ! Il reste en vie mais <strong>perd définitivement son droit de vote</strong>.
+            </p>
+          </div>
+        )}
+
         {/* Case 2: Direct vote elimination */}
         {eliminated && (
           <div className="p-4 rounded-2xl bg-[#fcf9f2] border border-[#dea299] shadow-sm space-y-3">
@@ -85,6 +122,18 @@ export const DayResolutionView: React.FC<DayResolutionViewProps> = ({
                 Éliminé
               </span>
             </div>
+          </div>
+        )}
+
+        {/* Ancien power loss warning */}
+        {ancienPowerLoss && (
+          <div className="p-4 rounded-2xl bg-[#faecea] border-2 border-[#b83b3b] shadow-sm space-y-1.5 animate-in fade-in duration-300">
+            <div className="text-xs font-extrabold uppercase tracking-wider text-[#871c1c] font-display">
+              ⚠️ Malédiction de l'Ancien !
+            </div>
+            <p className="text-xs text-[#591c1c] leading-relaxed">
+              Le village a causé la mort de l'<strong>Ancien</strong> ! En punition, <strong>tous les Villageois perdent immédiatement leurs pouvoirs spéciaux</strong> pour le reste de la partie.
+            </p>
           </div>
         )}
 

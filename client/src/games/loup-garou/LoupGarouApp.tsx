@@ -42,7 +42,7 @@ import { narration } from './utils/narrationAudio';
 import { assetPreloader, PreloadProgress } from './utils/assetPreloader';
 import { InitialLoadingScreen } from './components/InitialLoadingScreen';
 
-const STORAGE_KEY = 'sekou_gaming_loup_garou_v1';
+const STORAGE_KEY = 'sekou_gaming_loup_garou_v2';
 
 export interface LoupGarouAppProps {
   onBackToHub?: () => void;
@@ -79,6 +79,13 @@ export default function LoupGarouApp({ onBackToHub }: LoupGarouAppProps = {}) {
       salvateurState: { lastProtectedId: null },
       grandMechantLoupState: { isPowerLost: false },
       renardState: { hasPower: true },
+      infectState: { hasInfected: false },
+      ancienState: { hasSurvivedFirstWolfAttack: false, villagePowersLost: false },
+      enfantSauvageState: { modelPlayerId: null, actionDone: false },
+      idiotState: { isRevealedAndGraced: false },
+      necromancienState: { hasUsedRevive: false },
+      insomniaqueState: { lastBlockedId: null },
+      chienLoupActionDone: false,
       thiefActionDone: false,
       cupidonActionDone: false,
       pendingChasseurShot: null,
@@ -188,6 +195,8 @@ export default function LoupGarouApp({ onBackToHub }: LoupGarouAppProps = {}) {
       isOiled: false,
       isLover: false,
       loverPartnerId: null,
+      hasLostVoteRight: false,
+      isInfected: false,
     }));
 
     setGameState(prev => ({
@@ -320,6 +329,76 @@ export default function LoupGarouApp({ onBackToHub }: LoupGarouAppProps = {}) {
       ...prev,
       players: updatedPlayers,
       cupidonActionDone: true,
+    }));
+  };
+
+  // 4c-bis. Chien-Loup Action (Nuit 1)
+  const handleChienLoupAction = (choice: 'villageois' | 'loup_garou') => {
+    const updatedPlayers = gameState.players.map(p => {
+      if (p.currentRole === 'chien_loup') {
+        return {
+          ...p,
+          currentRole: choice as RoleId,
+          roleHistory: [
+            ...p.roleHistory,
+            {
+              role: choice as RoleId,
+              round: gameState.round,
+              phase: 'night',
+              note:
+                choice === 'loup_garou'
+                  ? 'Le Chien-Loup a choisi de rejoindre la meute des Loups-Garous.'
+                  : 'Le Chien-Loup a choisi de rester un fidèle Villageois.',
+            },
+          ],
+        };
+      }
+      return p;
+    });
+
+    setGameState(prev => ({
+      ...prev,
+      players: updatedPlayers,
+      chienLoupActionDone: true,
+      nightTargets: {
+        ...prev.nightTargets,
+        chienLoupChoice: choice,
+      },
+    }));
+  };
+
+  // 4c-ter. Enfant Sauvage Action (Nuit 1)
+  const handleEnfantSauvageAction = (modelPlayerId: string) => {
+    const model = gameState.players.find(p => p.id === modelPlayerId);
+    const updatedPlayers = gameState.players.map(p => {
+      if (p.currentRole === 'enfant_sauvage' && model) {
+        return {
+          ...p,
+          roleHistory: [
+            ...p.roleHistory,
+            {
+              role: 'enfant_sauvage' as RoleId,
+              round: gameState.round,
+              phase: 'night',
+              note: `A choisi ${model.name} comme modèle. Deviendra Loup-Garou si ${model.name} meurt.`,
+            },
+          ],
+        };
+      }
+      return p;
+    });
+
+    setGameState(prev => ({
+      ...prev,
+      players: updatedPlayers,
+      enfantSauvageState: {
+        modelPlayerId,
+        actionDone: true,
+      },
+      nightTargets: {
+        ...prev.nightTargets,
+        enfantSauvageModelId: modelPlayerId,
+      },
     }));
   };
 
@@ -501,6 +580,13 @@ export default function LoupGarouApp({ onBackToHub }: LoupGarouAppProps = {}) {
       salvateurState: { lastProtectedId: null },
       grandMechantLoupState: { isPowerLost: false },
       renardState: { hasPower: true },
+      infectState: { hasInfected: false },
+      ancienState: { hasSurvivedFirstWolfAttack: false, villagePowersLost: false },
+      enfantSauvageState: { modelPlayerId: null, actionDone: false },
+      idiotState: { isRevealedAndGraced: false },
+      necromancienState: { hasUsedRevive: false },
+      insomniaqueState: { lastBlockedId: null },
+      chienLoupActionDone: false,
       thiefActionDone: false,
       cupidonActionDone: false,
       pendingChasseurShot: null,
@@ -634,6 +720,8 @@ export default function LoupGarouApp({ onBackToHub }: LoupGarouAppProps = {}) {
             onUpdateNightTargets={handleUpdateNightTargets}
             onThiefAction={handleThiefAction}
             onCupidonAction={handleCupidonAction}
+            onChienLoupAction={handleChienLoupAction}
+            onEnfantSauvageAction={handleEnfantSauvageAction}
             onRenardAction={handleRenardAction}
             onNextStep={handleNextNightStep}
             onPrevStep={handlePrevNightStep}
@@ -662,6 +750,7 @@ export default function LoupGarouApp({ onBackToHub }: LoupGarouAppProps = {}) {
           <DayVoteView
             round={gameState.round}
             players={gameState.players}
+            corbeauTargetId={gameState.lastNightResolution?.corbeauTargetedPlayerId || null}
             onConfirmElimination={handleConfirmVoteElimination}
           />
         )}

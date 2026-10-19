@@ -22,7 +22,7 @@ export const ModeratorDrawer: React.FC<ModeratorDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-[#20140a]/65 backdrop-blur-sm flex justify-end">
-      <div className="w-full max-w-sm h-full bg-[#fcf9f2] border-l-2 border-[#bfa686] p-4 flex flex-col justify-between overflow-y-auto shadow-2xl">
+      <div className="w-full max-w-sm h-full bg-[#fcf9f2] border-l-2 border-[#bfa686] px-4 pt-safe-header pb-4 flex flex-col justify-between overflow-y-auto shadow-2xl">
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-[#e2d3bd]">

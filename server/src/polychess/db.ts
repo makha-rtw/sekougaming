@@ -160,13 +160,13 @@ export class PolychessDatabase implements IPolychessDatabase {
     if (trimmed.length < 3 || trimmed.length > 20) {
       return { success: false, error: 'Le pseudo doit comporter entre 3 et 20 caractères.' };
     }
-    if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
-      return { success: false, error: 'Le pseudo ne peut contenir que des lettres, chiffres, tirets et underscores.' };
+    if (!/^[a-zA-Z0-9_\-\u00C0-\u017F ]+$/.test(trimmed)) {
+      return { success: false, error: 'Le pseudo ne peut contenir que des lettres, chiffres, espaces, tirets et underscores.' };
     }
     if (!DEPARTMENTS[department]) {
       return { success: false, error: 'Département invalide.' };
     }
-    if (!passwordPlain || passwordPlain.length < 6) {
+    if (!passwordPlain || passwordPlain.trim().length < 6) {
       return { success: false, error: 'Le mot de passe doit comporter au moins 6 caractères.' };
     }
 
@@ -193,6 +193,31 @@ export class PolychessDatabase implements IPolychessDatabase {
     }
   }
 
+  public upsertUserMirror(user: UserPublic, passwordPlain: string): void {
+    try {
+      const salt = bcrypt.genSaltSync(10);
+      const passwordHash = bcrypt.hashSync(passwordPlain, salt);
+      const stmt = this.db.prepare(`
+        INSERT OR REPLACE INTO users (id, username, password_hash, department, elo, ranked_games, wins, draws, losses, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      stmt.run(
+        user.id,
+        user.username,
+        passwordHash,
+        user.department,
+        user.elo,
+        user.rankedGames,
+        user.wins,
+        user.draws,
+        user.losses,
+        user.createdAt || Date.now()
+      );
+    } catch {
+      // Ignore mirror errors
+    }
+  }
+
   public verifyUser(username: string, passwordPlain: string): { success: boolean; user?: UserPublic; error?: string } {
     const stmt = this.db.prepare(`SELECT * FROM users WHERE username = ? COLLATE NOCASE`);
     const row = stmt.get(username.trim()) as UserRow | undefined;
@@ -201,7 +226,9 @@ export class PolychessDatabase implements IPolychessDatabase {
       return { success: false, error: 'Identifiants incorrects.' };
     }
 
-    const match = bcrypt.compareSync(passwordPlain, row.password_hash);
+    const match =
+      bcrypt.compareSync(passwordPlain, row.password_hash) ||
+      bcrypt.compareSync(passwordPlain.trim(), row.password_hash);
     if (!match) {
       return { success: false, error: 'Identifiants incorrects.' };
     }

@@ -182,6 +182,46 @@ export const VillageWakeUpView: React.FC<VillageWakeUpViewProps> = ({
         )}
       </div>
 
+      {/* Morning Public Announcements (Bear Growl, Corbeau +2 votes, Necromancer Revival) */}
+      {(resolution?.bearGrowled ||
+        resolution?.corbeauTargetedPlayerName ||
+        resolution?.revivedPlayerName) && (
+        <div className="space-y-3">
+          {resolution?.revivedPlayerName && (
+            <div className="p-4 rounded-2xl bg-[#efe6f7] border border-[#bfa5db] space-y-1 shadow-xs">
+              <div className="text-xs font-bold text-[#4a1d78] uppercase tracking-wider font-display">
+                ✨ Miracle Nocturne · Nécromancien
+              </div>
+              <p className="text-xs text-[#3b185e] leading-relaxed">
+                Le Nécromancien a rappelé l'âme de <strong>{resolution.revivedPlayerName}</strong> d'entre les morts ! Ce joueur reprend place parmi les vivants.
+              </p>
+            </div>
+          )}
+
+          {resolution?.bearGrowled && (
+            <div className="p-4 rounded-2xl bg-[#faefe3] border border-[#dbbe9d] space-y-1 shadow-xs">
+              <div className="text-xs font-bold text-[#784212] uppercase tracking-wider font-display">
+                🐻 Le Montreur d'Ours · Grognement !
+              </div>
+              <p className="text-xs text-[#59310d] leading-relaxed">
+                <strong>GROARRR !</strong> L'ours du Montreur d'Ours grogne férocement ce matin : un Loup-Garou se cache immédiatement à sa gauche ou à sa droite !
+              </p>
+            </div>
+          )}
+
+          {resolution?.corbeauTargetedPlayerName && (
+            <div className="p-4 rounded-2xl bg-[#eaeaf2] border border-[#b5b5cf] space-y-1 shadow-xs">
+              <div className="text-xs font-bold text-[#25254d] uppercase tracking-wider font-display">
+                🪶 La Plume du Corbeau (+2 votes)
+              </div>
+              <p className="text-xs text-[#1d1d3b] leading-relaxed">
+                Une affiche anonyme a été clouée sur la porte de <strong>{resolution.corbeauTargetedPlayerName}</strong> : il ou elle reçoit <strong>2 votes supplémentaires d'office</strong> lors du scrutin d'aujourd'hui !
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Victory check announcement if won overnight */}
       {winner && (
         <div className="p-5 rounded-2xl bg-[#edf5ee] border border-[#a7cca9] shadow-sm space-y-2 text-center animate-in fade-in duration-300">
