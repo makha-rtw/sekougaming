@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
+import { motion } from 'motion/react';
 import { GameStatePublic } from '../../../shared/types.js';
 import confetti from 'canvas-confetti';
-import { Trophy, RotateCcw, Home, Sparkles, LogOut } from 'lucide-react';
+import { Trophy, RotateCcw, Home, LogOut, Crown } from 'lucide-react';
+import { sounds } from '../utils/sound.js';
 
 interface GameOverScreenProps {
   publicState: GameStatePublic;
@@ -25,116 +27,144 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
   const isHost = publicState.hostId === myPlayerId;
 
   useEffect(() => {
-    // Launch celebratory confetti
+    sounds.victory();
     confetti({
-      particleCount: 120,
+      particleCount: 110,
       spread: 80,
-      origin: { y: 0.6 },
-      colors: ['#EF4444', '#2563EB', '#10B981', '#F59E0B'],
+      origin: { y: 0.58 },
+      colors: ['#E5B84B', '#E03131', '#246BFD', '#16A35A'],
     });
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 max-w-md mx-auto text-center pt-safe pb-safe">
-      <div className="bg-slate-900/95 border-2 border-amber-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md w-full">
-        {/* Trophy Icon */}
-        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 mx-auto mb-4 shadow-xl animate-bounce">
-          <Trophy className="w-8 h-8 sm:w-10 sm:h-10" />
+    <div
+      className="min-h-[100dvh] w-full flex flex-col items-center justify-center p-4 pt-safe pb-safe select-none text-[#F5EFE4] font-['Plus_Jakarta_Sans',_sans-serif]"
+      style={{
+        background:
+          'radial-gradient(ellipse 85% 60% at 50% 30%, #123827 0%, #071810 60%, #030A07 100%)',
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0, y: 18 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+        className="bg-[#081610]/95 border-2 border-[#E5B84B]/50 rounded-[32px] p-6 sm:p-8 shadow-[0_24px_60px_rgba(0,0,0,0.8)] w-full max-w-md text-center"
+      >
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#E5B84B] text-[#091510] flex items-center justify-center mx-auto mb-4 shadow-[0_12px_30px_rgba(229,184,75,0.45)]">
+          <Trophy className="w-9 h-9 sm:w-10 sm:h-10" />
         </div>
 
-        <span className="inline-flex items-center gap-1.5 text-xs uppercase font-extrabold tracking-widest text-amber-400 bg-amber-950/70 border border-amber-500/40 px-3 py-1 rounded-full mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Partie terminée</span>
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#E5B84B] bg-[#E5B84B]/15 border border-[#E5B84B]/30 px-3 py-1 rounded-full mb-2">
+          <Crown className="w-3.5 h-3.5" />
+          <span>Manche remportée</span>
         </span>
 
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
-          {isWinner ? 'VOUS AVEZ GAGNÉ !' : `${winner?.name || 'Un joueur'} a gagné !`}
+        <h2 className="font-['Bricolage_Grotesque',_sans-serif] text-2xl sm:text-3xl font-extrabold text-[#F5EFE4] tracking-tight mb-2">
+          {isWinner ? 'Victoire royale !' : `${winner?.name || 'Un joueur'} remporte la table`}
         </h2>
 
-        <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+        <p className="text-xs text-[#9FB0A5] mb-6 leading-relaxed">
           {isWinner
-            ? 'Félicitations ! Vous avez posé toutes vos cartes sans enfreindre la règle de la carte noire.'
-            : `${winner?.name} a posé sa dernière carte et remporte la victoire sur cette manche de Sekouno !`}
+            ? 'Vous avez vidé votre main avec brio sans finir sur une carte noire.'
+            : `${winner?.name} a posé sa toute dernière carte sur le tapis.`}
         </p>
 
-        {/* Players Summary */}
-        <div className="bg-slate-950/80 rounded-2xl p-3 sm:p-4 border border-slate-800 mb-6 text-left">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-            Classement final
+        {/* Final Standings */}
+        <div className="bg-[#040C08]/85 rounded-2xl p-4 border border-white/10 mb-6 text-left">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9FB0A5] block mb-2.5">
+            Cartes restantes en main
           </span>
-          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1 no-scrollbar">
+          <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1 no-scrollbar">
             {publicState.players
               .slice()
               .sort((a, b) => a.cardCount - b.cardCount)
               .map((p, idx) => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-slate-900/60"
+                  className={`flex items-center justify-between text-xs py-2 px-3 rounded-xl border ${
+                    idx === 0
+                      ? 'bg-[#12291E] border-[#E5B84B]/40 text-[#FFE27A]'
+                      : 'bg-white/5 border-transparent text-[#F5EFE4]'
+                  }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-amber-400">#{idx + 1}</span>
-                    <span className="font-semibold text-white">
-                      {p.name} {p.id === myPlayerId && <span className="text-slate-400 text-[11px] font-normal">(Vous)</span>}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-[#E5B84B]">
+                      #{idx + 1}
+                    </span>
+                    <span className="font-bold truncate">
+                      {p.name}{' '}
+                      {p.id === myPlayerId && (
+                        <span className="text-[#9FB0A5] text-[11px] font-normal">(Vous)</span>
+                      )}
                     </span>
                   </div>
-                  <span className="text-slate-300 font-mono text-[11px]">
-                    {p.cardCount === 0 ? '🏆 Vainqueur' : `${p.cardCount} cartes`}
+                  <span className="font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-xs shrink-0">
+                    {p.cardCount === 0 ? 'Vainqueur' : `${p.cardCount} carte${p.cardCount > 1 ? 's' : ''}`}
                   </span>
                 </div>
               ))}
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Actions */}
         <div className="space-y-2.5">
           {isHost ? (
             <>
               <button
                 type="button"
-                onClick={onRestartGame}
+                onClick={() => {
+                  sounds.playCard();
+                  onRestartGame();
+                }}
                 disabled={isLoading}
-                className="w-full py-3.5 px-5 rounded-xl font-black text-sm uppercase tracking-wider text-white shadow-xl bg-gradient-to-r from-red-600 via-amber-500 to-blue-600 hover:brightness-110 flex items-center justify-center gap-2 transition-transform transform active:scale-95 disabled:opacity-50"
+                className="w-full py-3.5 px-5 rounded-full font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-sm bg-[#E5B84B] hover:bg-[#F0C75E] text-[#091510] shadow-[0_12px_30px_-8px_rgba(229,184,75,0.55)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" />
-                <span>Rejouer une manche</span>
+                <span>Relancer une manche immédiatement</span>
               </button>
 
               <button
                 type="button"
-                onClick={onReturnToLobby}
+                onClick={() => {
+                  sounds.buttonClick();
+                  onReturnToLobby();
+                }}
                 disabled={isLoading}
-                className="w-full py-3 px-5 rounded-xl font-bold text-xs uppercase tracking-wider text-amber-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-amber-500/30 flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                className="w-full py-3 px-5 rounded-full font-bold text-xs text-[#F5EFE4] bg-white/5 hover:bg-white/10 border border-white/15 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
               >
-                <Home className="w-4 h-4 text-amber-400" />
-                <span>Retourner à la salle d'attente</span>
+                <Home className="w-4 h-4 text-[#E5B84B]" />
+                <span>Retourner à la table d'attente</span>
               </button>
             </>
           ) : (
             <>
               <button
                 type="button"
-                onClick={onReturnToLobby}
+                onClick={() => {
+                  sounds.buttonClick();
+                  onReturnToLobby();
+                }}
                 disabled={isLoading}
-                className="w-full py-3 px-5 rounded-xl font-bold text-xs uppercase tracking-wider text-amber-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-amber-500/30 flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                className="w-full py-3.5 px-5 rounded-full font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-sm text-[#091510] bg-[#E5B84B] hover:bg-[#F0C75E] flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <Home className="w-4 h-4 text-amber-400" />
-                <span>Retourner à la salle d'attente</span>
+                <Home className="w-4 h-4" />
+                <span>Retourner à la table d'attente</span>
               </button>
 
               {onLeaveRoom && (
                 <button
                   type="button"
                   onClick={onLeaveRoom}
-                  className="w-full py-2.5 px-4 rounded-xl text-xs text-slate-400 hover:text-red-400 flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full py-2.5 px-4 rounded-full text-xs font-semibold text-[#9FB0A5] hover:text-[#FF8787] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span>Quitter le salon</span>
+                  <span>Quitter la table</span>
                 </button>
               )}
             </>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

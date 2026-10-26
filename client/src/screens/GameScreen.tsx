@@ -1,17 +1,44 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Card, ClientGameState, PlayableColor, PlayerPublic } from '../../../shared/types.js';
 import { CardView } from '../components/CardView.js';
 import { OpponentRing } from '../components/OpponentRing.js';
 import { PenaltyBanner } from '../components/PenaltyBanner.js';
 import { ColorPickerModal } from '../components/ColorPickerModal.js';
 import { HostPenaltyModal } from '../components/HostPenaltyModal.js';
-import { RotateCw, RotateCcw, SkipForward, ShieldAlert, LogOut, XCircle, ArrowDown, Volume2, VolumeX } from 'lucide-react';
+import {
+  RotateCw,
+  RotateCcw,
+  SkipForward,
+  ShieldAlert,
+  LogOut,
+  XCircle,
+  ArrowDown,
+  Volume2,
+  VolumeX,
+  Flame,
+  ArrowUpDown,
+} from 'lucide-react';
 import { sounds } from '../utils/sound.js';
 
 interface FlyingCardAnim {
   id: string;
   type: 'draw' | 'play';
   card?: Card;
+}
+
+interface TableCallout {
+  id: string;
+  title: string;
+  subtitle?: string;
+  accent: string;
+}
+
+interface DiscardHistoryItem {
+  card: Card;
+  angle: number;
+  offsetX: number;
+  offsetY: number;
 }
 
 interface GameScreenProps {
@@ -26,6 +53,33 @@ interface GameScreenProps {
   onCloseRoom?: () => void;
   error?: string | null;
 }
+
+const SUIT_AMBIENT_GLOW: Record<PlayableColor, { hex: string; rgba: string; label: string; badge: string }> = {
+  red: {
+    hex: '#E03131',
+    rgba: 'rgba(224, 49, 49, 0.24)',
+    label: 'Rouge',
+    badge: 'bg-[#E03131] text-[#FAF3E6] border-[#FF8787]/60 shadow-[0_0_16px_rgba(224,49,49,0.55)]',
+  },
+  blue: {
+    hex: '#246BFD',
+    rgba: 'rgba(36, 107, 253, 0.24)',
+    label: 'Bleu',
+    badge: 'bg-[#246BFD] text-[#FAF3E6] border-[#74C0FC]/60 shadow-[0_0_16px_rgba(36,107,253,0.55)]',
+  },
+  green: {
+    hex: '#16A35A',
+    rgba: 'rgba(22, 163, 90, 0.24)',
+    label: 'Vert',
+    badge: 'bg-[#16A35A] text-[#FAF3E6] border-[#63E6BE]/60 shadow-[0_0_16px_rgba(22,163,90,0.55)]',
+  },
+  yellow: {
+    hex: '#F5B727',
+    rgba: 'rgba(245, 183, 39, 0.24)',
+    label: 'Jaune',
+    badge: 'bg-[#F5B727] text-[#141109] border-[#FFE066]/80 shadow-[0_0_16px_rgba(245,183,39,0.55)]',
+  },
+};
 
 export const GameScreen: React.FC<GameScreenProps> = ({
   clientState,
@@ -44,13 +98,84 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [pendingCard, setPendingCard] = useState<Card | null>(null);
   const [selectedPenaltyTarget, setSelectedPenaltyTarget] = useState<PlayerPublic | null>(null);
   const [isMuted, setIsMuted] = useState(sounds.isSoundMuted());
+  const [sortMode, setSortMode] = useState<'none' | 'color' | 'value'>('none');
 
   // Flying cards animation queue
   const [flyingCards, setFlyingCards] = useState<FlyingCardAnim[]>([]);
 
-  const opponents = pub.players.filter(p => p.id !== myPlayerId);
-  const currentTurnPlayer = pub.players.find(p => p.id === pub.currentTurnPlayerId);
+  // Visual stack of recent discard cards so the pile looks physical
+  const [discardHistory, setDiscardHistory] = useState<DiscardHistoryItem[]>(() =>
+    pub.topDiscard ? [{ card: pub.topDiscard, angle: -2, offsetX: 0, offsetY: 0 }] : []
+  );
+
+  // Kinetic table callout for special actions (+2, +4, Skip, Reverse, UNO)
+  const [callout, setCallout] = useState<TableCallout | null>(null);
+
+  const opponents = pub.players.filter((p) => p.id !== myPlayerId);
+  const mePublic = pub.players.find((p) => p.id === myPlayerId);
+  const currentTurnPlayer = pub.players.find((p) => p.id === pub.currentTurnPlayerId);
   const isHost = pub.hostId === myPlayerId;
+
+  const triggerCallout = (title: string, subtitle?: string, accent = '#E5B84B') => {
+    const id = `c_${Date.now()}_${Math.random()}`;
+    setCallout({ id, title, subtitle, accent });
+    setTimeout(() => {
+      setCallout((prev) => (prev?.id === id ? null : prev));
+    }, 1450);
+  };
+
+  // Track discard pile changes (including opponent plays!)
+  const prevTopDiscardIdRef = useRef<string | null>(pub.topDiscard?.id || null);
+  const playedLocallyCardIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const top = pub.topDiscard;
+    if (!top) return;
+
+    if (top.id !== prevTopDiscardIdRef.current) {
+      prevTopDiscardIdRef.current = top.id;
+
+      // Add to physical discard stack (keep up to 5 cards)
+      const angle = ((top.id.charCodeAt(0) + top.id.charCodeAt(top.id.length - 1)) % 22) - 11;
+      const offsetX = ((top.id.charCodeAt(1) || 3) % 9) - 4;
+      const offsetY = ((top.id.charCodeAt(2) || 5) % 7) - 3;
+
+      setDiscardHistory((prev) => {
+        const filtered = prev.filter((item) => item.card.id !== top.id);
+        return [...filtered.slice(-4), { card: top, angle, offsetX, offsetY }];
+      });
+
+      // If played by an opponent, play the card sound too
+      if (playedLocallyCardIdRef.current !== top.id) {
+        sounds.playCard(top);
+      }
+      playedLocallyCardIdRef.current = null;
+
+      // Trigger table callout for special cards
+      if (top.value === 'skip') {
+        triggerCallout('PASSE TON TOUR !', pub.lastActionMessage || undefined, '#FF6B6B');
+      } else if (top.value === 'reverse') {
+        triggerCallout('SENS INVERSÉ !', pub.direction === 1 ? 'Sens horaire' : 'Sens anti-horaire', '#74C0FC');
+      } else if (top.value === 'draw2') {
+        triggerCallout('+2 CARTES !', pub.penaltyStack ? `Cumul : +${pub.penaltyStack.totalCards}` : undefined, '#F5B727');
+      } else if (top.value === 'wild4') {
+        triggerCallout('+4 JOKER !', pub.penaltyStack ? `Cumul : +${pub.penaltyStack.totalCards}` : undefined, '#E03131');
+      } else if (top.value === 'wild') {
+        const suitName = pub.currentColor ? SUIT_AMBIENT_GLOW[pub.currentColor].label : '';
+        triggerCallout('CHANGEMENT DE COULEUR', suitName ? `Nouvelle couleur : ${suitName}` : undefined, '#E5B84B');
+      }
+    }
+  }, [pub.topDiscard, pub.currentColor, pub.direction, pub.penaltyStack, pub.lastActionMessage]);
+
+  // Track UNO notices from any player
+  const prevUnoTimestampRef = useRef<number>(pub.unoNotice?.timestamp || 0);
+  useEffect(() => {
+    if (pub.unoNotice && pub.unoNotice.timestamp !== prevUnoTimestampRef.current) {
+      prevUnoTimestampRef.current = pub.unoNotice.timestamp;
+      sounds.uno();
+      triggerCallout('SEKOUNO !', `${pub.unoNotice.playerName} n'a plus qu'une carte !`, '#E5B84B');
+    }
+  }, [pub.unoNotice]);
 
   // Track hand changes to animate drawn cards and play piocher_carte sound for EACH card
   const prevHandLengthRef = useRef(myHand.length);
@@ -68,16 +193,18 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
     if (currentLen > prevLen) {
       const drawnCount = currentLen - prevLen;
-      // Animate each drawn card sequentially with sound
+      if (drawnCount >= 2) {
+        sounds.penalty();
+      }
       for (let i = 0; i < drawnCount; i++) {
         setTimeout(() => {
-          sounds.drawCard();
+          sounds.drawCard(i);
           const animId = `draw_${Date.now()}_${i}`;
-          setFlyingCards(prev => [...prev, { id: animId, type: 'draw' }]);
+          setFlyingCards((prev) => [...prev, { id: animId, type: 'draw' }]);
           setTimeout(() => {
-            setFlyingCards(prev => prev.filter(f => f.id !== animId));
-          }, 450);
-        }, i * 160);
+            setFlyingCards((prev) => prev.filter((f) => f.id !== animId));
+          }, 430);
+        }, i * 145);
       }
     }
 
@@ -123,6 +250,22 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const playableCardsCount = myHand.filter(isCardPlayable).length;
   const hasNoPlayableCards = isMyTurn && playableCardsCount === 0;
 
+  // Sorted hand for player comfort
+  const displayedHand = useMemo(() => {
+    if (sortMode === 'none') return myHand;
+    const colorOrder: Record<string, number> = { red: 1, blue: 2, green: 3, yellow: 4, black: 5 };
+    return [...myHand].sort((a, b) => {
+      if (sortMode === 'color') {
+        const cDiff = (colorOrder[a.color] || 9) - (colorOrder[b.color] || 9);
+        if (cDiff !== 0) return cDiff;
+        return a.value.localeCompare(b.value);
+      }
+      const vDiff = a.value.localeCompare(b.value);
+      if (vDiff !== 0) return vDiff;
+      return (colorOrder[a.color] || 9) - (colorOrder[b.color] || 9);
+    });
+  }, [myHand, sortMode]);
+
   // Auto-resolve penalty if targeted and player has no counter card
   useEffect(() => {
     if (isMyTurn && pub.penaltyStack && pub.penaltyStack.targetPlayerId === myPlayerId) {
@@ -140,6 +283,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     if (!isMyTurn || !isCardPlayable(card)) return;
 
     if (card.color === 'black') {
+      sounds.buttonClick();
       setPendingCard(card);
     } else {
       triggerPlayCard(card);
@@ -147,14 +291,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   };
 
   const triggerPlayCard = (card: Card, chosenColor?: PlayableColor) => {
-    // Trigger flying card animation from hand to discard pile
+    playedLocallyCardIdRef.current = card.id;
     const animId = `play_${Date.now()}`;
-    setFlyingCards(prev => [...prev, { id: animId, type: 'play', card }]);
-    sounds.playCard();
+    setFlyingCards((prev) => [...prev, { id: animId, type: 'play', card }]);
+    sounds.playCard(card);
 
     setTimeout(() => {
-      setFlyingCards(prev => prev.filter(f => f.id !== animId));
-    }, 380);
+      setFlyingCards((prev) => prev.filter((f) => f.id !== animId));
+    }, 360);
 
     onPlayCard(card.id, chosenColor);
   };
@@ -172,6 +316,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   };
 
   const handleManualUno = () => {
+    if (!onCallUno) return;
     sounds.uno();
     onCallUno();
   };
@@ -181,77 +326,88 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     setIsMuted(muted);
   };
 
-  const getColorName = (c: PlayableColor | null) => {
-    switch (c) {
-      case 'red': return 'Rouge';
-      case 'blue': return 'Bleu';
-      case 'green': return 'Vert';
-      case 'yellow': return 'Jaune';
-      default: return '';
-    }
+  const cycleSortMode = () => {
+    sounds.buttonClick();
+    setSortMode((prev) => (prev === 'none' ? 'color' : prev === 'color' ? 'value' : 'none'));
   };
 
-  const getColorBg = (c: PlayableColor | null) => {
-    switch (c) {
-      case 'red': return 'bg-red-500 shadow-red-500/50';
-      case 'blue': return 'bg-blue-500 shadow-blue-500/50';
-      case 'green': return 'bg-emerald-500 shadow-emerald-500/50';
-      case 'yellow': return 'bg-amber-400 shadow-amber-400/50 text-slate-900';
-      default: return 'bg-slate-700';
-    }
-  };
-
-  // Gentle overlap ensuring the center oval and number of every card is NEVER masked
-  const getOverlapMarginClass = (index: number) => {
-    if (index === 0) return '';
-    return '-ml-2 sm:-ml-3 md:-ml-4';
-  };
+  const activeSuit = pub.currentColor ? SUIT_AMBIENT_GLOW[pub.currentColor] : null;
+  const showUnoButton =
+    Boolean(onCallUno) &&
+    (clientState.canCallUno || (myHand.length <= 2 && myHand.length >= 1 && !mePublic?.hasCalledUno));
 
   return (
-    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between pt-safe pl-safe pr-safe select-none relative">
-      {/* 1. TOP HEADER: Room status bar + Opponents */}
-      <header className="flex-shrink-0 px-2 pt-2 pb-1">
-        {/* Navigation Bar */}
-        <div className="flex items-center justify-between py-1 mb-1 border-b border-slate-800/80 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-mono font-black text-amber-400 bg-slate-900/90 px-2.5 py-0.5 rounded-lg border border-slate-700/80 shadow">
-              {pub.roomCode}
+    <div
+      className="h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between pt-safe pl-safe pr-safe select-none relative text-[#F5EFE4] font-['Plus_Jakarta_Sans',_sans-serif]"
+      style={{
+        background:
+          'radial-gradient(ellipse 85% 65% at 50% 45%, #0D291D 0%, #071710 58%, #030A07 100%)',
+      }}
+    >
+      {/* Dynamic Ambient Suit Spotlight on the Felt Table */}
+      <div
+        aria-hidden
+        className="fixed inset-0 pointer-events-none transition-all duration-700 z-0"
+        style={{
+          background: activeSuit
+            ? `radial-gradient(38rem 26rem at 50% 46%, ${activeSuit.rgba}, transparent 70%)`
+            : 'radial-gradient(34rem 24rem at 50% 46%, rgba(229,184,75,0.12), transparent 70%)',
+        }}
+      />
+
+      {/* 1. TOP HUD BAR + OPPONENTS */}
+      <header className="relative z-20 flex-shrink-0 px-2.5 pt-1.5 pb-1">
+        <div className="flex items-center justify-between py-1.5 px-3 mb-1.5 rounded-2xl bg-[#06110C]/85 border border-white/10 backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <span className="font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-xs sm:text-sm tracking-wider text-[#E5B84B] bg-[#12261C] px-2.5 py-1 rounded-xl border border-[#E5B84B]/30">
+              #{pub.roomCode}
             </span>
-            <span className="text-slate-400 text-[11px] hidden sm:inline font-bold">
-              SEKOUNO
+            <span className="font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-sm tracking-tight text-[#F5EFE4] hidden sm:inline">
+              Sekouno Club
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Sound toggle button */}
+          {/* Last action ticker in center of top bar on desktop */}
+          {pub.lastActionMessage && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-[#C7D4CB] max-w-md truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E5B84B] shrink-0" />
+              <span className="truncate">{pub.lastActionMessage}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={toggleSound}
-              className="p-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-slate-400 hover:text-white transition-colors"
-              title={isMuted ? 'Activer le son' : 'Couper le son'}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[#B5C4B9] hover:text-white transition-colors cursor-pointer"
+              title={isMuted ? 'Activer les effets sonores' : 'Couper le son'}
             >
-              {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 text-[#FF6B6B]" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-[#E5B84B]" />
+              )}
             </button>
 
             {isHost ? (
               <button
                 type="button"
                 onClick={onCloseRoom || onLeaveRoom}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-500/40 text-[11px] font-bold text-red-300 hover:bg-red-900 transition-colors shadow"
-                title="Fermer le salon pour tout le monde"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2D0D0F] hover:bg-[#421316] border border-[#E03131]/40 text-[11px] font-bold text-[#FF8787] transition-colors cursor-pointer"
+                title="Fermer la table pour tous les joueurs"
               >
-                <XCircle className="w-3.5 h-3.5 text-red-400" />
-                <span>Fermer salon</span>
+                <XCircle className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Fermer</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={onLeaveRoom}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700 text-[11px] text-slate-300 hover:text-red-300 transition-colors shadow"
-                title="Quitter la partie"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-[#B5C4B9] hover:text-[#FF8787] transition-colors cursor-pointer"
+                title="Quitter la table"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>Quitter</span>
+                <span className="hidden xs:inline">Quitter</span>
               </button>
             )}
           </div>
@@ -263,22 +419,30 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           currentTurnPlayerId={pub.currentTurnPlayerId}
           isHost={isHost}
           onSelectPlayerForPenalty={(player) => setSelectedPenaltyTarget(player)}
+          onCatchUno={onCatchUno}
         />
       </header>
 
-      {/* 2. MIDDLE: Felt Gaming Table (Draw Pile, Discard Pile, Beacon) */}
-      <main className="flex-1 flex flex-col items-center justify-center relative my-auto px-2 min-h-0">
-        {/* Error notification banner */}
-        {error && (
-          <div className="absolute top-1 z-40 max-w-sm w-full px-3 py-1.5 bg-red-950/95 border border-red-500 rounded-xl text-xs text-red-200 flex items-center gap-2 shadow-2xl animate-shake">
-            <ShieldAlert className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <span className="text-[11px] leading-tight">{error}</span>
-          </div>
-        )}
+      {/* 2. CENTER BAIZE TABLE: Draw Pile, Direction Orbit & Physical Discard Stack */}
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-3 min-h-0">
+        {/* Error toast */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="absolute top-1 z-40 max-w-sm w-full px-3.5 py-2 bg-[#2D0A0A]/95 border border-[#E03131] rounded-2xl text-xs text-[#FFD8D8] flex items-center gap-2 shadow-2xl"
+            >
+              <ShieldAlert className="w-4 h-4 text-[#FF6B6B] shrink-0" />
+              <span className="leading-snug">{error}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Penalty Banner if active */}
+        {/* Active Penalty Stack Banner */}
         {pub.penaltyStack && (
-          <div className="w-full px-2 z-20 mb-1">
+          <div className="w-full px-1 z-30 mb-2">
             <PenaltyBanner
               penaltyStack={pub.penaltyStack}
               players={pub.players}
@@ -289,145 +453,271 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           </div>
         )}
 
-        {/* Action log message ticker */}
-        {pub.lastActionMessage && (
-          <div className="mb-1.5 px-3 py-0.5 bg-slate-900/90 border border-slate-700/70 rounded-full text-[10px] sm:text-xs text-slate-300 font-medium shadow-md max-w-sm text-center truncate">
+        {/* Mobile action ticker */}
+        {pub.lastActionMessage && !pub.penaltyStack && (
+          <div className="md:hidden mb-2 px-3 py-1 rounded-full bg-[#06110C]/85 border border-white/10 text-[11px] text-[#C7D4CB] max-w-xs truncate shadow">
             {pub.lastActionMessage}
           </div>
         )}
 
-        {/* Central Gaming Table Felt Mat */}
-        <div className="relative p-4 sm:p-6 rounded-3xl bg-slate-950/70 border-2 border-slate-800/80 shadow-2xl flex items-center justify-center gap-5 sm:gap-9 backdrop-blur-sm">
-          {/* Subtle table felt glow */}
-          <div className="absolute inset-0 rounded-3xl bg-radial from-slate-800/20 via-transparent to-transparent pointer-events-none" />
+        {/* Center Club Table Mat with Walnut & Brass Rim */}
+        <div
+          className="relative px-6 py-5 sm:px-12 sm:py-8 rounded-[44px] flex items-center justify-center gap-6 sm:gap-12 shadow-[0_24px_60px_rgba(0,0,0,0.75),inset_0_2px_20px_rgba(0,0,0,0.6)]"
+          style={{
+            background:
+              'radial-gradient(circle at 50% 50%, #103324 0%, #092117 70%, #061710 100%)',
+            border: '3px solid rgba(229, 184, 75, 0.32)',
+            boxShadow: activeSuit
+              ? `0 24px 60px rgba(0,0,0,0.75), 0 0 42px ${activeSuit.rgba}, inset 0 0 28px rgba(0,0,0,0.55)`
+              : undefined,
+          }}
+        >
+          {/* Inner brass hairline ring */}
+          <div className="absolute inset-2.5 rounded-[34px] border border-[#E5B84B]/15 pointer-events-none" />
 
-          {/* Draw Pile (Pioche) */}
+          {/* DRAW PILE (Pioche) with 3D deck thickness */}
           <div className="flex flex-col items-center relative z-10" id="draw-pile-anchor">
             <div className="relative">
+              {/* Deck thickness layers underneath */}
+              <div className="absolute top-1.5 left-1.5 w-full h-full rounded-[15px] bg-[#CFC5B4] border border-black/30 pointer-events-none" />
+              <div className="absolute top-0.5 left-0.5 w-full h-full rounded-[15px] bg-[#E3DAC9] border border-black/20 pointer-events-none" />
+
               <CardView
                 showBack
                 size="md"
                 onClick={isMyTurn && !clientState.canPassTurn ? handleManualDraw : undefined}
                 className={`
-                  transition-all duration-200
-                  ${isMyTurn && !clientState.canPassTurn ? 'cursor-pointer hover:scale-105 active:scale-95' : 'brightness-90'}
-                  ${hasNoPlayableCards ? 'ring-4 ring-amber-400 ring-offset-2 ring-offset-slate-950 animate-pulse-fast shadow-2xl shadow-amber-500/50 scale-105' : 'ring-2 ring-blue-500/50'}
+                  relative transition-transform duration-200
+                  ${
+                    isMyTurn && !clientState.canPassTurn
+                      ? 'cursor-pointer hover:-translate-y-1.5 hover:scale-[1.04] active:scale-95'
+                      : 'brightness-90'
+                  }
+                  ${
+                    hasNoPlayableCards
+                      ? 'ring-3 ring-[#E5B84B] shadow-[0_0_28px_rgba(229,184,75,0.65)] scale-[1.04]'
+                      : ''
+                  }
                 `}
               />
-              <span className="absolute -bottom-2 -right-2 bg-slate-900 text-amber-400 border border-slate-700 text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">
+
+              {/* Remaining cards counter pill */}
+              <span className="absolute -bottom-2 -right-2 bg-[#091510] text-[#E5B84B] border border-[#E5B84B]/50 font-['Bricolage_Grotesque',_sans-serif] text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-lg">
                 {pub.drawPileCount}
               </span>
             </div>
 
-            {/* Subrillance Pioche if no playable card */}
-            {isMyTurn && !clientState.canPassTurn && (
+            {/* Draw action prompt */}
+            {isMyTurn && !clientState.canPassTurn ? (
               <button
                 type="button"
                 onClick={handleManualDraw}
-                className={`
-                  mt-2 px-3 py-1 rounded-xl text-xs font-black transition-all transform active:scale-95 shadow-md flex items-center gap-1
-                  ${hasNoPlayableCards
-                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 ring-2 ring-amber-300 animate-pulse-fast shadow-lg shadow-amber-500/30'
-                    : 'bg-blue-950/70 border border-blue-500/40 text-blue-300 hover:bg-blue-900'}
-                `}
+                className={`mt-3 px-3.5 py-1 rounded-full font-['Bricolage_Grotesque',_sans-serif] text-xs font-extrabold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-md ${
+                  hasNoPlayableCards
+                    ? 'bg-[#E5B84B] text-[#091510] ring-2 ring-[#FFE27A] animate-pulse-fast'
+                    : 'bg-white/10 hover:bg-white/15 text-[#F5EFE4] border border-white/15'
+                }`}
               >
-                <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
+                <ArrowDown className="w-3.5 h-3.5" />
                 <span>{hasNoPlayableCards ? 'Piocher !' : 'Piocher'}</span>
               </button>
+            ) : (
+              <span className="mt-3 text-[11px] font-semibold text-[#8FA696]">Pioche</span>
             )}
           </div>
 
-          {/* Direction Indicator */}
-          <div className="flex flex-col items-center justify-center text-slate-500 relative z-10">
-            {pub.direction === 1 ? (
-              <RotateCw className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400 animate-spin-slow" />
-            ) : (
-              <RotateCcw className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400 animate-spin-slow" />
-            )}
-            <span className="text-[9px] uppercase font-bold tracking-widest mt-1 text-slate-400">
-              {pub.direction === 1 ? 'Horaire' : 'Anti-h.'}
+          {/* DIRECTION ORBIT & SUIT MEDALLION */}
+          <div className="flex flex-col items-center justify-center gap-2 relative z-10">
+            <div
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06120C]/90 border border-[#E5B84B]/35 flex items-center justify-center shadow-inner"
+              title={pub.direction === 1 ? 'Sens horaire' : 'Sens anti-horaire'}
+            >
+              {pub.direction === 1 ? (
+                <RotateCw className="w-5 h-5 sm:w-6 sm:h-6 text-[#E5B84B] animate-spin-slow" />
+              ) : (
+                <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6 text-[#74C0FC] animate-spin-slow" />
+              )}
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#9FB0A5]">
+              {pub.direction === 1 ? 'Horaire' : 'Anti-hor.'}
             </span>
           </div>
 
-          {/* Discard Pile (Défausse) */}
+          {/* DISCARD PILE (Défausse) with layered history */}
           <div className="flex flex-col items-center relative z-10" id="discard-pile-anchor">
-            <div className="relative">
-              {pub.topDiscard ? (
-                <div className="transition-transform duration-300">
-                  <CardView
-                    card={pub.topDiscard}
-                    size="md"
-                    className="rotate-1 pointer-events-none"
-                  />
-                </div>
+            <div className="relative w-[4.4rem] h-[6.5rem] sm:w-[5.1rem] sm:h-[7.5rem] md:w-[5.5rem] md:h-[8.1rem] flex items-center justify-center">
+              {discardHistory.length > 0 ? (
+                discardHistory.map((item, idx) => {
+                  const isTop = idx === discardHistory.length - 1;
+                  return (
+                    <motion.div
+                      key={`${item.card.id}_${idx}`}
+                      initial={isTop ? { scale: 1.32, y: -28, rotate: item.angle - 8, opacity: 0.85 } : false}
+                      animate={{
+                        scale: isTop ? 1 : 0.96,
+                        x: isTop ? 0 : item.offsetX,
+                        y: isTop ? 0 : item.offsetY,
+                        rotate: item.angle,
+                        opacity: isTop ? 1 : 0.72,
+                      }}
+                      transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                      className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                      style={{ zIndex: idx }}
+                    >
+                      <CardView card={item.card} size="md" />
+                    </motion.div>
+                  );
+                })
               ) : (
-                <div className="w-16 h-24 sm:w-20 sm:h-30 md:w-22 md:h-34 rounded-xl border-2 border-dashed border-slate-700 flex items-center justify-center text-xs text-slate-500">
+                <div className="w-full h-full rounded-[15px] border-2 border-dashed border-white/20 flex items-center justify-center text-xs text-[#8FA696]">
                   Vide
                 </div>
               )}
             </div>
 
-            {/* Active Color Pill */}
-            <div className="mt-2 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/95 border border-slate-700 shadow">
-              <span className="text-[10px] text-slate-400 font-semibold">Couleur :</span>
-              <div className={`w-3 h-3 rounded-full ${getColorBg(pub.currentColor)} shadow-sm`} />
-              <span className="text-[10px] font-bold text-white">{getColorName(pub.currentColor)}</span>
-            </div>
+            {/* Active Suit Pill */}
+            {activeSuit ? (
+              <div
+                className={`mt-3 px-3 py-0.5 rounded-full border text-[11px] font-['Bricolage_Grotesque',_sans-serif] font-extrabold tracking-wide flex items-center gap-1.5 transition-all ${activeSuit.badge}`}
+              >
+                <span className="w-2 h-2 rounded-full bg-current opacity-80" />
+                <span>{activeSuit.label}</span>
+              </div>
+            ) : (
+              <span className="mt-3 text-[11px] font-semibold text-[#8FA696]">Défausse</span>
+            )}
           </div>
+
+          {/* KINETIC ACTION CALLOUT OVERLAY */}
+          <AnimatePresence>
+            {callout && (
+              <motion.div
+                key={callout.id}
+                initial={{ scale: 0.7, opacity: 0, y: 12 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.85, opacity: 0, y: -10 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                className="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center justify-center text-center"
+              >
+                <div
+                  className="px-5 py-2.5 rounded-2xl bg-[#06110C]/95 border-2 shadow-[0_16px_40px_rgba(0,0,0,0.85)] backdrop-blur-md"
+                  style={{ borderColor: callout.accent }}
+                >
+                  <div
+                    className="font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-lg sm:text-2xl tracking-tight"
+                    style={{ color: callout.accent }}
+                  >
+                    {callout.title}
+                  </div>
+                  {callout.subtitle && (
+                    <div className="text-[11px] sm:text-xs font-semibold text-[#F5EFE4] mt-0.5">
+                      {callout.subtitle}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 
-      {/* 3. BOTTOM SECTION: Active Turn Banner, Hand & Controls */}
-      <footer className="flex-shrink-0 bg-slate-950/95 border-t border-slate-800/90 rounded-t-2xl sm:rounded-t-3xl pt-2 pb-1.5 px-2 shadow-2xl relative">
-        {/* Prominent Current Player Turn Banner visible to ALL players with increased separation */}
-        <div className="flex items-center justify-between mb-3.5 sm:mb-4 px-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-2.5 h-2.5 rounded-full ${isMyTurn ? 'bg-amber-400 animate-ping' : 'bg-slate-500'}`} />
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] sm:text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
-                Tour :
-              </span>
+      {/* 3. PLAYER HAND DOCK & TURN CONTROLS */}
+      <footer className="relative z-20 flex-shrink-0 bg-gradient-to-t from-[#040C08] via-[#07140E]/95 to-[#091A12]/90 border-t border-[#E5B84B]/25 rounded-t-[28px] pt-2.5 pb-2 px-2.5 shadow-[0_-16px_40px_rgba(0,0,0,0.7)]">
+        {/* Turn Bar + Action Buttons (UNO Call, Pass Turn, Sort Hand) */}
+        <div className="flex items-center justify-between gap-2 mb-3 px-1.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                isMyTurn ? 'bg-[#E5B84B] shadow-[0_0_10px_#E5B84B] animate-ping' : 'bg-[#52665A]'
+              }`}
+            />
+            <div className="flex items-center gap-1.5 truncate">
               <span
-                className={`text-xs sm:text-sm font-black uppercase tracking-wider px-2.5 py-0.5 rounded-lg ${
+                className={`font-['Bricolage_Grotesque',_sans-serif] text-xs sm:text-sm font-extrabold px-3 py-1 rounded-xl transition-all truncate ${
                   isMyTurn
-                    ? 'bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 shadow-md shadow-amber-500/30 animate-pulse-fast'
-                    : 'text-amber-300 bg-slate-900 border border-slate-800'
+                    ? 'bg-[#E5B84B] text-[#091510] shadow-[0_4px_18px_rgba(229,184,75,0.45)]'
+                    : 'bg-white/5 text-[#C7D4CB] border border-white/10'
                 }`}
               >
-                {isMyTurn ? '⭐ C’EST VOTRE TOUR !' : currentTurnPlayer?.name || 'En attente...'}
+                {isMyTurn ? 'À vous de jouer !' : `Tour de ${currentTurnPlayer?.name || '...'}`}
               </span>
+
+              {mePublic?.hasCalledUno && (
+                <span className="px-2 py-0.5 rounded-lg bg-[#E03131] text-[#FAF3E6] font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-[10px] uppercase tracking-wider">
+                  SEKO annoncé
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Bouton Passer le tour : Uniquement présent lorsqu'un joueur a pioché une carte jouable */}
-          {clientState.canPassTurn && onPassTurn && (
-            <button
-              type="button"
-              onClick={onPassTurn}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 hover:brightness-110 ring-2 ring-amber-300 shadow-lg shadow-amber-500/30 animate-pulse-fast active:scale-95 transition-all cursor-pointer"
-            >
-              <SkipForward className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-950" />
-              <span>Passer le tour</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Sort Hand Button */}
+            {myHand.length > 2 && (
+              <button
+                type="button"
+                onClick={cycleSortMode}
+                className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-[#C7D4CB] flex items-center gap-1 transition-colors cursor-pointer"
+                title="Trier vos cartes par couleur ou par valeur"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#E5B84B]" />
+                <span className="hidden xs:inline">
+                  {sortMode === 'none' ? 'Trier' : sortMode === 'color' ? 'Couleur' : 'Valeur'}
+                </span>
+              </button>
+            )}
+
+            {/* Blazing UNO / SEKO Call Button */}
+            {showUnoButton && (
+              <button
+                type="button"
+                onClick={handleManualUno}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#E03131] via-[#E8590C] to-[#F59F00] text-[#FAF3E6] font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(224,49,49,0.7)] hover:brightness-110 active:scale-95 flex items-center gap-1.5 animate-pulse-fast cursor-pointer"
+              >
+                <Flame className="w-4 h-4 fill-current" />
+                <span>Crier SEKO !</span>
+              </button>
+            )}
+
+            {/* Pass Turn Button after drawing a playable card */}
+            {clientState.canPassTurn && onPassTurn && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.buttonClick();
+                  onPassTurn();
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-xs sm:text-sm bg-[#E5B84B] hover:bg-[#F0C75E] text-[#091510] shadow-lg active:scale-95 transition-all cursor-pointer"
+              >
+                <SkipForward className="w-4 h-4" />
+                <span>Passer</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Hand Cards: Inter-superposées (Overlapping fan) with center numbers ALWAYS visible - Increased top separation */}
-        <div className="w-full overflow-x-auto no-scrollbar pt-2.5 sm:pt-3.5 pb-0.5 px-1">
-          <div className="flex items-center justify-start min-w-max pl-1 pr-6" id="player-hand-container">
-            {myHand.map((card, idx) => {
+        {/* Fanned / Overlapping Player Hand */}
+        <div className="w-full overflow-x-auto no-scrollbar pt-4 pb-1 px-2">
+          <div
+            className="flex items-center justify-start sm:justify-center min-w-max pl-2 pr-6 mx-auto"
+            id="player-hand-container"
+          >
+            {displayedHand.map((card, idx) => {
               const playable = isCardPlayable(card);
-              // Decreases ONLY luminosity (brightness-[0.62]) if card cannot be played or it's not my turn
               const dimmed = !isMyTurn || !playable;
+              const mid = (displayedHand.length - 1) / 2;
+              const tilt = displayedHand.length <= 12 ? (idx - mid) * 1.4 : 0;
 
               return (
                 <div
                   key={card.id}
-                  style={{ zIndex: idx }}
+                  style={{
+                    zIndex: idx,
+                    transform: `rotate(${tilt}deg)`,
+                  }}
                   className={`
-                    relative transition-all duration-200 transform
-                    ${getOverlapMarginClass(idx)}
-                    hover:z-30 hover:-translate-y-5
+                    relative transition-all duration-200
+                    ${idx === 0 ? '' : '-ml-2.5 sm:-ml-3.5 md:-ml-4'}
+                    hover:z-40 hover:!rotate-0
                   `}
                 >
                   <CardView
@@ -443,36 +733,40 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           </div>
         </div>
 
-        {/* Bottom Helper Info */}
-        <div className="flex items-center justify-between text-[10px] text-slate-400 px-2 pt-0.5 border-t border-slate-900">
+        {/* Bottom Status Bar */}
+        <div className="flex items-center justify-between text-[11px] text-[#8FA696] px-2 pt-1 border-t border-white/5">
           <span>
-            Votre main : <strong className="text-white">{myHand.length} cartes</strong>
+            Main : <strong className="text-[#F5EFE4]">{myHand.length} carte{myHand.length > 1 ? 's' : ''}</strong>
           </span>
           <span>
             {isMyTurn ? (
               hasNoPlayableCards ? (
-                <strong className="text-amber-400 font-bold">Aucune carte jouable — Piochez !</strong>
+                <strong className="text-[#E5B84B]">Aucune carte jouable — Piochez au centre</strong>
               ) : (
-                <span className="text-slate-300 font-medium">{playableCardsCount} jouable{playableCardsCount > 1 ? 's' : ''}</span>
+                <span className="text-[#C7D4CB]">
+                  <strong className="text-[#E5B84B]">{playableCardsCount}</strong> coup{playableCardsCount > 1 ? 's' : ''} possible{playableCardsCount > 1 ? 's' : ''}
+                </span>
               )
             ) : (
-              <span className="text-slate-500">En attente de votre tour...</span>
+              <span>Observez la table...</span>
             )}
           </span>
         </div>
       </footer>
 
-      {/* 4. VISIBLE FLYING CARDS ANIMATION LAYER */}
-      {flyingCards.map(anim => {
+      {/* 4. FLYING CARDS LAYER */}
+      {flyingCards.map((anim) => {
         if (anim.type === 'draw') {
           return (
             <div
               key={anim.id}
               className="fixed z-50 pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flying-draw-card"
-              style={{
-                '--target-x': '130px',
-                '--target-y': '260px',
-              } as React.CSSProperties}
+              style={
+                {
+                  '--target-x': '90px',
+                  '--target-y': '250px',
+                } as React.CSSProperties
+              }
             >
               <CardView showBack size="sm" />
             </div>
@@ -483,11 +777,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           return (
             <div
               key={anim.id}
-              className="fixed z-50 pointer-events-none bottom-20 left-1/2 -translate-x-1/2 flying-play-card"
-              style={{
-                '--fly-x': '0px',
-                '--fly-y': '-190px',
-              } as React.CSSProperties}
+              className="fixed z-50 pointer-events-none bottom-24 left-1/2 -translate-x-1/2 flying-play-card"
+              style={
+                {
+                  '--fly-x': '0px',
+                  '--fly-y': '-195px',
+                } as React.CSSProperties
+              }
             >
               <CardView card={anim.card} size="sm" isPlayable />
             </div>
@@ -497,14 +793,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         return null;
       })}
 
-      {/* Color Picker Modal for Wild & +4 */}
+      {/* Wild Suit Picker Modal */}
       <ColorPickerModal
         isOpen={pendingCard !== null}
         onSelectColor={handleColorSelected}
         onCancel={() => setPendingCard(null)}
       />
 
-      {/* Host Penalty Modal */}
+      {/* Host Arbiter Penalty Modal */}
       <HostPenaltyModal
         targetPlayer={selectedPenaltyTarget}
         onApplyPenalty={(targetId, count) => onHostGivePenalty?.(targetId, count)}

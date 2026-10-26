@@ -72,11 +72,11 @@
 
 /* Tactile physical card 3D feel and shadows */
 .uno-card-shadow {
-  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.6), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.72), 0 2px 5px -1px rgba(0, 0, 0, 0.45);
 }
 
 .uno-card-shadow-active {
-  box-shadow: 0 10px 25px -2px rgba(245, 158, 11, 0.7), 0 0 16px 2px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 12px 28px -3px rgba(229, 184, 75, 0.55), 0 0 14px 1px rgba(255, 226, 122, 0.35);
 }
 
 /* Hide scrollbar while preserving smooth scrolling */
