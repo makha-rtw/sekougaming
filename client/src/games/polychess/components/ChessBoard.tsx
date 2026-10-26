@@ -138,10 +138,72 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   const displayFiles = orientation === 'w' ? files : [...files].reverse();
   const displayRanks = orientation === 'w' ? ranks : [...ranks].reverse();
 
+  const turn = chess.turn();
+  const kingSq = (turn === 'w' ? 'e1' : 'e8') as Square;
+  const kRookSq = (turn === 'w' ? 'h1' : 'h8') as Square;
+  const qRookSq = (turn === 'w' ? 'a1' : 'a8') as Square;
+
+  // Detect legal castling moves (Petit Roque O-O & Grand Roque O-O-O) for active player
+  const allVerboseMoves = chess.moves({ verbose: true });
+  const kingsideCastleMove = allVerboseMoves.find((m) => m.flags.includes('k')) || null;
+  const queensideCastleMove = allVerboseMoves.find((m) => m.flags.includes('q')) || null;
+
+  // Map special castling target squares -> canonical castling move { from, to }
+  const castlingTargetMap = new Map<string, { from: string; to: string; label: string }>();
+  if (selectedSquare === kingSq) {
+    if (kingsideCastleMove) {
+      castlingTargetMap.set(kingsideCastleMove.to, {
+        from: kingsideCastleMove.from,
+        to: kingsideCastleMove.to,
+        label: 'O-O',
+      });
+      castlingTargetMap.set(kRookSq, {
+        from: kingsideCastleMove.from,
+        to: kingsideCastleMove.to,
+        label: 'O-O',
+      });
+    }
+    if (queensideCastleMove) {
+      castlingTargetMap.set(queensideCastleMove.to, {
+        from: queensideCastleMove.from,
+        to: queensideCastleMove.to,
+        label: 'O-O-O',
+      });
+      castlingTargetMap.set(qRookSq, {
+        from: queensideCastleMove.from,
+        to: queensideCastleMove.to,
+        label: 'O-O-O',
+      });
+    }
+  } else if (selectedSquare === kRookSq && kingsideCastleMove) {
+    castlingTargetMap.set(kingSq, {
+      from: kingsideCastleMove.from,
+      to: kingsideCastleMove.to,
+      label: 'O-O',
+    });
+  } else if (selectedSquare === qRookSq && queensideCastleMove) {
+    castlingTargetMap.set(kingSq, {
+      from: queensideCastleMove.from,
+      to: queensideCastleMove.to,
+      label: 'O-O-O',
+    });
+  }
+
+  // Detect if lastMove was a castling move so we also highlight the Rook's squares
+  const castledRookSquares: string[] = [];
+  if (lastMove) {
+    const movedPiece = chess.get(lastMove.to as Square);
+    if (movedPiece?.type === 'k') {
+      if (lastMove.from === 'e1' && lastMove.to === 'g1') castledRookSquares.push('h1', 'f1');
+      if (lastMove.from === 'e1' && lastMove.to === 'c1') castledRookSquares.push('a1', 'd1');
+      if (lastMove.from === 'e8' && lastMove.to === 'g8') castledRookSquares.push('h8', 'f8');
+      if (lastMove.from === 'e8' && lastMove.to === 'c8') castledRookSquares.push('a8', 'd8');
+    }
+  }
+
   // Find king in check
   let checkKingSquare: Square | null = null;
   if (chess.inCheck()) {
-    const turn = chess.turn();
     for (let r = 0; r < 8; r++) {
       for (let f = 0; f < 8; f++) {
         const sq = (files[f] + ranks[r]) as Square;
@@ -154,6 +216,13 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     }
   }
 
+  const executeCastling = (castleMove: { from: string; to: string }) => {
+    if (!isInteractive) return;
+    onMove?.({ from: castleMove.from, to: castleMove.to });
+    setSelectedSquare(null);
+    setLegalMoves([]);
+  };
+
   const handleSquareClick = (square: Square) => {
     if (!isInteractive) return;
 
@@ -164,7 +233,14 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       return;
     }
 
-    // 2. If a piece was already selected and clicked square is in legal moves
+    // 2. Check if clicked square triggers a Castling (Roque) move (via g1/c1, King->Rook, or Rook->King)
+    const castlingAction = castlingTargetMap.get(square);
+    if (selectedSquare && castlingAction) {
+      executeCastling(castlingAction);
+      return;
+    }
+
+    // 3. If a piece was already selected and clicked square is in legal moves
     if (selectedSquare && legalMoves.includes(square)) {
       const piece = chess.get(selectedSquare);
       const isPawnPromotion =
@@ -182,7 +258,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       return;
     }
 
-    // 3. Otherwise, select the piece if it belongs to current turn
+    // 4. Otherwise, select the piece if it belongs to current turn
     const piece = chess.get(square);
     if (piece && piece.color === chess.turn()) {
       setSelectedSquare(square);
@@ -202,9 +278,9 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   };
 
   return (
-    <div className="relative w-full max-w-[min(94vw,430px)] sm:max-w-[480px] aspect-square mx-auto select-none">
+    <div className="relative w-full max-w-[min(94vw,430px)] sm:max-w-[480px] mx-auto select-none">
       {/* Outer Luxury Board Frame */}
-      <div className="w-full h-full rounded-2xl bg-slate-900 border-4 border-slate-800 shadow-2xl p-2 sm:p-2.5 flex flex-col justify-between">
+      <div className="w-full aspect-square rounded-2xl bg-slate-900 border-4 border-slate-800 shadow-2xl p-2 sm:p-2.5 flex flex-col justify-between">
         <div className="grid grid-cols-8 grid-rows-8 w-full h-full rounded-xl overflow-hidden border border-slate-700/60 shadow-inner">
           {displayRanks.map((rank, rIdx) =>
             displayFiles.map((file, fIdx) => {
@@ -215,9 +291,13 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
               const isLight = (file.charCodeAt(0) - 97 + parseInt(rank)) % 2 === 1;
 
               const isSelected = selectedSquare === square;
+              const castlingAction = castlingTargetMap.get(square);
+              const isCastlingTarget = Boolean(castlingAction);
               const isLegalTarget = legalMoves.includes(square);
-              const isCaptureTarget = isLegalTarget && piece !== null;
-              const isLastMove = lastMove && (lastMove.from === square || lastMove.to === square);
+              const isCaptureTarget = isLegalTarget && piece !== null && !isCastlingTarget;
+              const isLastMove =
+                (lastMove && (lastMove.from === square || lastMove.to === square)) ||
+                castledRookSquares.includes(square);
               const isCheckKing = checkKingSquare === square;
 
               return (
@@ -228,7 +308,9 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                     isLight ? 'bg-[#ebecd0]' : 'bg-[#739552]'
                   } ${isLastMove ? (isLight ? '!bg-[#f7ec7d]' : '!bg-[#baca44]') : ''} ${
                     isSelected ? '!bg-amber-400/80 ring-2 ring-amber-500' : ''
-                  } ${isCheckKing ? '!bg-red-500/90 animate-pulse' : ''}`}
+                  } ${isCastlingTarget ? 'ring-2 ring-inset ring-amber-400/90' : ''} ${
+                    isCheckKing ? '!bg-red-500/90 animate-pulse' : ''
+                  }`}
                 >
                   {/* File & Rank coordinate labels on board edges */}
                   {fIdx === 0 && (
@@ -257,8 +339,26 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                     </div>
                   )}
 
+                  {/* Castling (Roque) Special Indicator */}
+                  {isCastlingTarget && castlingAction && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      {!piece && (
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-amber-500/85 border-2 border-white shadow-md flex items-center justify-center">
+                          <span className="text-[7px] sm:text-[8px] font-black text-slate-950 tracking-tighter">
+                            {castlingAction.label}
+                          </span>
+                        </div>
+                      )}
+                      {piece && (
+                        <span className="absolute top-0.5 right-0.5 px-1 py-0.2 rounded bg-amber-500 text-slate-950 text-[7px] font-black uppercase shadow">
+                          {castlingAction.label}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Legal Move Indicators */}
-                  {isLegalTarget && !isCaptureTarget && (
+                  {isLegalTarget && !isCaptureTarget && !isCastlingTarget && (
                     <div className="absolute w-3.5 h-3.5 sm:w-4 sm:h-4 bg-slate-900/35 rounded-full pointer-events-none" />
                   )}
                   {isCaptureTarget && (
@@ -270,6 +370,32 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
           )}
         </div>
       </div>
+
+      {/* Quick Action Castling (Roque) Buttons when legally available */}
+      {isInteractive && (kingsideCastleMove || queensideCastleMove) && (
+        <div className="mt-2 flex items-center justify-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-150">
+          {kingsideCastleMove && (
+            <button
+              type="button"
+              onClick={() => executeCastling(kingsideCastleMove)}
+              className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/35 hover:to-amber-600/35 border border-amber-400/60 text-amber-300 text-xs font-black tracking-wide flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            >
+              <span>🏰</span>
+              <span>Petit Roque (O-O)</span>
+            </button>
+          )}
+          {queensideCastleMove && (
+            <button
+              type="button"
+              onClick={() => executeCastling(queensideCastleMove)}
+              className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/35 hover:to-amber-600/35 border border-amber-400/60 text-amber-300 text-xs font-black tracking-wide flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            >
+              <span>🏰</span>
+              <span>Grand Roque (O-O-O)</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Pawn Promotion Modal */}
       {pendingPromotion && (

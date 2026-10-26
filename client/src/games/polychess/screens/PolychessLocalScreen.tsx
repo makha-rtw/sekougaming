@@ -24,12 +24,25 @@ export const PolychessLocalScreen: React.FC<PolychessLocalScreenProps> = ({ onBa
 
   const handleMove = (moveAttempt: { from: string; to: string; promotion?: string }) => {
     try {
+      const movingPiece = chess.get(moveAttempt.from as any);
+      const isPromotion =
+        movingPiece?.type === 'p' &&
+        ((movingPiece.color === 'w' && moveAttempt.to[1] === '8') ||
+          (movingPiece.color === 'b' && moveAttempt.to[1] === '1'));
+
       const isCapture = chess.get(moveAttempt.to as any) !== null;
-      const move = chess.move({
-        from: moveAttempt.from,
-        to: moveAttempt.to,
-        promotion: moveAttempt.promotion || 'q',
-      });
+      const move = chess.move(
+        isPromotion
+          ? {
+              from: moveAttempt.from,
+              to: moveAttempt.to,
+              promotion: moveAttempt.promotion || 'q',
+            }
+          : {
+              from: moveAttempt.from,
+              to: moveAttempt.to,
+            }
+      );
 
       if (!move) return;
 
@@ -38,6 +51,8 @@ export const PolychessLocalScreen: React.FC<PolychessLocalScreenProps> = ({ onBa
         chessSounds.playVictory();
       } else if (chess.inCheck()) {
         chessSounds.playCheck();
+      } else if (move.flags.includes('k') || move.flags.includes('q') || move.san === 'O-O' || move.san === 'O-O-O') {
+        chessSounds.playCastle();
       } else if (isCapture || move.captured) {
         chessSounds.playCapture();
       } else {

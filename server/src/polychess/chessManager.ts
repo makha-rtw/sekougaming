@@ -188,6 +188,40 @@ export class PolychessGame {
     }
   }
 
+  public static normalizeCastlingAttempt(
+    chess: Chess,
+    moveAttempt: { from: string; to: string; promotion?: string }
+  ): { from: string; to: string; promotion?: string } {
+    const legalVerbose = chess.moves({ verbose: true });
+    const kingsideCastle = legalVerbose.find((m) => m.flags.includes('k'));
+    const queensideCastle = legalVerbose.find((m) => m.flags.includes('q'));
+
+    const turn = chess.turn();
+    const kingSq = turn === 'w' ? 'e1' : 'e8';
+    const kRookSq = turn === 'w' ? 'h1' : 'h8';
+    const qRookSq = turn === 'w' ? 'a1' : 'a8';
+
+    // King -> Kingside Rook or Kingside Rook -> King
+    if (
+      kingsideCastle &&
+      ((moveAttempt.from === kingSq && moveAttempt.to === kRookSq) ||
+        (moveAttempt.from === kRookSq && moveAttempt.to === kingSq))
+    ) {
+      return { from: kingsideCastle.from, to: kingsideCastle.to };
+    }
+
+    // King -> Queenside Rook or Queenside Rook -> King
+    if (
+      queensideCastle &&
+      ((moveAttempt.from === kingSq && moveAttempt.to === qRookSq) ||
+        (moveAttempt.from === qRookSq && moveAttempt.to === kingSq))
+    ) {
+      return { from: queensideCastle.from, to: queensideCastle.to };
+    }
+
+    return moveAttempt;
+  }
+
   public makeMove(
     userId: string,
     moveAttempt: { from: string; to: string; promotion?: string }
@@ -206,11 +240,25 @@ export class PolychessGame {
     }
 
     try {
-      const move = this.chess.move({
-        from: moveAttempt.from,
-        to: moveAttempt.to,
-        promotion: moveAttempt.promotion || 'q',
-      });
+      const normalized = PolychessGame.normalizeCastlingAttempt(this.chess, moveAttempt);
+      const movingPiece = this.chess.get(normalized.from as any);
+      const isPromotion =
+        movingPiece?.type === 'p' &&
+        ((movingPiece.color === 'w' && normalized.to[1] === '8') ||
+          (movingPiece.color === 'b' && normalized.to[1] === '1'));
+
+      const move = this.chess.move(
+        isPromotion
+          ? {
+              from: normalized.from,
+              to: normalized.to,
+              promotion: normalized.promotion || 'q',
+            }
+          : {
+              from: normalized.from,
+              to: normalized.to,
+            }
+      );
 
       if (!move) {
         return { success: false, error: 'Coup illégal.' };

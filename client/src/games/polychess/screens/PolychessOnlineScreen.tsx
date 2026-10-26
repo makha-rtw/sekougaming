@@ -119,6 +119,8 @@ export const PolychessOnlineScreen: React.FC<PolychessOnlineScreenProps> = ({
         if (last) {
           if (state.isCheck) {
             chessSounds.playCheck();
+          } else if (last.san.startsWith('O-O')) {
+            chessSounds.playCastle();
           } else if (last.san.includes('x')) {
             chessSounds.playCapture();
           } else {

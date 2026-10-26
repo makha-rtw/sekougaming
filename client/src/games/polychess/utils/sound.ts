@@ -50,6 +50,35 @@ class ChessSoundSystem {
     } catch {}
   }
 
+  public playCastle() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      // Double wooden placement sound: King step + Rook slide/step
+      const playStep = (startOffset: number, startFreq: number, endFreq: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(startFreq, ctx.currentTime + startOffset);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + startOffset + 0.055);
+
+        gain.gain.setValueAtTime(0.32, ctx.currentTime + startOffset);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startOffset + 0.055);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime + startOffset);
+        osc.stop(ctx.currentTime + startOffset + 0.065);
+      };
+
+      playStep(0, 310, 135);
+      playStep(0.075, 370, 160);
+    } catch {}
+  }
+
   public playCapture() {
     const ctx = this.getContext();
     if (!ctx) return;

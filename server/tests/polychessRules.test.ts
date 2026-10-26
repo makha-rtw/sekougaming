@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Chess } from 'chess.js';
+import { PolychessGame } from '../src/polychess/chessManager.js';
 
 describe('POLYCHESS Chess Rules & Engine Verification (Section 15.2)', () => {
   it('validates legal moves and rejects illegal moves', () => {
@@ -68,6 +69,33 @@ describe('POLYCHESS Chess Rules & Engine Verification (Section 15.2)', () => {
     expect(moveQueenside.san).toBe('O-O-O');
     expect(chess.get('c8')?.type).toBe('k');
     expect(chess.get('d8')?.type).toBe('r');
+  });
+
+  it('normalizes King-to-Rook and Rook-to-King castling inputs in PolychessGame', () => {
+    const chess = new Chess('r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1');
+
+    // White King->Rook (e1->h1) normalizes to Petit Roque (e1->g1)
+    expect(PolychessGame.normalizeCastlingAttempt(chess, { from: 'e1', to: 'h1' })).toEqual({
+      from: 'e1',
+      to: 'g1',
+    });
+
+    // White Rook->King (a1->e1) normalizes to Grand Roque (e1->c1)
+    expect(PolychessGame.normalizeCastlingAttempt(chess, { from: 'a1', to: 'e1' })).toEqual({
+      from: 'e1',
+      to: 'c1',
+    });
+
+    // Execute White Petit Roque
+    chess.move(PolychessGame.normalizeCastlingAttempt(chess, { from: 'e1', to: 'h1' }));
+    expect(chess.get('g1')?.type).toBe('k');
+    expect(chess.get('f1')?.type).toBe('r');
+
+    // Black Rook->King (a8->e8) normalizes to Black Grand Roque (e8->c8)
+    expect(PolychessGame.normalizeCastlingAttempt(chess, { from: 'a8', to: 'e8' })).toEqual({
+      from: 'e8',
+      to: 'c8',
+    });
   });
 
   it('handles pawn promotion (Promotion)', () => {
