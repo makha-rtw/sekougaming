@@ -11,6 +11,7 @@ import { RoomManager } from './rooms/roomManager.js';
 import { PlayableColor } from '../../shared/types.js';
 import polychessAuthRouter from './polychess/authRoutes.js';
 import { setupPolychessSockets } from './polychess/chessSockets.js';
+import { setupSekouBombSockets } from './sekou-bomb/bombSockets.js';
 
 dotenv.config();
 
@@ -74,6 +75,7 @@ const io = new Server(server, {
 });
 
 setupPolychessSockets(io);
+setupSekouBombSockets(io);
 
 const roomManager = new RoomManager();
 

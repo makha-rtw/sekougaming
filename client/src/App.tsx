@@ -14,10 +14,11 @@ import { GameOverScreen } from './screens/GameOverScreen.js';
 import { HubScreen } from './screens/HubScreen.js';
 import LoupGarouApp from './games/loup-garou/LoupGarouApp.js';
 import PolychessApp from './games/polychess/PolychessApp.js';
+import SekouBombApp from './games/sekou-bomb/SekouBombApp.js';
 import { WifiOff } from 'lucide-react';
 import { sounds } from './utils/sound.js';
 
-export type ActiveGame = 'hub' | 'sekouno' | 'loup_garou' | 'polychess';
+export type ActiveGame = 'hub' | 'sekouno' | 'loup_garou' | 'polychess' | 'sekou_bomb';
 
 export const App: React.FC = () => {
   const [activeGame, setActiveGame] = useState<ActiveGame>(() => {
@@ -27,8 +28,18 @@ export const App: React.FC = () => {
       if (params.get('game') === 'loup_garou') return 'loup_garou';
       if (params.get('game') === 'sekouno') return 'sekouno';
       if (params.get('game') === 'polychess' || params.get('chessRoom')) return 'polychess';
+      if (params.get('game') === 'sekou_bomb' || params.get('bombRoom')) return 'sekou_bomb';
     }
     return 'hub';
+  });
+
+  const [bombRoomCode, setBombRoomCode] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const bombRoom = params.get('bombRoom');
+      return bombRoom ? bombRoom.trim().toUpperCase() : null;
+    }
+    return null;
   });
 
   const [chessRoomCode, setChessRoomCode] = useState<string | null>(() => {
@@ -287,7 +298,28 @@ export const App: React.FC = () => {
     );
   }
 
-  // 4. Sekouno Flow
+  // 4. Sekou Bomb Game
+  if (activeGame === 'sekou_bomb') {
+    return (
+      <SekouBombApp
+        socket={socket}
+        initialRoomCode={bombRoomCode}
+        onBackToHub={() => {
+          if (
+            typeof window !== 'undefined' &&
+            (window.location.search.includes('bombRoom=') ||
+              window.location.search.includes('game=sekou_bomb'))
+          ) {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+          setBombRoomCode(null);
+          setActiveGame('hub');
+        }}
+      />
+    );
+  }
+
+  // 5. Sekouno Flow
   return (
     <div className="relative min-h-screen text-slate-100 flex flex-col justify-between">
       {/* Offline / Reconnecting banner for Sekouno multiplayer */}

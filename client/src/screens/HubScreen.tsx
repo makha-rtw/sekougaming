@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { ArrowUpRight, Users, Wifi, Smartphone, Trophy } from 'lucide-react';
+import { ArrowUpRight, Users, Wifi, Smartphone, Trophy, Flame } from 'lucide-react';
 
 /*
  * Hub "Nuit de jeu"
@@ -9,7 +9,7 @@ import { ArrowUpRight, Users, Wifi, Smartphone, Trophy } from 'lucide-react';
  * Rayons  : affiches 28px, boutons en pilule.
  */
 
-type GameId = 'sekouno' | 'loup_garou' | 'polychess';
+type GameId = 'sekouno' | 'loup_garou' | 'polychess' | 'sekou_bomb';
 
 interface HubScreenProps {
   onSelectGame: (gameId: GameId) => void;
@@ -64,6 +64,19 @@ const GAMES: GameEntry[] = [
     meta: [
       { icon: Users, label: '2 joueurs' },
       { icon: Trophy, label: 'Classement Elo' },
+    ],
+  },
+  {
+    id: 'sekou_bomb',
+    title: 'Sekou Bomb',
+    pitch: 'Trouve un mot contenant les lettres imposées et passe la bombe avant qu’elle n’explose.',
+    image: '/hub/sekoubomb.jpg',
+    fallback: 'radial-gradient(circle at 50% 35%,#ff9f1c 0%,#ff334b 45%,#1c1116 80%,#0b080a 100%)',
+    shade: '14,8,10',
+    focus: '50% 42%',
+    meta: [
+      { icon: Users, label: '2 à 16 joueurs' },
+      { icon: Flame, label: 'FR & EN • En ligne' },
     ],
   },
 ];
@@ -126,7 +139,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({ onSelectGame }) => {
             Ce soir, on joue à quoi&nbsp;?
           </motion.h1>
           <motion.p {...rise(2)} className="mt-4 max-w-[46ch] text-base leading-relaxed text-[#B7BDCC] sm:text-lg">
-            Trois jeux à lancer en un geste entre amis, sur téléphone comme sur ordinateur.
+            Quatre jeux à lancer en un geste entre amis, sur téléphone comme sur ordinateur.
           </motion.p>
         </section>
 
