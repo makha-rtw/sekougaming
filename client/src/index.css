@@ -186,62 +186,40 @@
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* ==================== SEKOU BOMB : RISOGRAPH & SOLARI WORLD ==================== */
+/* ==================== SEKOU BOMB : SOCIAL GAMEBOX WORLD ==================== */
 .sekou-bomb-world {
-  --sb-paper: #F4EFE6;
-  --sb-paper-deep: #E8E0D0;
-  --sb-card: #FAF6EE;
-  --sb-ink: #141312;
-  --sb-ink-muted: #57524A;
-  --sb-vermilion: #E5382B;
-  --sb-cobalt: #1D4ED8;
-  --sb-amber: #E59A00;
-  --sb-mint: #0B7A53;
-  background-color: var(--sb-paper);
-  background-image: radial-gradient(rgba(20, 19, 18, 0.075) 1px, transparent 1px);
-  background-size: 16px 16px;
-  color: var(--sb-ink);
-  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  color-scheme: light;
+  --sg-bg: #0D111D;
+  --sg-surface: #171E30;
+  --sg-surface-hover: #1F2942;
+  --sg-surface-sunken: #111625;
+  --sg-border: rgba(255, 255, 255, 0.08);
+  --sg-border-highlight: rgba(255, 255, 255, 0.16);
+  --sg-coral: #FF5722;
+  --sg-coral-hover: #F4511E;
+  --sg-gold: #FFB300;
+  --sg-emerald: #10B981;
+  --sg-cobalt: #3B82F6;
+  --sg-crimson: #EF4444;
+  --sg-text-primary: #FFFFFF;
+  --sg-text-secondary: #CBD5E1;
+  --sg-text-muted: #94A3B8;
+
+  background-color: var(--sg-bg);
+  background-image: radial-gradient(50rem 32rem at 50% -8%, rgba(255, 87, 34, 0.10), transparent 75%),
+                    radial-gradient(40rem 26rem at 90% 110%, rgba(59, 130, 246, 0.08), transparent 70%);
+  color: var(--sg-text-primary);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color-scheme: dark;
 }
 
 .sekou-bomb-world ::selection {
-  background-color: #E5382B;
-  color: #FAF6EE;
+  background-color: #FF5722;
+  color: #FFFFFF;
 }
 
 .sekou-bomb-world :focus-visible {
-  outline: 2px solid #1D4ED8;
+  outline: 2px solid #FF5722;
   outline-offset: 2px;
-}
-
-.font-bomb-display {
-  font-family: 'Big Shoulders Display', Impact, sans-serif;
-}
-
-.font-bomb-mono {
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
-  font-variant-numeric: tabular-nums;
-}
-
-@keyframes solariFlapClack {
-  0% {
-    transform: perspective(420px) rotateX(-75deg);
-    opacity: 0.55;
-  }
-  65% {
-    transform: perspective(420px) rotateX(8deg);
-    opacity: 1;
-  }
-  100% {
-    transform: perspective(420px) rotateX(0deg);
-    opacity: 1;
-  }
-}
-
-.solari-flap-enter {
-  animation: solariFlapClack 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
-  transform-origin: center center;
 }
 
 /* ==================== SEKOUNO : SALON ARCHITECTURAL 4-COULEURS ==================== */
