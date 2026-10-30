@@ -16,6 +16,16 @@
     <meta name="description" content="SekouGaming : jouez entre amis à Sekouno, Loups-Garous, Polychess et Sekou Bomb gratuitement et sans installation." />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preload" as="image" href="/loading/logo_chargement_sekou.png" fetchpriority="high" />
+    <script>
+      // Forcer la vérification de mise à jour du Service Worker dès l'arrivée
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].update();
+          }
+        });
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,600..900&family=Big+Shoulders+Display:wght@700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Cinzel:wght@600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">

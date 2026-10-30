@@ -5,19 +5,18 @@ import { App } from './App.js';
 import './index.css';
 
 // Seamless Service Worker auto-upgrade:
-// Visitors who previously installed the legacy CacheFirst SW (which showed only 2 games)
-// get upgraded immediately on controllerchange without requiring a manual browser refresh.
+// Whenever a new version is deployed, the new Service Worker activates and claims control.
+// The page automatically reloads to display the latest version without requiring a manual refresh.
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-  const hadExistingController = Boolean(navigator.serviceWorker.controller);
   let refreshing = false;
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadExistingController || refreshing) return;
+    if (refreshing) return;
     // Never interrupt an active live multiplayer round mid-turn
     if (document.documentElement.hasAttribute('data-in-live-match')) return;
 
     const lastReload = Number(sessionStorage.getItem('sekou_sw_reload_ts') || '0');
-    if (Date.now() - lastReload < 10_000) return;
+    if (Date.now() - lastReload < 6_000) return;
 
     refreshing = true;
     sessionStorage.setItem('sekou_sw_reload_ts', String(Date.now()));
@@ -31,7 +30,7 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       registration.update().catch(() => {});
       window.setInterval(() => {
         registration.update().catch(() => {});
-      }, 60_000);
+      }, 30_000);
     },
   });
 }
