@@ -472,9 +472,10 @@ export class UnoGame {
       // Check if newly drawn card is playable
       const isPlayable = this.isCardPlayableNormally(card, currentPlayer.hand.length);
       if (isPlayable) {
-        // Player has the right to play it before the next player's turn, or pass
+        // Player has the right to play it before the next player's turn, or pass.
+        // Strict secrecy: never reveal the drawn card's identity to opponents in public messages.
         this.drawnPlayableCard = { playerId: currentPlayer.id, cardId: card.id };
-        this.lastActionMessage = `${currentPlayer.name} a pioché ${this.getCardName(card)} (jouable) ! Il peut la poser ou passer son tour.`;
+        this.lastActionMessage = `${currentPlayer.name} a pioché une carte.`;
         return { success: true, drawnCards, canPlayDrawnCard: true };
       }
     }
@@ -531,7 +532,7 @@ export class UnoGame {
       playerName: player.name,
       timestamp: Date.now(),
     };
-    this.lastActionMessage = `🔥 ${player.name} a déclaré UNO !`;
+    this.lastActionMessage = `${player.name} a déclaré SEKO !`;
     return { success: true };
   }
 
@@ -567,7 +568,7 @@ export class UnoGame {
     target.cardCount = target.hand.length;
     target.hasCalledUno = false;
 
-    this.lastActionMessage = `⚡ CONTRE-UNO ! ${caller.name} a pris ${target.name} en flagrant délit (+2 cartes de pénalité) !`;
+    this.lastActionMessage = `CONTRE-SEKO ! ${caller.name} surprend ${target.name} (+2 cartes de pénalité) !`;
     return { success: true };
   }
 
@@ -600,15 +601,20 @@ export class UnoGame {
     target.cardCount = target.hand.length;
     target.hasCalledUno = false;
 
-    this.lastActionMessage = `⚠️ Pénalité de l'Hôte : ${target.name} reçoit +${safeCount} cartes !`;
+    this.lastActionMessage = `Arbitrage Hôte : ${target.name} reçoit +${safeCount} cartes !`;
     return { success: true };
   }
 
   /**
    * Get public game state for broadcasting.
-   * Strips all private card hands and session tokens.
+   * Strips all private card hands, session tokens, and masks drawnPlayableCard ID for non-owners.
    */
-  public getPublicState(hostId: string): GameStatePublic {
+  public getPublicState(hostId: string, viewerPlayerId?: string): GameStatePublic {
+    const canSeeDrawnCardId =
+      Boolean(viewerPlayerId) &&
+      this.drawnPlayableCard !== null &&
+      this.drawnPlayableCard.playerId === viewerPlayerId;
+
     return {
       roomCode: this.roomCode,
       status: this.status,
@@ -631,7 +637,7 @@ export class UnoGame {
       winner: this.winner,
       lastActionMessage: this.lastActionMessage,
       unoNotice: this.unoNotice,
-      drawnCardPlayableId: this.drawnPlayableCard ? this.drawnPlayableCard.cardId : null,
+      drawnCardPlayableId: canSeeDrawnCardId && this.drawnPlayableCard ? this.drawnPlayableCard.cardId : null,
     };
   }
 

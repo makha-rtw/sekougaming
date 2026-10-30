@@ -3,28 +3,29 @@ import { Socket } from 'socket.io-client';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   ArrowLeft,
-  Bomb,
-  Flame,
+  Fire,
   Heart,
-  Crown,
+  CrownSimple,
   Copy,
   Check,
-  Share2,
+  ShareNetwork,
   QrCode,
-  Volume2,
-  VolumeX,
-  HelpCircle,
-  Settings,
-  Users,
-  Send,
+  SpeakerHigh,
+  SpeakerSlash,
+  BookOpenText,
+  Sliders,
+  UsersThree,
+  PaperPlaneRight,
   Trophy,
-  RotateCcw,
-  Sparkles,
+  ArrowCounterClockwise,
+  Sparkle,
   Skull,
-  Globe,
   X,
-  AlertTriangle,
-} from 'lucide-react';
+  WarningOctagon,
+  CheckCircle,
+  ArrowsClockwise,
+  Ticket,
+} from '@phosphor-icons/react';
 import {
   BombDifficulty,
   BombLanguage,
@@ -35,6 +36,11 @@ import {
 } from '../../../../shared/sekouBombTypes.js';
 import { getBombTranslation } from './i18n.js';
 import { bombSounds } from './sound.js';
+import {
+  SolariFlapTile,
+  SolariWordStrip,
+  BombLightDialog,
+} from './components/SolariFlap.js';
 
 interface SekouBombAppProps {
   socket: Socket;
@@ -52,6 +58,28 @@ interface SavedBombSession {
 const SESSION_KEY = 'sekou_bomb_session_v1';
 const NAME_KEY = 'sekou_bomb_player_name_v1';
 const UI_LANG_KEY = 'sekou_bomb_ui_lang_v1';
+
+const DEMO_SPECIMENS: Record<BombLanguage, { prompt: string; sample: string }[]> = {
+  fr: [
+    { prompt: 'TRE', sample: 'CONTRETEMPS' },
+    { prompt: 'EAU', sample: 'CHAPITEAU' },
+    { prompt: 'OUR', sample: 'TOURBILLON' },
+    { prompt: 'ION', sample: 'IMPULSION' },
+  ],
+  en: [
+    { prompt: 'ING', sample: 'LIGHTNING' },
+    { prompt: 'STR', sample: 'ASTRONAUT' },
+    { prompt: 'GHT', sample: 'SPOTLIGHT' },
+    { prompt: 'OUS', sample: 'MARVELOUS' },
+  ],
+};
+
+function normalizeLetters(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+}
 
 function loadSavedSession(): SavedBombSession | null {
   try {
@@ -76,26 +104,38 @@ function clearBombSession() {
 }
 
 /**
- * Highlights the required prompt letters inside a word or live typing string.
+ * Highlights the required prompt letters inside a word or live typing string
+ * using crisp Risograph Vermilion print marking.
  */
-const HighlightedWord: React.FC<{ word: string; prompt: string }> = ({ word, prompt }) => {
+const HighlightedWord: React.FC<{ word: string; prompt: string; lightOnDark?: boolean }> = ({
+  word,
+  prompt,
+  lightOnDark = false,
+}) => {
   if (!word) return null;
   const upperWord = word.toUpperCase();
-  const upperPrompt = prompt.toUpperCase();
-  const idx = upperWord.indexOf(upperPrompt);
+  const normWord = normalizeLetters(word);
+  const normPrompt = normalizeLetters(prompt);
+  const idx = normPrompt ? normWord.indexOf(normPrompt) : -1;
 
-  if (idx === -1 || !upperPrompt) {
+  if (idx === -1 || !normPrompt) {
     return <span>{upperWord}</span>;
   }
 
   const before = upperWord.slice(0, idx);
-  const match = upperWord.slice(idx, idx + upperPrompt.length);
-  const after = upperWord.slice(idx + upperPrompt.length);
+  const match = upperWord.slice(idx, idx + normPrompt.length);
+  const after = upperWord.slice(idx + normPrompt.length);
 
   return (
     <span>
       {before}
-      <span className="text-[#FF9F1C] underline decoration-[#FF9F1C]/80 decoration-2 underline-offset-2 font-black">
+      <span
+        className={
+          lightOnDark
+            ? 'bg-[#E5382B] text-[#FAF6EE] px-0.5 rounded-[2px] font-black'
+            : 'bg-[#E5382B] text-[#FAF6EE] px-1 py-0.5 rounded-[2px] font-black'
+        }
+      >
         {match}
       </span>
       {after}
@@ -128,8 +168,12 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     }
   });
 
+  const [entryMode, setEntryMode] = useState<'create' | 'join'>(() =>
+    initialRoomCode ? 'join' : 'create'
+  );
   const [createDictLang, setCreateDictLang] = useState<BombLanguage>('fr');
   const [joinCodeInput, setJoinCodeInput] = useState<string>(initialRoomCode || '');
+  const [demoIndex, setDemoIndex] = useState<number>(0);
 
   const [roomState, setRoomState] = useState<BombRoomStatePublic | null>(null);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
@@ -151,6 +195,15 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
   const lastEventIdRef = useRef<string | null>(null);
   const lastTickSecondRef = useRef<number>(-1);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Cycle the Solari demonstration strip on Home screen when idle
+  useEffect(() => {
+    if (roomState || reduceMotion) return;
+    const id = window.setInterval(() => {
+      setDemoIndex((prev) => (prev + 1) % DEMO_SPECIMENS[uiLang].length);
+    }, 3400);
+    return () => window.clearInterval(id);
+  }, [roomState, uiLang, reduceMotion]);
 
   const toggleUiLang = () => {
     const next: BombLanguage = uiLang === 'fr' ? 'en' : 'fr';
@@ -199,7 +252,6 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
       serverOffsetMsRef.current = (state.serverNowMs || Date.now()) - Date.now();
       setRoomState(state);
 
-      // Trigger sound effects on new server event
       if (state.lastEvent && state.lastEvent.id !== lastEventIdRef.current) {
         lastEventIdRef.current = state.lastEvent.id;
         const ev = state.lastEvent;
@@ -226,7 +278,6 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     };
   }, [socket, initialRoomCode]);
 
-  // Auto-focus word input whenever it becomes my turn
   const isMyTurn = Boolean(
     roomState &&
       roomState.status === 'PLAYING' &&
@@ -234,11 +285,12 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
       roomState.activePlayerId === myPlayerId
   );
 
+  // Auto-focus word input whenever it becomes my turn
   useEffect(() => {
     if (isMyTurn) {
       setWordInput('');
       setInlineInputError(null);
-      setTimeout(() => {
+      window.setTimeout(() => {
         inputRef.current?.focus();
       }, 40);
     }
@@ -341,8 +393,8 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     if (trimmedCode.length !== 6) {
       setErrorBanner(
         uiLang === 'fr'
-          ? 'Le code du salon doit comporter 6 caractères.'
-          : 'Room code must be 6 characters.'
+          ? 'Le code du plateau doit comporter 6 caractères.'
+          : 'Stage code must be 6 characters.'
       );
       return;
     }
@@ -370,7 +422,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
             window.history.replaceState({}, '', `${window.location.pathname}?game=sekou_bomb`);
           }
         } else {
-          setErrorBanner(res?.error || 'Impossible de rejoindre ce salon.');
+          setErrorBanner(res?.error || 'Impossible de rejoindre ce plateau.');
         }
       }
     );
@@ -433,14 +485,12 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
           res.error ||
           'Mot invalide';
         setInlineInputError(msg);
-        // Select text or clear quickly so mobile player can retype immediately
         setWordInput('');
         inputRef.current?.focus();
       }
     });
   };
 
-  // Invite URL helpers
   const getInviteUrl = () => {
     if (typeof window === 'undefined' || !roomState) return '';
     return `${window.location.origin}${window.location.pathname}?bombRoom=${roomState.roomCode}`;
@@ -450,7 +500,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     if (!roomState) return;
     navigator.clipboard.writeText(roomState.roomCode);
     setCopiedType('code');
-    setTimeout(() => setCopiedType(null), 2000);
+    window.setTimeout(() => setCopiedType(null), 2000);
   };
 
   const handleCopyLink = () => {
@@ -458,7 +508,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     if (!url) return;
     navigator.clipboard.writeText(url);
     setCopiedType('link');
-    setTimeout(() => setCopiedType(null), 2000);
+    window.setTimeout(() => setCopiedType(null), 2000);
   };
 
   const handleShareLink = async () => {
@@ -467,11 +517,11 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Sekou Bomb — SekouGaming',
+          title: 'Sekou Bomb | SekouGaming',
           text:
             uiLang === 'fr'
-              ? `Rejoins ma partie Sekou Bomb (Code : ${roomState.roomCode}) !`
-              : `Join my Sekou Bomb room (Code: ${roomState.roomCode})!`,
+              ? `Rejoins mon plateau Sekou Bomb (Code : ${roomState.roomCode}) !`
+              : `Join my Sekou Bomb stage (Code: ${roomState.roomCode})!`,
           url,
         });
         return;
@@ -503,221 +553,413 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
       : 1;
   const isCriticalTime = remainingMs > 0 && remainingMs <= 3500;
 
+  const isInArena = Boolean(
+    roomState &&
+      (roomState.status === 'COUNTDOWN' ||
+        roomState.status === 'PLAYING' ||
+        roomState.status === 'PLAYER_ELIMINATED' ||
+        roomState.status === 'ROUND_TRANSITION')
+  );
+
+  const demoList = DEMO_SPECIMENS[uiLang];
+  const currentDemo = demoList[demoIndex % demoList.length];
+  const wordContainsPrompt = Boolean(
+    roomState?.currentPrompt &&
+      wordInput.trim().length > 0 &&
+      normalizeLetters(wordInput).includes(normalizeLetters(roomState.currentPrompt))
+  );
+
   return (
     <div
-      className="min-h-[100dvh] w-full bg-[#110D10] text-[#FAF6F0] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col justify-between overflow-x-hidden select-none"
+      className="sekou-bomb-world min-h-[100dvh] w-full flex flex-col justify-between overflow-x-hidden select-none"
       style={{
-        paddingTop: 'max(env(safe-area-inset-top, 0px), 0.65rem)',
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.65rem)',
-        backgroundImage:
-          'radial-gradient(48rem 32rem at 50% -10%, rgba(255,159,28,0.14), transparent 65%), radial-gradient(40rem 30rem at 90% 105%, rgba(255,51,75,0.12), transparent 65%)',
+        paddingTop: 'max(env(safe-area-inset-top, 0px), 0.5rem)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.75rem)',
       }}
     >
-      {/* Top Navigation Bar */}
-      <header className="w-full max-w-4xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0">
-        <button
-          type="button"
-          onClick={roomState ? handleLeaveRoom : onBackToHub}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1C1418] hover:bg-[#271C22] border border-[#38262E] text-xs font-bold text-[#FF9F1C] transition-all cursor-pointer active:scale-95"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>{roomState ? t.leaveRoom : t.backToHub}</span>
-        </button>
+      {/* ==================== TOP BROADCAST STUDIO RAIL ==================== */}
+      <header className="w-full max-w-6xl mx-auto px-3 sm:px-6 py-2 shrink-0">
+        <div className="flex items-center justify-between gap-2 bg-[#FAF6EE] border-2 border-[#141312] rounded-[8px] px-2.5 sm:px-4 py-2 shadow-[3px_3px_0_#141312]">
+          <button
+            type="button"
+            onClick={roomState ? handleLeaveRoom : onBackToHub}
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[5px] bg-[#E8E0D0] hover:bg-[#141312] hover:text-[#FAF6EE] border-2 border-[#141312] text-xs font-bold uppercase tracking-wider text-[#141312] transition-[background-color,color,transform] cursor-pointer active:translate-y-[1px]"
+          >
+            <ArrowLeft weight="bold" className="w-3.5 h-3.5" />
+            <span>{roomState ? t.leaveRoom : t.backToHub}</span>
+          </button>
 
-        <div className="flex items-center gap-1.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#FF9F1C] to-[#FF334B] flex items-center justify-center text-[#110D10] shadow-md">
-            <Bomb className="w-4 h-4 stroke-[2.5]" />
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#E5382B] text-[#FAF6EE] border border-[#141312] font-bomb-mono text-[10px] font-bold uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FAF6EE]" />
+              DIRECT
+            </span>
+            <span className="font-bomb-display font-black text-xl sm:text-2xl tracking-wide uppercase leading-none text-[#141312]">
+              SEKOU <span className="text-[#E5382B]">BOMB</span>
+            </span>
           </div>
-          <span className="font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-base sm:text-lg tracking-tight">
-            SEKOU <span className="text-[#FF9F1C]">BOMB</span>
-          </span>
-        </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* UI Language Switcher (FR / EN) */}
-          <button
-            type="button"
-            onClick={toggleUiLang}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[#1C1418] hover:bg-[#271C22] border border-[#38262E] text-[11px] font-black text-[#FAF6F0] cursor-pointer"
-            title="Interface Language (FR / EN)"
-          >
-            <Globe className="w-3.5 h-3.5 text-[#FF9F1C]" />
-            <span>{uiLang.toUpperCase()}</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Typographic UI Language Stamp (FR / EN) */}
+            <button
+              type="button"
+              onClick={toggleUiLang}
+              aria-label="Basculer la langue (FR / EN)"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[5px] bg-[#FAF6EE] hover:bg-[#1D4ED8] hover:text-[#FAF6EE] border-2 border-[#141312] font-bomb-mono text-xs font-bold uppercase text-[#141312] transition-[background-color,color] cursor-pointer"
+            >
+              <span>{uiLang.toUpperCase()}</span>
+            </button>
 
-          {/* Rules Modal Button */}
-          <button
-            type="button"
-            onClick={() => setShowRulesModal(true)}
-            className="p-2 rounded-full bg-[#1C1418] hover:bg-[#271C22] border border-[#38262E] text-[#FAF6F0]/80 hover:text-[#FF9F1C] cursor-pointer"
-            title={t.rulesBtn}
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
+            {/* Rules Sheet Trigger */}
+            <button
+              type="button"
+              onClick={() => setShowRulesModal(true)}
+              aria-label={t.rulesBtn}
+              title={t.rulesBtn}
+              className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-[5px] bg-[#FAF6EE] hover:bg-[#E59A00] border-2 border-[#141312] text-xs font-bold text-[#141312] transition-[background-color,color] cursor-pointer"
+            >
+              <BookOpenText weight="bold" className="w-4 h-4" />
+              <span className="hidden md:inline uppercase tracking-wider">{t.rulesBtn}</span>
+            </button>
 
-          {/* Sound Mute Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsMuted(bombSounds.toggleMute())}
-            className="p-2 rounded-full bg-[#1C1418] hover:bg-[#271C22] border border-[#38262E] text-[#FAF6F0]/80 hover:text-[#FF9F1C] cursor-pointer"
-          >
-            {isMuted ? <VolumeX className="w-4 h-4 text-[#FF334B]" /> : <Volume2 className="w-4 h-4" />}
-          </button>
+            {/* Audio Mute Switch */}
+            <button
+              type="button"
+              onClick={() => setIsMuted(bombSounds.toggleMute())}
+              aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
+              className={`p-1.5 rounded-[5px] border-2 border-[#141312] transition-[background-color,color] cursor-pointer ${
+                isMuted
+                  ? 'bg-[#E5382B] text-[#FAF6EE]'
+                  : 'bg-[#FAF6EE] hover:bg-[#E8E0D0] text-[#141312]'
+              }`}
+            >
+              {isMuted ? (
+                <SpeakerSlash weight="bold" className="w-4 h-4" />
+              ) : (
+                <SpeakerHigh weight="bold" className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Error Banner */}
+      {/* Error Dispatch Banner */}
       {errorBanner && (
-        <div className="w-full max-w-lg mx-auto px-3 mb-2">
-          <div className="p-3 rounded-2xl bg-[#FF334B]/15 border border-[#FF334B]/60 text-xs font-bold text-[#FFD5DA] flex items-center justify-between gap-2">
+        <div className="w-full max-w-2xl mx-auto px-3 sm:px-6 mt-1">
+          <div
+            role="alert"
+            className="px-3.5 py-2.5 rounded-[6px] bg-[#E5382B] text-[#FAF6EE] border-2 border-[#141312] shadow-[3px_3px_0_#141312] text-xs font-bold flex items-center justify-between gap-2"
+          >
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-[#FF334B] shrink-0" />
+              <WarningOctagon weight="fill" className="w-4 h-4 shrink-0" />
               <span>{errorBanner}</span>
             </div>
             <button
               type="button"
               onClick={() => setErrorBanner(null)}
-              className="p-1 hover:bg-white/10 rounded-lg"
+              aria-label={t.close}
+              className="p-1 rounded-[4px] hover:bg-black/20 cursor-pointer"
             >
-              <X className="w-3.5 h-3.5" />
+              <X weight="bold" className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       )}
 
-      {/* ==================== 1. HOME SCREEN (NO ROOM) ==================== */}
+      {/* ==================== 1. HOME SCREEN : RISOGRAPH POSTER & TICKET ==================== */}
       {!roomState && (
-        <main className="flex-1 w-full max-w-xl mx-auto px-4 py-3 flex flex-col justify-center gap-4">
-          <div className="text-center space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF9F1C]/15 border border-[#FF9F1C]/35 text-[#FF9F1C] text-xs font-extrabold uppercase tracking-wider">
-              <Flame className="w-3.5 h-3.5" />
-              <span>FR & EN • 2–16 Joueurs</span>
-            </div>
-            <h1 className="font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-5xl font-extrabold tracking-tight">
-              SEKOU <span className="text-[#FF9F1C]">BOMB</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-[#FAF6F0]/70 max-w-md mx-auto">{t.subtitle}</p>
-          </div>
-
-          {/* Shared Nickname Card */}
-          <div className="bg-[#1C1418] border border-[#38262E] rounded-3xl p-4 sm:p-5 shadow-xl">
-            <label className="block text-xs font-black uppercase tracking-wider text-[#FF9F1C] mb-2">
-              {t.yourNickname}
-            </label>
-            <input
-              type="text"
-              maxLength={20}
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder={t.nicknamePlaceholder}
-              className="w-full px-4 py-3 rounded-2xl bg-[#110D10] border border-[#38262E] focus:border-[#FF9F1C] text-base font-bold text-[#FAF6F0] outline-none transition-colors"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Create Room Card */}
-            <form
-              onSubmit={handleCreateRoom}
-              className="bg-[#1C1418] border border-[#38262E] rounded-3xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-xl"
-            >
+        <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 py-3 sm:py-6 flex items-center">
+          <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-stretch">
+            {/* Left Column: Editorial Broadcast Poster + Live Solari Specimen */}
+            <section className="lg:col-span-6 flex flex-col justify-between bg-[#E8E0D0] border-2 border-[#141312] rounded-[10px] p-5 sm:p-7 shadow-[6px_6px_0_#141312] relative overflow-hidden">
+              {/* Top print registration strip */}
               <div>
-                <h2 className="font-['Bricolage_Grotesque',_sans-serif] text-lg font-extrabold text-white mb-1">
-                  {t.createRoomTitle}
-                </h2>
-                <p className="text-xs text-[#FAF6F0]/60 mb-3">{t.dictLanguageLabel}</p>
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b-2 border-[#141312]">
+                  <span className="font-bomb-mono text-[11px] font-bold uppercase tracking-widest text-[#141312]">
+                    {t.studioKicker}
+                  </span>
+                  <span className="px-2 py-0.5 bg-[#1D4ED8] text-[#FAF6EE] border border-[#141312] rounded-[3px] font-bomb-mono text-[10px] font-bold uppercase tracking-wider">
+                    2..16 JOUEURS
+                  </span>
+                </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <h1 className="font-bomb-display font-black uppercase leading-[0.88] tracking-tight text-[clamp(3.3rem,9vw,5.6rem)] text-[#141312]">
+                  SEKOU{' '}
+                  <span className="inline-block px-2.5 pb-1 bg-[#E5382B] text-[#FAF6EE] border-2 border-[#141312] rounded-[6px] shadow-[3px_3px_0_#141312] -rotate-1">
+                    BOMB
+                  </span>
+                </h1>
+
+                <p className="mt-3.5 text-sm sm:text-base font-medium leading-relaxed text-[#2B2926] max-w-lg">
+                  {t.subtitle}
+                </p>
+              </div>
+
+              {/* Interactive Mechanical Solari Specimen Board */}
+              <div className="my-5 p-4 rounded-[8px] bg-[#FAF6EE] border-2 border-[#141312]">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="font-bomb-mono text-[10px] font-bold uppercase tracking-widest text-[#57524A]">
+                    {uiLang === 'fr' ? 'Spécimen mécanique en direct' : 'Live split-flap specimen'}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setCreateDictLang('fr')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${
-                      createDictLang === 'fr'
-                        ? 'bg-[#FF9F1C]/20 border-[#FF9F1C] text-[#FF9F1C]'
-                        : 'bg-[#110D10] border-[#38262E] text-[#FAF6F0]/70'
-                    }`}
+                    onClick={() => setDemoIndex((i) => (i + 1) % demoList.length)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#E8E0D0] hover:bg-[#141312] hover:text-[#FAF6EE] border border-[#141312] font-bomb-mono text-[10px] font-bold uppercase transition-[background-color,color] cursor-pointer"
                   >
-                    🇫🇷 Français
+                    <ArrowsClockwise weight="bold" className="w-3 h-3" />
+                    <span>{uiLang === 'fr' ? 'Tourner' : 'Flip'}</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setCreateDictLang('en')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${
-                      createDictLang === 'en'
-                        ? 'bg-[#FF9F1C]/20 border-[#FF9F1C] text-[#FF9F1C]'
-                        : 'bg-[#110D10] border-[#38262E] text-[#FAF6F0]/70'
-                    }`}
-                  >
-                    🇬🇧 English
-                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <SolariWordStrip
+                    text={currentDemo.prompt}
+                    size="sm"
+                    tone="ink"
+                    label={`Syllabe ${currentDemo.prompt}`}
+                  />
+
+                  <div className="flex items-center gap-2 font-bomb-mono text-sm sm:text-base font-bold text-[#141312] bg-[#E8E0D0] px-3 py-2 rounded-[5px] border border-[#141312]">
+                    <CheckCircle weight="fill" className="w-4 h-4 text-[#0B7A53] shrink-0" />
+                    <HighlightedWord word={currentDemo.sample} prompt={currentDemo.prompt} />
+                  </div>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#FF9F1C] to-[#FF5E36] hover:brightness-110 text-[#110D10] font-black text-sm uppercase tracking-wider shadow-lg shadow-[#FF9F1C]/20 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
-              >
-                {isLoading ? t.creating : t.createRoomBtn}
-              </button>
-            </form>
+              {/* 3 Editorial Print Columns (No SaaS Cards) */}
+              <div className="grid grid-cols-3 gap-3 pt-3 border-t-2 border-[#141312] text-left">
+                <div>
+                  <div className="font-bomb-mono text-[10px] font-bold text-[#E5382B]">01 / SYLLABE</div>
+                  <div className="text-xs font-bold text-[#141312] mt-0.5">
+                    {uiLang === 'fr' ? '2 à 4 lettres sur volets' : '2 to 4 split-flap letters'}
+                  </div>
+                </div>
+                <div className="border-l border-[#141312]/25 pl-3">
+                  <div className="font-bomb-mono text-[10px] font-bold text-[#1D4ED8]">02 / RELAIS</div>
+                  <div className="text-xs font-bold text-[#141312] mt-0.5">
+                    {uiLang === 'fr' ? 'Validation instantanée' : 'Instant bomb handoff'}
+                  </div>
+                </div>
+                <div className="border-l border-[#141312]/25 pl-3">
+                  <div className="font-bomb-mono text-[10px] font-bold text-[#0B7A53]">03 / ALPHABET</div>
+                  <div className="text-xs font-bold text-[#141312] mt-0.5">
+                    {uiLang === 'fr' ? '24 lettres = +1 vie' : '24 letters = +1 life'}
+                  </div>
+                </div>
+              </div>
+            </section>
 
-            {/* Join Room Card */}
-            <form
-              onSubmit={handleJoinRoom}
-              className="bg-[#1C1418] border border-[#38262E] rounded-3xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-xl"
-            >
-              <div>
-                <h2 className="font-['Bricolage_Grotesque',_sans-serif] text-lg font-extrabold text-white mb-1">
-                  {t.joinRoomTitle}
-                </h2>
-                <p className="text-xs text-[#FAF6F0]/60 mb-3">{t.roomCodeLabel}</p>
+            {/* Right Column: Perforated Contestant Registration Ticket */}
+            <section className="lg:col-span-6 bg-[#FAF6EE] border-2 border-[#141312] rounded-[10px] shadow-[6px_6px_0_#141312] flex flex-col justify-between overflow-hidden">
+              {/* Ticket Top Header Bar */}
+              <div className="bg-[#141312] text-[#FAF6EE] px-5 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Ticket weight="fill" className="w-4 h-4 text-[#E59A00]" />
+                  <span className="font-bomb-mono text-xs font-bold uppercase tracking-widest">
+                    {uiLang === 'fr' ? 'Billet d’engagement candidat' : 'Contestant Entry Pass'}
+                  </span>
+                </div>
+                <span className="font-bomb-mono text-[11px] text-[#E59A00] font-bold">
+                  N° 04-SB
+                </span>
+              </div>
 
+              {/* Step 1: Shared Contestant Identity */}
+              <div className="p-5 sm:px-6 sm:pt-5 sm:pb-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="bomb-nickname-input"
+                    className="font-bomb-mono text-xs font-bold uppercase tracking-wider text-[#141312]"
+                  >
+                    01 / {t.yourNickname}
+                  </label>
+                  <span className="font-bomb-mono text-[11px] font-semibold text-[#57524A]">
+                    {playerName.trim().length}/20
+                  </span>
+                </div>
                 <input
+                  id="bomb-nickname-input"
                   type="text"
-                  maxLength={6}
-                  value={joinCodeInput}
-                  onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                  placeholder={t.roomCodePlaceholder}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#110D10] border border-[#38262E] focus:border-[#FF9F1C] font-mono text-lg font-black tracking-widest uppercase text-center text-[#FF9F1C] outline-none"
+                  maxLength={20}
+                  autoComplete="nickname"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder={t.nicknamePlaceholder}
+                  className="w-full px-3.5 py-3 rounded-[6px] bg-[#F4EFE6] border-2 border-[#141312] focus:bg-white text-base font-bold text-[#141312] placeholder:text-[#57524A]/60 outline-none transition-[background-color]"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#2A1D24] hover:bg-[#38262E] border border-[#FF9F1C]/50 text-[#FF9F1C] font-black text-sm uppercase tracking-wider transition-all cursor-pointer active:scale-98 disabled:opacity-50"
-              >
-                {isLoading ? t.joining : t.joinRoomBtn}
-              </button>
-            </form>
+              {/* Perforated Tear Line with Circular Hole-Punch Cutouts */}
+              <div className="relative flex items-center my-1">
+                <div className="w-5 h-5 rounded-full bg-[#F4EFE6] border-2 border-[#141312] -ml-3 shrink-0" />
+                <div className="flex-1 border-t-2 border-dashed border-[#141312]/40 mx-2" />
+                <div className="w-5 h-5 rounded-full bg-[#F4EFE6] border-2 border-[#141312] -mr-3 shrink-0" />
+              </div>
+
+              {/* Step 2: Mode Selector (Create Stage vs Enter Ticket Code) */}
+              <div className="p-5 sm:px-6 sm:pt-4 sm:pb-6 flex-1 flex flex-col justify-between gap-4">
+                <div>
+                  <span className="block font-bomb-mono text-xs font-bold uppercase tracking-wider text-[#141312] mb-2">
+                    02 / {uiLang === 'fr' ? 'Mode d’accès' : 'Stage access mode'}
+                  </span>
+
+                  <div
+                    role="tablist"
+                    className="grid grid-cols-2 p-1 rounded-[7px] bg-[#E8E0D0] border-2 border-[#141312] gap-1"
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={entryMode === 'create'}
+                      onClick={() => setEntryMode('create')}
+                      className={`py-2 px-3 rounded-[4px] font-bomb-mono text-xs font-bold uppercase tracking-wide transition-[background-color,color] cursor-pointer ${
+                        entryMode === 'create'
+                          ? 'bg-[#141312] text-[#FAF6EE]'
+                          : 'text-[#141312] hover:bg-[#FAF6EE]/70'
+                      }`}
+                    >
+                      {t.modeCreateTab}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={entryMode === 'join'}
+                      onClick={() => setEntryMode('join')}
+                      className={`py-2 px-3 rounded-[4px] font-bomb-mono text-xs font-bold uppercase tracking-wide transition-[background-color,color] cursor-pointer ${
+                        entryMode === 'join'
+                          ? 'bg-[#1D4ED8] text-[#FAF6EE]'
+                          : 'text-[#141312] hover:bg-[#FAF6EE]/70'
+                      }`}
+                    >
+                      {t.modeJoinTab}
+                    </button>
+                  </div>
+                </div>
+
+                {entryMode === 'create' ? (
+                  <form onSubmit={handleCreateRoom} className="space-y-4">
+                    <div>
+                      <span className="block text-xs font-bold text-[#57524A] mb-2">
+                        {t.dictLanguageLabel}
+                      </span>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {(['fr', 'en'] as const).map((lang) => {
+                          const active = createDictLang === lang;
+                          return (
+                            <button
+                              key={lang}
+                              type="button"
+                              onClick={() => setCreateDictLang(lang)}
+                              className={`flex items-center justify-between px-3.5 py-3 rounded-[6px] border-2 border-[#141312] text-left transition-[background-color,color,transform,box-shadow] cursor-pointer ${
+                                active
+                                  ? 'bg-[#E59A00] text-[#141312] shadow-[3px_3px_0_#141312] -translate-y-[1px]'
+                                  : 'bg-[#F4EFE6] text-[#141312] hover:bg-white'
+                              }`}
+                            >
+                              <div>
+                                <div className="font-bomb-mono text-[10px] font-bold uppercase opacity-75">
+                                  {lang === 'fr' ? 'ÉDITION FR' : 'EDITION EN'}
+                                </div>
+                                <div className="text-sm font-bold">
+                                  {lang === 'fr' ? t.langFr : t.langEn}
+                                </div>
+                              </div>
+                              <span className="px-2 py-0.5 rounded-[3px] bg-[#141312] text-[#FAF6EE] font-bomb-mono text-xs font-bold uppercase">
+                                {lang.toUpperCase()}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-3.5 px-5 rounded-[7px] bg-[#E5382B] hover:bg-[#cf2d20] text-[#FAF6EE] border-2 border-[#141312] shadow-[4px_4px_0_#141312] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_#141312] font-bomb-display font-black text-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-[transform,box-shadow,background-color] cursor-pointer disabled:opacity-50"
+                    >
+                      <Fire weight="fill" className="w-5 h-5" />
+                      <span>{isLoading ? t.creating : t.createRoomBtn}</span>
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleJoinRoom} className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="bomb-join-code-input"
+                        className="block text-xs font-bold text-[#57524A] mb-2"
+                      >
+                        {t.roomCodeLabel} (6 {uiLang === 'fr' ? 'caractères' : 'characters'})
+                      </label>
+                      <input
+                        id="bomb-join-code-input"
+                        type="text"
+                        maxLength={6}
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={joinCodeInput}
+                        onChange={(e) =>
+                          setJoinCodeInput(
+                            e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+                          )
+                        }
+                        placeholder={t.roomCodePlaceholder}
+                        className="w-full px-4 py-3 rounded-[6px] bg-[#F4EFE6] border-2 border-[#141312] focus:bg-white font-bomb-mono text-2xl font-bold tracking-[0.3em] uppercase text-center text-[#1D4ED8] placeholder:text-[#57524A]/45 placeholder:text-base placeholder:tracking-wider outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-3.5 px-5 rounded-[7px] bg-[#1D4ED8] hover:bg-[#1841b8] text-[#FAF6EE] border-2 border-[#141312] shadow-[4px_4px_0_#141312] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_#141312] font-bomb-display font-black text-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-[transform,box-shadow,background-color] cursor-pointer disabled:opacity-50"
+                    >
+                      <Ticket weight="fill" className="w-5 h-5" />
+                      <span>{isLoading ? t.joining : t.joinRoomBtn}</span>
+                    </button>
+                  </form>
+                )}
+              </div>
+            </section>
           </div>
         </main>
       )}
 
-      {/* ==================== 2. WAITING LOBBY SCREEN ==================== */}
+      {/* ==================== 2. WAITING LOBBY : CONTROL SHEET & CALL LIST ==================== */}
       {roomState && roomState.status === 'LOBBY' && (
-        <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-2 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {/* Left Column: Room Code, Share & Players List */}
-          <div className="lg:col-span-5 space-y-3.5">
-            {/* Room Code & Share Panel */}
-            <div className="bg-[#1C1418] border-2 border-[#FF9F1C]/50 rounded-3xl p-4 shadow-xl text-center">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#FF9F1C]">
-                {t.roomCodeLabel}
-              </span>
-              <div className="my-1 font-mono text-3xl sm:text-4xl font-black tracking-[0.22em] text-white">
-                {roomState.roomCode}
+        <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 py-3 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left Column: Solari Room Code Pass & Registered Contestants */}
+          <div className="lg:col-span-5 space-y-4">
+            {/* Solari Access Code Ticket */}
+            <section className="bg-[#FAF6EE] border-2 border-[#141312] rounded-[10px] p-4 sm:p-5 shadow-[5px_5px_0_#141312]">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="font-bomb-mono text-[11px] font-bold uppercase tracking-widest text-[#E5382B]">
+                  {t.roomCodeLabel}
+                </span>
+                <span className="px-2 py-0.5 rounded-[3px] bg-[#141312] text-[#FAF6EE] font-bomb-mono text-[10px] font-bold uppercase">
+                  {roomState.settings.language.toUpperCase()}
+                </span>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
+              <div className="flex justify-center py-1">
+                <SolariWordStrip
+                  text={roomState.roomCode}
+                  size="sm"
+                  tone="ink"
+                  label={`Code du salon ${roomState.roomCode}`}
+                />
+              </div>
+
+              <div className="mt-3.5 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={handleCopyCode}
-                  className="py-2 px-2.5 rounded-xl bg-[#110D10] hover:bg-[#271C22] border border-[#38262E] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="py-2 px-2.5 rounded-[5px] bg-[#F4EFE6] hover:bg-[#141312] hover:text-[#FAF6EE] border-2 border-[#141312] text-xs font-bold flex items-center justify-center gap-1.5 transition-[background-color,color] cursor-pointer"
                 >
                   {copiedType === 'code' ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <Check weight="bold" className="w-3.5 h-3.5 text-[#0B7A53]" />
                   ) : (
-                    <Copy className="w-3.5 h-3.5 text-[#FF9F1C]" />
+                    <Copy weight="bold" className="w-3.5 h-3.5" />
                   )}
                   <span>{copiedType === 'code' ? t.copied : t.copyCode}</span>
                 </button>
@@ -725,12 +967,12 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="py-2 px-2.5 rounded-xl bg-[#110D10] hover:bg-[#271C22] border border-[#38262E] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="py-2 px-2.5 rounded-[5px] bg-[#F4EFE6] hover:bg-[#141312] hover:text-[#FAF6EE] border-2 border-[#141312] text-xs font-bold flex items-center justify-center gap-1.5 transition-[background-color,color] cursor-pointer"
                 >
                   {copiedType === 'link' ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <Check weight="bold" className="w-3.5 h-3.5 text-[#0B7A53]" />
                   ) : (
-                    <Copy className="w-3.5 h-3.5 text-[#FF9F1C]" />
+                    <Copy weight="bold" className="w-3.5 h-3.5" />
                   )}
                   <span>{copiedType === 'link' ? t.copied : t.copyLink}</span>
                 </button>
@@ -738,70 +980,68 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 <button
                   type="button"
                   onClick={handleShareLink}
-                  className="py-2 px-2.5 rounded-xl bg-[#110D10] hover:bg-[#271C22] border border-[#38262E] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="py-2 px-2.5 rounded-[5px] bg-[#F4EFE6] hover:bg-[#1D4ED8] hover:text-[#FAF6EE] border-2 border-[#141312] text-xs font-bold flex items-center justify-center gap-1.5 transition-[background-color,color] cursor-pointer"
                 >
-                  <Share2 className="w-3.5 h-3.5 text-[#FF9F1C]" />
+                  <ShareNetwork weight="bold" className="w-3.5 h-3.5" />
                   <span>{t.shareLink}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleOpenQrModal}
-                  className="py-2 px-2.5 rounded-xl bg-[#110D10] hover:bg-[#271C22] border border-[#38262E] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="py-2 px-2.5 rounded-[5px] bg-[#E59A00] hover:brightness-95 border-2 border-[#141312] text-xs font-bold text-[#141312] flex items-center justify-center gap-1.5 transition-[filter] cursor-pointer"
                 >
-                  <QrCode className="w-3.5 h-3.5 text-[#FF9F1C]" />
+                  <QrCode weight="bold" className="w-3.5 h-3.5" />
                   <span>{t.qrCode}</span>
                 </button>
               </div>
-            </div>
+            </section>
 
-            {/* Players List */}
-            <div className="bg-[#1C1418] border border-[#38262E] rounded-3xl p-4 shadow-xl">
-              <div className="flex items-center justify-between mb-3">
+            {/* Contestants Call Sheet */}
+            <section className="bg-[#FAF6EE] border-2 border-[#141312] rounded-[10px] p-4 sm:p-5 shadow-[5px_5px_0_#141312]">
+              <div className="flex items-center justify-between pb-2.5 mb-3 border-b-2 border-[#141312]">
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[#FF9F1C]" />
-                  <h2 className="font-['Bricolage_Grotesque',_sans-serif] text-sm font-extrabold uppercase tracking-wider">
+                  <UsersThree weight="bold" className="w-4 h-4 text-[#141312]" />
+                  <h2 className="font-bomb-display font-black text-xl uppercase tracking-wide">
                     {t.playersTitle}
                   </h2>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#110D10] border border-[#38262E] text-xs font-black text-[#FF9F1C]">
-                  {roomState.players.length} / {roomState.settings.maxPlayers}
+                <span className="px-2 py-0.5 rounded-[4px] bg-[#141312] text-[#FAF6EE] font-bomb-mono text-xs font-bold">
+                  {roomState.players.length}/{roomState.settings.maxPlayers}
                 </span>
               </div>
 
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {roomState.players.map((p, idx) => (
                   <div
                     key={p.id}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-2xl border ${
-                      p.id === myPlayerId
-                        ? 'bg-[#FF9F1C]/10 border-[#FF9F1C]/50'
-                        : 'bg-[#110D10] border-[#38262E]'
+                    className={`flex items-center justify-between px-3 py-2 rounded-[6px] border-2 border-[#141312] ${
+                      p.id === myPlayerId ? 'bg-[#E59A00]/25' : 'bg-[#F4EFE6]'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-5 h-5 rounded-full bg-[#271C22] text-[10px] font-black flex items-center justify-center text-[#FF9F1C] shrink-0">
-                        {idx + 1}
+                      <span className="w-6 h-6 rounded-[4px] bg-[#141312] text-[#FAF6EE] font-bomb-mono text-[11px] font-bold flex items-center justify-center shrink-0">
+                        {String(idx + 1).padStart(2, '0')}
                       </span>
-                      <span className="font-bold text-sm truncate">{p.name}</span>
+                      <span className="font-bold text-sm truncate text-[#141312]">{p.name}</span>
                       {p.isHost && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FF9F1C]/20 text-[#FF9F1C] text-[10px] font-black">
-                          <Crown className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] bg-[#E5382B] text-[#FAF6EE] font-bomb-mono text-[10px] font-bold uppercase shrink-0">
+                          <CrownSimple weight="fill" className="w-3 h-3" />
                           {t.hostBadge}
                         </span>
                       )}
                       {p.id === myPlayerId && (
-                        <span className="text-[10px] font-bold text-[#FAF6F0]/60">
-                          ({t.youBadge})
+                        <span className="font-bomb-mono text-[10px] font-bold uppercase text-[#1D4ED8] shrink-0">
+                          [{t.youBadge}]
                         </span>
                       )}
                     </div>
 
                     <span
-                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                      className={`font-bomb-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded-[3px] border border-[#141312] shrink-0 ${
                         p.isConnected
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : 'bg-amber-500/15 text-amber-400'
+                          ? 'bg-[#0B7A53] text-[#FAF6EE]'
+                          : 'bg-[#E59A00] text-[#141312]'
                       }`}
                     >
                       {p.isConnected ? t.online : t.offline}
@@ -810,51 +1050,51 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 ))}
               </div>
 
-              {/* Start Game Button */}
-              <div className="mt-4">
+              {/* Start Broadcast Button */}
+              <div className="mt-4 pt-3 border-t-2 border-[#141312]">
                 {isHost ? (
                   <button
                     type="button"
                     disabled={roomState.players.length < 2}
                     onClick={handleStartGame}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#FF9F1C] to-[#FF334B] hover:brightness-110 text-[#110D10] font-black text-sm uppercase tracking-wider shadow-lg shadow-[#FF9F1C]/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-40"
+                    className="w-full py-3.5 px-4 rounded-[7px] bg-[#E5382B] hover:bg-[#cf2d20] text-[#FAF6EE] border-2 border-[#141312] shadow-[4px_4px_0_#141312] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_#141312] font-bomb-display font-black text-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-[transform,box-shadow,background-color] cursor-pointer disabled:opacity-45 disabled:shadow-none"
                   >
-                    <Flame className="w-4 h-4 fill-current" />
+                    <Fire weight="fill" className="w-5 h-5" />
                     <span>
                       {roomState.players.length < 2 ? t.needTwoPlayers : t.startGameBtn}
                     </span>
                   </button>
                 ) : (
-                  <div className="py-3 px-4 rounded-2xl bg-[#110D10] border border-[#38262E] text-center text-xs font-bold text-[#FAF6F0]/70">
+                  <div className="py-3 px-4 rounded-[6px] bg-[#E8E0D0] border-2 border-[#141312] text-center font-bomb-mono text-xs font-bold text-[#141312]">
                     {t.waitingForHost}
                   </div>
                 )}
               </div>
-            </div>
+            </section>
           </div>
 
-          {/* Right Column: Complete Configurable Settings Panel */}
-          <div className="lg:col-span-7 bg-[#1C1418] border border-[#38262E] rounded-3xl p-4 sm:p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#38262E] pb-2.5">
+          {/* Right Column: Stage Director Control Ledger */}
+          <section className="lg:col-span-7 bg-[#FAF6EE] border-2 border-[#141312] rounded-[10px] p-4 sm:p-6 shadow-[5px_5px_0_#141312]">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b-2 border-[#141312]">
               <div className="flex items-center gap-2">
-                <Settings className="w-4 h-4 text-[#FF9F1C]" />
-                <h2 className="font-['Bricolage_Grotesque',_sans-serif] text-base font-extrabold uppercase tracking-wider">
+                <Sliders weight="bold" className="w-5 h-5 text-[#1D4ED8]" />
+                <h2 className="font-bomb-display font-black text-2xl uppercase tracking-wide">
                   {t.settingsTitle}
                 </h2>
               </div>
               {!isHost && (
-                <span className="text-[11px] text-[#FAF6F0]/50 font-semibold">
-                  {t.hostBadge} uniquement
+                <span className="px-2 py-0.5 rounded-[4px] bg-[#E8E0D0] border border-[#141312] font-bomb-mono text-[10px] font-bold uppercase text-[#57524A]">
+                  {t.hostOnlyNote}
                 </span>
               )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
-              {/* 1. Dictionary Language */}
-              <div className="p-3 rounded-2xl bg-[#110D10] border border-[#38262E]">
-                <label className="block font-black text-[#FF9F1C] mb-2">
+              {/* 1. Official Dictionary */}
+              <div className="p-3.5 rounded-[7px] bg-[#F4EFE6] border-2 border-[#141312]">
+                <span className="block font-bomb-mono text-[11px] font-bold uppercase tracking-wider text-[#57524A] mb-2">
                   {t.dictLanguageLabel}
-                </label>
+                </span>
                 <div className="grid grid-cols-2 gap-1.5">
                   {(['fr', 'en'] as const).map((lang) => (
                     <button
@@ -862,23 +1102,26 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                       type="button"
                       disabled={!isHost}
                       onClick={() => handleUpdateSettings({ language: lang })}
-                      className={`py-2 px-2.5 rounded-xl font-bold border transition-all cursor-pointer disabled:cursor-default ${
+                      className={`py-2 px-2.5 rounded-[5px] font-bold border-2 border-[#141312] flex items-center justify-between transition-[background-color,color] cursor-pointer disabled:cursor-default ${
                         roomState.settings.language === lang
-                          ? 'bg-[#FF9F1C] text-[#110D10] border-[#FF9F1C]'
-                          : 'bg-[#1C1418] text-[#FAF6F0]/70 border-[#38262E]'
+                          ? 'bg-[#141312] text-[#FAF6EE]'
+                          : 'bg-[#FAF6EE] text-[#141312]'
                       }`}
                     >
-                      {lang === 'fr' ? `🇫🇷 ${t.langFr}` : `🇬🇧 ${t.langEn}`}
+                      <span>{lang === 'fr' ? t.langFr : t.langEn}</span>
+                      <span className="font-bomb-mono text-[10px] uppercase opacity-80">
+                        {lang}
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* 2. Prompt Difficulty */}
-              <div className="p-3 rounded-2xl bg-[#110D10] border border-[#38262E]">
-                <label className="block font-black text-[#FF9F1C] mb-2">
+              {/* 2. Syllable Caliber / Difficulty */}
+              <div className="p-3.5 rounded-[7px] bg-[#F4EFE6] border-2 border-[#141312]">
+                <span className="block font-bomb-mono text-[11px] font-bold uppercase tracking-wider text-[#57524A] mb-2">
                   {t.difficultyLabel}
-                </label>
+                </span>
                 <div className="grid grid-cols-3 gap-1.5">
                   {(
                     [
@@ -892,10 +1135,10 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                       type="button"
                       disabled={!isHost}
                       onClick={() => handleUpdateSettings({ difficulty: d.id })}
-                      className={`py-2 px-2 rounded-xl font-bold border transition-all cursor-pointer disabled:cursor-default ${
+                      className={`py-2 px-2 rounded-[5px] font-bold border-2 border-[#141312] transition-[background-color,color] cursor-pointer disabled:cursor-default ${
                         roomState.settings.difficulty === d.id
-                          ? 'bg-[#FF9F1C] text-[#110D10] border-[#FF9F1C]'
-                          : 'bg-[#1C1418] text-[#FAF6F0]/70 border-[#38262E]'
+                          ? 'bg-[#E5382B] text-[#FAF6EE]'
+                          : 'bg-[#FAF6EE] text-[#141312]'
                       }`}
                     >
                       {d.label}
@@ -904,21 +1147,21 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 </div>
               </div>
 
-              {/* 3. Initial Lives & Max Lives */}
-              <div className="p-3 rounded-2xl bg-[#110D10] border border-[#38262E] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#FAF6F0]/90">{t.initialLivesLabel}</span>
-                  <div className="flex items-center gap-1.5">
+              {/* 3. Starting Lives & Max Lives */}
+              <div className="p-3.5 rounded-[7px] bg-[#F4EFE6] border-2 border-[#141312] space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-[#141312]">{t.initialLivesLabel}</span>
+                  <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((val) => (
                       <button
                         key={val}
                         type="button"
                         disabled={!isHost}
                         onClick={() => handleUpdateSettings({ initialLives: val })}
-                        className={`w-7 h-7 rounded-lg font-black border cursor-pointer disabled:cursor-default ${
+                        className={`w-7 h-7 rounded-[4px] font-bomb-mono font-bold border-2 border-[#141312] cursor-pointer disabled:cursor-default ${
                           roomState.settings.initialLives === val
-                            ? 'bg-[#FF334B] text-white border-[#FF334B]'
-                            : 'bg-[#1C1418] text-[#FAF6F0]/70 border-[#38262E]'
+                            ? 'bg-[#E5382B] text-[#FAF6EE]'
+                            : 'bg-[#FAF6EE] text-[#141312]'
                         }`}
                       >
                         {val}
@@ -927,19 +1170,19 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#FAF6F0]/90">{t.maxLivesLabel}</span>
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#141312]/15">
+                  <span className="font-bold text-[#141312]">{t.maxLivesLabel}</span>
+                  <div className="flex items-center gap-1">
                     {[3, 4, 5, 6].map((val) => (
                       <button
                         key={val}
                         type="button"
                         disabled={!isHost}
                         onClick={() => handleUpdateSettings({ maxLives: val })}
-                        className={`w-7 h-7 rounded-lg font-black border cursor-pointer disabled:cursor-default ${
+                        className={`w-7 h-7 rounded-[4px] font-bomb-mono font-bold border-2 border-[#141312] cursor-pointer disabled:cursor-default ${
                           roomState.settings.maxLives === val
-                            ? 'bg-[#FF9F1C] text-[#110D10] border-[#FF9F1C]'
-                            : 'bg-[#1C1418] text-[#FAF6F0]/70 border-[#38262E]'
+                            ? 'bg-[#141312] text-[#FAF6EE]'
+                            : 'bg-[#FAF6EE] text-[#141312]'
                         }`}
                       >
                         {val}
@@ -949,17 +1192,17 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 </div>
               </div>
 
-              {/* 4. Turn Durations (Min & Max Bomb Fuse) */}
-              <div className="p-3 rounded-2xl bg-[#110D10] border border-[#38262E] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#FAF6F0]/90">{t.minTurnSecLabel}</span>
+              {/* 4. Fuse Min & Max Duration */}
+              <div className="p-3.5 rounded-[7px] bg-[#F4EFE6] border-2 border-[#141312] space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-[#141312]">{t.minTurnSecLabel}</span>
                   <select
                     disabled={!isHost}
                     value={roomState.settings.minTurnDurationSec}
                     onChange={(e) =>
                       handleUpdateSettings({ minTurnDurationSec: Number(e.target.value) })
                     }
-                    className="px-2.5 py-1 rounded-lg bg-[#1C1418] border border-[#38262E] font-bold text-[#FF9F1C]"
+                    className="px-2.5 py-1 rounded-[4px] bg-[#FAF6EE] border-2 border-[#141312] font-bomb-mono font-bold text-[#141312]"
                   >
                     {[3, 4, 5, 6, 8, 10].map((s) => (
                       <option key={s} value={s}>
@@ -969,15 +1212,15 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                   </select>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#FAF6F0]/90">{t.maxBombSecLabel}</span>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#141312]/15">
+                  <span className="font-bold text-[#141312]">{t.maxBombSecLabel}</span>
                   <select
                     disabled={!isHost}
                     value={roomState.settings.maxBombDurationSec}
                     onChange={(e) =>
                       handleUpdateSettings({ maxBombDurationSec: Number(e.target.value) })
                     }
-                    className="px-2.5 py-1 rounded-lg bg-[#1C1418] border border-[#38262E] font-bold text-[#FF9F1C]"
+                    className="px-2.5 py-1 rounded-[4px] bg-[#FAF6EE] border-2 border-[#141312] font-bomb-mono font-bold text-[#141312]"
                   >
                     {[10, 12, 15, 18, 20, 25].map((s) => (
                       <option key={s} value={s}>
@@ -988,10 +1231,10 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 </div>
               </div>
 
-              {/* 5. Word Repetition & Invalid Word Policy */}
-              <div className="p-3 rounded-2xl bg-[#110D10] border border-[#38262E] space-y-2.5">
+              {/* 5. Word Reuse & Invalid Word Penalty */}
+              <div className="p-3.5 rounded-[7px] bg-[#F4EFE6] border-2 border-[#141312] space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-bold text-[#FAF6F0]/90">{t.wordRepetitionLabel}</span>
+                  <span className="font-bold text-[#141312]">{t.wordRepetitionLabel}</span>
                   <button
                     type="button"
                     disabled={!isHost}
@@ -1003,7 +1246,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                             : 'forbid',
                       })
                     }
-                    className="px-2.5 py-1 rounded-lg bg-[#1C1418] border border-[#38262E] font-bold text-[#FF9F1C] cursor-pointer disabled:cursor-default"
+                    className="px-2.5 py-1 rounded-[4px] bg-[#FAF6EE] border-2 border-[#141312] font-bomb-mono font-bold text-[#1D4ED8] cursor-pointer disabled:cursor-default"
                   >
                     {roomState.settings.wordRepetitionPolicy === 'forbid'
                       ? t.repForbid
@@ -1011,8 +1254,8 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-bold text-[#FAF6F0]/90">{t.invalidPolicyLabel}</span>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#141312]/15">
+                  <span className="font-bold text-[#141312]">{t.invalidPolicyLabel}</span>
                   <button
                     type="button"
                     disabled={!isHost}
@@ -1024,7 +1267,11 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                             : 'retry',
                       })
                     }
-                    className="px-2.5 py-1 rounded-lg bg-[#1C1418] border border-[#38262E] font-bold text-[#FF9F1C] cursor-pointer disabled:cursor-default"
+                    className={`px-2.5 py-1 rounded-[4px] border-2 border-[#141312] font-bomb-mono font-bold cursor-pointer disabled:cursor-default ${
+                      roomState.settings.invalidAttemptPolicy === 'lose_life'
+                        ? 'bg-[#E5382B] text-[#FAF6EE]'
+                        : 'bg-[#FAF6EE] text-[#141312]'
+                    }`}
                   >
                     {roomState.settings.invalidAttemptPolicy === 'retry'
                       ? t.policyRetry
@@ -1033,17 +1280,17 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 </div>
               </div>
 
-              {/* 6. Prompt Max Failures & Room Capacity */}
-              <div className="p-3 rounded-2xl bg-[#110D10] border border-[#38262E] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#FAF6F0]/90">{t.maxPromptFailuresLabel}</span>
+              {/* 6. Fails Before Flip & Capacity */}
+              <div className="p-3.5 rounded-[7px] bg-[#F4EFE6] border-2 border-[#141312] space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-[#141312]">{t.maxPromptFailuresLabel}</span>
                   <select
                     disabled={!isHost}
                     value={roomState.settings.maxPromptFailures}
                     onChange={(e) =>
                       handleUpdateSettings({ maxPromptFailures: Number(e.target.value) })
                     }
-                    className="px-2.5 py-1 rounded-lg bg-[#1C1418] border border-[#38262E] font-bold text-[#FF9F1C]"
+                    className="px-2.5 py-1 rounded-[4px] bg-[#FAF6EE] border-2 border-[#141312] font-bomb-mono font-bold text-[#141312]"
                   >
                     {[1, 2, 3, 4, 5].map((n) => (
                       <option key={n} value={n}>
@@ -1053,15 +1300,15 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                   </select>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#FAF6F0]/90">{t.maxPlayersLabel}</span>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#141312]/15">
+                  <span className="font-bold text-[#141312]">{t.maxPlayersLabel}</span>
                   <select
                     disabled={!isHost}
                     value={roomState.settings.maxPlayers}
                     onChange={(e) =>
                       handleUpdateSettings({ maxPlayers: Number(e.target.value) })
                     }
-                    className="px-2.5 py-1 rounded-lg bg-[#1C1418] border border-[#38262E] font-bold text-[#FF9F1C]"
+                    className="px-2.5 py-1 rounded-[4px] bg-[#FAF6EE] border-2 border-[#141312] font-bomb-mono font-bold text-[#141312]"
                   >
                     {[4, 6, 8, 10, 12, 16].map((n) => (
                       <option key={n} value={n}>
@@ -1072,10 +1319,13 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 </div>
               </div>
 
-              {/* 7. Bonus Alphabet Configuration (Full Width) */}
-              <div className="sm:col-span-2 p-3 rounded-2xl bg-[#110D10] border border-[#38262E] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-black text-[#FF9F1C]">{t.bonusAlphabetLabel}</span>
+              {/* 7. Bonus Alphabet Stamp Card Config */}
+              <div className="sm:col-span-2 p-3.5 rounded-[7px] bg-[#F4EFE6] border-2 border-[#141312] space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkle weight="fill" className="w-4 h-4 text-[#0B7A53]" />
+                    <span className="font-bold text-[#141312]">{t.bonusAlphabetLabel}</span>
+                  </div>
                   <button
                     type="button"
                     disabled={!isHost}
@@ -1084,10 +1334,10 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                         bonusAlphabetEnabled: !roomState.settings.bonusAlphabetEnabled,
                       })
                     }
-                    className={`px-3 py-1 rounded-lg font-black border cursor-pointer disabled:cursor-default ${
+                    className={`px-3 py-1 rounded-[4px] font-bomb-mono font-bold border-2 border-[#141312] cursor-pointer disabled:cursor-default ${
                       roomState.settings.bonusAlphabetEnabled
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
-                        : 'bg-[#1C1418] text-[#FAF6F0]/50 border-[#38262E]'
+                        ? 'bg-[#0B7A53] text-[#FAF6EE]'
+                        : 'bg-[#FAF6EE] text-[#57524A]'
                     }`}
                   >
                     {roomState.settings.bonusAlphabetEnabled ? t.enabled : t.disabled}
@@ -1096,10 +1346,14 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
 
                 {roomState.settings.bonusAlphabetEnabled && (
                   <div>
-                    <label className="block text-[10px] text-[#FAF6F0]/60 mb-1">
+                    <label
+                      htmlFor="bomb-alphabet-custom"
+                      className="block font-bomb-mono text-[10px] font-bold uppercase text-[#57524A] mb-1"
+                    >
                       {t.bonusAlphabetCustomLabel}
                     </label>
                     <input
+                      id="bomb-alphabet-custom"
                       type="text"
                       disabled={!isHost}
                       value={roomState.settings.bonusAlphabetLetters}
@@ -1108,198 +1362,209 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                           bonusAlphabetLetters: e.target.value.toUpperCase(),
                         })
                       }
-                      className="w-full px-3 py-1.5 rounded-xl bg-[#1C1418] border border-[#38262E] font-mono text-xs tracking-widest uppercase text-[#FAF6F0]"
+                      className="w-full px-3 py-2 rounded-[5px] bg-[#FAF6EE] border-2 border-[#141312] font-bomb-mono text-xs font-bold tracking-[0.22em] uppercase text-[#141312]"
                     />
                   </div>
                 )}
               </div>
             </div>
-          </div>
+          </section>
         </main>
       )}
 
-      {/* ==================== 3. ACTIVE GAME ARENA (COUNTDOWN & PLAYING) ==================== */}
-      {roomState && (roomState.status === 'COUNTDOWN' || roomState.status === 'PLAYING') && (
-        <main className="flex-1 w-full max-w-3xl mx-auto px-2.5 sm:px-5 py-1 flex flex-col justify-start gap-2.5">
-          {/* Top Compact Info Strip: Round, Language, Words Count */}
-          <div className="flex items-center justify-between px-3 py-1.5 rounded-2xl bg-[#1C1418] border border-[#38262E] text-[11px] font-bold">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-md bg-[#FF9F1C]/20 text-[#FF9F1C] font-black">
-                {roomState.settings.language === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN'}
+      {/* ==================== 3. ACTIVE BROADCAST ARENA (SOLARI STAGE) ==================== */}
+      {roomState && isInArena && (
+        <main className="flex-1 w-full max-w-4xl mx-auto px-2.5 sm:px-6 py-1.5 flex flex-col justify-start gap-2.5">
+          {/* Top Compact Studio Telemetry Bar */}
+          <div className="flex items-center justify-between px-3 py-1.5 rounded-[7px] bg-[#141312] text-[#FAF6EE] font-bomb-mono text-xs font-bold">
+            <div className="flex items-center gap-2.5">
+              <span className="px-2 py-0.5 rounded-[3px] bg-[#E59A00] text-[#141312] font-bold uppercase">
+                {roomState.settings.language.toUpperCase()}
               </span>
-              <span className="text-[#FAF6F0]/75">
-                {t.roundLabel} <strong className="text-white">#{roomState.roundNumber}</strong>
+              <span>
+                {t.roundLabel.toUpperCase()} #{String(roomState.roundNumber).padStart(2, '0')}
               </span>
             </div>
-            <div className="text-[#FAF6F0]/75">
+            <div>
               {t.wordsPlayedLabel} :{' '}
-              <strong className="text-[#FF9F1C]">{roomState.totalWordsPlayed}</strong>
+              <span className="text-[#E59A00]">{roomState.totalWordsPlayed}</span>
             </div>
           </div>
 
-          {/* Players Horizontal Ring / Strip (Mobile-Friendly, Always Visible) */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {roomState.players.map((p) => {
+          {/* Horizontal Contestant Desk Strip */}
+          <div className="flex items-stretch gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {roomState.players.map((p, idx) => {
               const isHolder = roomState.activePlayerId === p.id && roomState.status === 'PLAYING';
               return (
                 <div
                   key={p.id}
-                  className={`shrink-0 min-w-[112px] sm:min-w-[128px] px-2.5 py-2 rounded-2xl border transition-all ${
+                  className={`shrink-0 min-w-[122px] sm:min-w-[140px] rounded-[7px] border-2 border-[#141312] overflow-hidden transition-[transform,box-shadow,background-color,opacity] ${
                     p.isEliminated
-                      ? 'bg-[#161013]/60 border-[#2C1D24] opacity-55'
+                      ? 'bg-[#E8E0D0]/65 opacity-55'
                       : isHolder
-                      ? 'bg-gradient-to-b from-[#FF9F1C]/25 to-[#FF334B]/20 border-[#FF9F1C] ring-2 ring-[#FF9F1C]/50 shadow-lg'
-                      : 'bg-[#1C1418] border-[#38262E]'
+                      ? 'bg-[#FAF6EE] shadow-[3px_3px_0_#E5382B] -translate-y-[1px]'
+                      : 'bg-[#FAF6EE]'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-xs font-extrabold truncate">{p.name}</span>
-                    {isHolder && <span className="text-xs animate-bounce">💣</span>}
-                    {p.isEliminated && <Skull className="w-3.5 h-3.5 text-[#FF334B] shrink-0" />}
+                  {/* Desk Header Strip */}
+                  <div
+                    className={`px-2.5 py-1 flex items-center justify-between gap-1 border-b border-[#141312] ${
+                      isHolder
+                        ? 'bg-[#E5382B] text-[#FAF6EE]'
+                        : p.isEliminated
+                        ? 'bg-[#D8D0C0] text-[#57524A]'
+                        : 'bg-[#E8E0D0] text-[#141312]'
+                    }`}
+                  >
+                    <span className="font-bomb-mono text-[10px] font-bold">
+                      #{idx + 1}
+                    </span>
+                    <span className="text-xs font-bold truncate flex-1">{p.name}</span>
+                    {isHolder && <Fire weight="fill" className="w-3.5 h-3.5 shrink-0" />}
+                    {p.isEliminated && <Skull weight="fill" className="w-3.5 h-3.5 shrink-0" />}
                   </div>
 
-                  {/* Hearts / Lives */}
-                  <div className="flex items-center gap-0.5 mb-1">
-                    {Array.from({ length: p.maxLives }).map((_, i) => (
-                      <Heart
-                        key={i}
-                        className={`w-3 h-3 ${
-                          i < p.lives
-                            ? 'text-[#FF334B] fill-[#FF334B]'
-                            : 'text-[#38262E] fill-transparent'
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Live Typing or Last Word Status */}
-                  <div className="h-4 flex items-center text-[10px] font-mono truncate">
-                    {p.isEliminated ? (
-                      <span className="text-[#FF334B] font-bold">{t.eliminatedTag}</span>
-                    ) : isHolder && p.currentTyping ? (
-                      <span className="text-white font-black truncate">
-                        <HighlightedWord
-                          word={p.currentTyping}
-                          prompt={roomState.currentPrompt}
+                  <div className="px-2.5 py-1.5 space-y-1">
+                    {/* Life Stamps */}
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: p.maxLives }).map((_, i) => (
+                        <Heart
+                          key={i}
+                          weight={i < p.lives ? 'fill' : 'regular'}
+                          className={`w-3.5 h-3.5 ${
+                            i < p.lives ? 'text-[#E5382B]' : 'text-[#141312]/25'
+                          }`}
                         />
-                      </span>
-                    ) : p.lastWordSubmitted ? (
-                      <span
-                        className={`truncate font-bold ${
-                          p.lastWordStatus === 'valid'
-                            ? 'text-emerald-400'
-                            : 'text-[#FF334B] line-through'
-                        }`}
-                      >
-                        {p.lastWordSubmitted}
-                      </span>
-                    ) : (
-                      <span className="text-[#FAF6F0]/40">
-                        {isHolder ? t.waitingInput : '—'}
-                      </span>
-                    )}
+                      ))}
+                    </div>
+
+                    {/* Teleprinter Desk Line */}
+                    <div className="h-4 flex items-center font-bomb-mono text-[10px] truncate">
+                      {p.isEliminated ? (
+                        <span className="text-[#E5382B] font-bold uppercase">
+                          {t.eliminatedTag}
+                        </span>
+                      ) : isHolder && p.currentTyping ? (
+                        <span className="text-[#141312] font-bold truncate">
+                          <HighlightedWord
+                            word={p.currentTyping}
+                            prompt={roomState.currentPrompt}
+                          />
+                        </span>
+                      ) : p.lastWordSubmitted ? (
+                        <span
+                          className={`truncate font-bold ${
+                            p.lastWordStatus === 'valid'
+                              ? 'text-[#0B7A53]'
+                              : 'text-[#E5382B] line-through'
+                          }`}
+                        >
+                          {p.lastWordSubmitted}
+                        </span>
+                      ) : (
+                        <span className="text-[#57524A]">
+                          {isHolder ? t.waitingInput : t.noWordYet}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Central Bomb & Prompt Stage (Positioned Upper-Center so Mobile Keyboard Never Hides It) */}
-          <div className="relative bg-[#1C1418] border-2 border-[#38262E] rounded-3xl p-3.5 sm:p-5 shadow-2xl flex flex-col items-center justify-center overflow-hidden">
+          {/* Central Solari Mechanical Stage + Immediate Word Input */}
+          <section className="bg-[#FAF6EE] border-2 border-[#141312] rounded-[10px] p-3.5 sm:p-5 shadow-[5px_5px_0_#141312]">
             {roomState.status === 'COUNTDOWN' ? (
-              <div className="py-6 text-center space-y-2">
-                <p className="text-xs font-black uppercase tracking-widest text-[#FF9F1C]">
+              <div className="py-6 flex flex-col items-center justify-center text-center gap-3">
+                <span className="px-2.5 py-0.5 rounded-[4px] bg-[#E59A00] border border-[#141312] font-bomb-mono text-xs font-bold uppercase tracking-widest text-[#141312]">
                   {t.countdownTitle}
+                </span>
+                <SolariFlapTile char={String(countdownSec)} size="xl" tone="vermilion" />
+                <p className="font-bomb-mono text-xs font-bold uppercase tracking-wider text-[#57524A]">
+                  {t.countdownSub}...
                 </p>
-                <div className="font-['Bricolage_Grotesque',_sans-serif] text-6xl sm:text-7xl font-black text-white animate-pulse">
-                  {countdownSec}
-                </div>
-                <p className="text-xs text-[#FAF6F0]/60">{t.countdownSub}</p>
               </div>
             ) : (
               <>
-                {/* Turn Status Banner */}
-                <div className="w-full flex items-center justify-between gap-2 mb-2">
-                  <span
-                    className={`text-xs sm:text-sm font-black uppercase tracking-wider ${
-                      isMyTurn ? 'text-[#FF9F1C]' : 'text-[#FAF6F0]/80'
-                    }`}
-                  >
-                    {isMyTurn
-                      ? t.yourTurnBanner
-                      : `${activePlayer?.name || ''} ${t.otherTurnBanner}`}
-                  </span>
+                {/* Stage Status Header & Digital Studio Clock */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-2.5 py-1 rounded-[4px] border-2 border-[#141312] font-bomb-mono text-xs font-bold uppercase tracking-wider ${
+                        isMyTurn
+                          ? 'bg-[#E5382B] text-[#FAF6EE]'
+                          : 'bg-[#E8E0D0] text-[#141312]'
+                      }`}
+                    >
+                      {isMyTurn
+                        ? t.yourTurnBanner
+                        : `${activePlayer?.name || ''} ${t.otherTurnBanner}`}
+                    </span>
+                  </div>
 
-                  <span
-                    className={`font-mono text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-full border ${
+                  <div
+                    className={`font-bomb-mono text-sm sm:text-base font-bold px-3 py-1 rounded-[5px] border-2 border-[#141312] ${
                       isCriticalTime
-                        ? 'bg-[#FF334B]/25 border-[#FF334B] text-[#FF334B] animate-pulse'
-                        : 'bg-[#110D10] border-[#38262E] text-[#FF9F1C]'
+                        ? 'bg-[#E5382B] text-[#FAF6EE]'
+                        : 'bg-[#141312] text-[#E59A00]'
                     }`}
                   >
                     {(remainingMs / 1000).toFixed(1)}s
-                  </span>
+                  </div>
                 </div>
 
-                {/* Fuse Countdown Bar */}
-                <div className="w-full h-2.5 rounded-full bg-[#110D10] overflow-hidden border border-[#38262E] mb-3">
+                {/* Graduated Fuse Rail (GPU-composited transform: scaleX) */}
+                <div className="relative w-full h-3.5 rounded-[4px] bg-[#E8E0D0] border-2 border-[#141312] overflow-hidden mb-4">
                   <div
-                    className={`h-full transition-all duration-75 ${
-                      isCriticalTime
-                        ? 'bg-gradient-to-r from-[#FF334B] to-[#FF9F1C]'
-                        : 'bg-gradient-to-r from-[#FF9F1C] to-amber-300'
+                    className={`h-full w-full origin-left transition-transform duration-75 ease-linear ${
+                      isCriticalTime ? 'bg-[#E5382B]' : 'bg-[#E59A00]'
                     }`}
-                    style={{ width: `${Math.round(progressRatio * 100)}%` }}
+                    style={{ transform: `scaleX(${progressRatio})` }}
+                  />
+                  {/* Calibration ruler ticks */}
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-30"
+                    style={{
+                      backgroundImage:
+                        'repeating-linear-gradient(to right, transparent 0, transparent 18px, #141312 18px, #141312 19px)',
+                    }}
                   />
                 </div>
 
-                {/* Ticking Bomb Visual + Huge Readable Letter Combination */}
+                {/* Giant Solari Split-Flap Syllable Display */}
                 <div
                   onClick={() => isMyTurn && inputRef.current?.focus()}
-                  className="relative flex flex-col items-center justify-center py-1 cursor-pointer"
+                  className="flex flex-col items-center justify-center py-1 cursor-pointer"
                 >
                   <motion.div
                     animate={
                       reduceMotion
                         ? {}
                         : isCriticalTime
-                        ? { scale: [1, 1.07, 0.97, 1.05, 1], rotate: [-2, 2, -2, 2, 0] }
-                        : { scale: [1, 1.03, 1] }
+                        ? { x: [-2, 2, -2, 2, 0] }
+                        : {}
                     }
-                    transition={{
-                      duration: isCriticalTime ? 0.35 : 0.9,
-                      repeat: Infinity,
-                    }}
-                    className={`relative w-32 h-32 sm:w-40 sm:h-40 rounded-full flex flex-col items-center justify-center border-4 shadow-2xl ${
-                      isCriticalTime
-                        ? 'bg-radial from-[#3B1219] via-[#1E0D12] to-[#0E090C] border-[#FF334B] shadow-[#FF334B]/35'
-                        : 'bg-radial from-[#2C1E16] via-[#171114] to-[#0D0A0C] border-[#FF9F1C] shadow-[#FF9F1C]/25'
-                    }`}
+                    transition={{ duration: 0.28, repeat: isCriticalTime ? Infinity : 0 }}
                   >
-                    {/* Fuse Spark Top Badge */}
-                    <div className="absolute -top-3.5 px-2.5 py-0.5 rounded-full bg-[#110D10] border border-[#FF9F1C] flex items-center gap-1 shadow">
-                      <Flame className="w-3.5 h-3.5 text-[#FF9F1C] fill-[#FF9F1C] animate-bounce" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-[#FF9F1C]">
-                        BOMB
-                      </span>
-                    </div>
-
-                    {/* THE LETTER COMBINATION (Huge & High-Contrast for Mobile) */}
-                    <span className="font-['Bricolage_Grotesque',_monospace] text-4xl sm:text-5xl font-black tracking-[0.12em] text-white drop-shadow-[0_2px_12px_rgba(255,159,28,0.45)]">
-                      {roomState.currentPrompt}
-                    </span>
+                    <SolariWordStrip
+                      text={roomState.currentPrompt || '...'}
+                      size="lg"
+                      tone={isCriticalTime ? 'vermilion' : 'ink'}
+                      label={`Syllabe imposée : ${roomState.currentPrompt}`}
+                    />
                   </motion.div>
 
-                  {/* Live Typing Preview when another player holds the bomb */}
+                  {/* Live Teleprinter Monitor when watching another player */}
                   {!isMyTurn && activePlayer && (
-                    <div className="mt-2.5 min-h-[28px] px-4 py-1 rounded-xl bg-[#110D10] border border-[#38262E] font-mono text-sm sm:text-base font-black tracking-wider text-center">
+                    <div className="mt-3 min-h-[36px] px-4 py-1.5 rounded-[6px] bg-[#F4EFE6] border-2 border-[#141312] font-bomb-mono text-sm sm:text-base font-bold tracking-wider flex items-center justify-center">
                       {activePlayer.currentTyping ? (
                         <HighlightedWord
                           word={activePlayer.currentTyping}
                           prompt={roomState.currentPrompt}
                         />
                       ) : (
-                        <span className="text-xs text-[#FAF6F0]/45 italic">
+                        <span className="text-xs text-[#57524A]">
                           {activePlayer.name} {t.waitingInput}
                         </span>
                       )}
@@ -1307,10 +1572,10 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                   )}
                 </div>
 
-                {/* Word Input Form (Right below the bomb so mobile virtual keyboard never hides it) */}
+                {/* Immediate Teleprinter Input Form (Directly under prompt for mobile keyboards) */}
                 {isMyTurn ? (
-                  <form onSubmit={handleSubmitWord} className="w-full mt-3 space-y-1.5">
-                    <div className="flex items-center gap-2">
+                  <form onSubmit={handleSubmitWord} className="w-full mt-3.5 space-y-2">
+                    <div className="flex items-stretch gap-2">
                       <div className="relative flex-1">
                         <input
                           ref={inputRef}
@@ -1324,87 +1589,111 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                           value={wordInput}
                           onChange={(e) => handleWordInputChange(e.target.value)}
                           placeholder={`${t.inputPlaceholder} « ${roomState.currentPrompt} »...`}
-                          className="w-full px-4 py-3 rounded-2xl bg-[#110D10] border-2 border-[#FF9F1C] text-base sm:text-lg font-black uppercase tracking-wider text-white placeholder:text-[#FAF6F0]/35 placeholder:font-semibold outline-none shadow-inner"
+                          className="w-full h-full px-3.5 pr-28 py-3 rounded-[7px] bg-white border-2 border-[#141312] font-bomb-mono text-base sm:text-lg font-bold uppercase tracking-wider text-[#141312] placeholder:text-[#57524A]/50 placeholder:font-sans placeholder:text-sm outline-none"
                         />
+
+                        {wordInput.trim().length > 0 && (
+                          <span
+                            className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-[4px] border border-[#141312] font-bomb-mono text-[10px] font-bold uppercase ${
+                              wordContainsPrompt
+                                ? 'bg-[#0B7A53] text-[#FAF6EE]'
+                                : 'bg-[#E8E0D0] text-[#57524A]'
+                            }`}
+                          >
+                            {wordContainsPrompt ? t.promptMatchedHint : t.promptMissingHint}
+                          </span>
+                        )}
                       </div>
 
                       <button
                         type="submit"
-                        className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-[#FF9F1C] to-[#FF334B] text-[#110D10] font-black text-sm uppercase tracking-wider flex items-center gap-1.5 shadow-lg cursor-pointer active:scale-95 shrink-0"
+                        className="px-4 sm:px-6 py-3 rounded-[7px] bg-[#E5382B] hover:bg-[#cf2d20] text-[#FAF6EE] border-2 border-[#141312] shadow-[3px_3px_0_#141312] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_#141312] font-bomb-display font-black text-lg sm:text-xl uppercase tracking-wider flex items-center gap-1.5 transition-[transform,box-shadow,background-color] cursor-pointer shrink-0"
                       >
                         <span>{t.validateBtn}</span>
-                        <Send className="w-4 h-4" />
+                        <PaperPlaneRight weight="fill" className="w-4 h-4" />
                       </button>
                     </div>
 
-                    {/* Live Prompt Match Feedback / Rejection Message */}
                     <AnimatePresence mode="wait">
                       {inlineInputError && (
                         <motion.div
                           key={inlineInputError}
-                          initial={{ opacity: 0, y: -4 }}
+                          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -4 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
-                          className="text-xs font-extrabold text-[#FF334B] text-center"
+                          role="alert"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[5px] bg-[#E5382B] text-[#FAF6EE] border border-[#141312] text-xs font-bold"
                         >
-                          ⚠️ {inlineInputError}
+                          <WarningOctagon weight="fill" className="w-3.5 h-3.5 shrink-0" />
+                          <span>{inlineInputError}</span>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </form>
                 ) : (
                   myPlayer?.isEliminated && (
-                    <div className="mt-2 px-3 py-1.5 rounded-xl bg-[#FF334B]/15 border border-[#FF334B]/40 text-xs font-bold text-[#FFD5DA]">
+                    <div className="mt-3 px-3 py-2 rounded-[6px] bg-[#E8E0D0] border-2 border-[#141312] text-center font-bomb-mono text-xs font-bold text-[#141312]">
                       {t.eliminatedBanner}
                     </div>
                   )
                 )}
 
-                {/* Last Event Ticker */}
+                {/* Broadcast Dispatch Event Ticker */}
                 {roomState.lastEvent && (
-                  <div className="mt-2 text-[11px] font-bold text-[#FAF6F0]/75 text-center">
+                  <div className="mt-3 pt-2.5 border-t border-[#141312]/15 flex items-center justify-center gap-1.5 text-xs font-bold text-[#141312] text-center">
                     {roomState.lastEvent.type === 'word_accepted' && (
-                      <span className="text-emerald-400">
-                        ✓ <strong>{roomState.lastEvent.playerName}</strong> {t.events.word_accepted}{' '}
-                        « <strong>{roomState.lastEvent.word}</strong> »
+                      <span className="inline-flex items-center gap-1.5 text-[#0B7A53]">
+                        <CheckCircle weight="fill" className="w-4 h-4 shrink-0" />
+                        <span>
+                          <strong>{roomState.lastEvent.playerName}</strong> {t.events.word_accepted}{' '}
+                          « <strong>{roomState.lastEvent.word}</strong> »
+                        </span>
                       </span>
                     )}
                     {roomState.lastEvent.type === 'bonus_life_earned' && (
-                      <span className="text-amber-300">
-                        ★ <strong>{roomState.lastEvent.playerName}</strong>{' '}
-                        {t.events.bonus_life_earned}
+                      <span className="inline-flex items-center gap-1.5 text-[#1D4ED8]">
+                        <Sparkle weight="fill" className="w-4 h-4 shrink-0" />
+                        <span>
+                          <strong>{roomState.lastEvent.playerName}</strong>{' '}
+                          {t.events.bonus_life_earned}
+                        </span>
                       </span>
                     )}
                     {roomState.lastEvent.type === 'timeout_life_lost' && (
-                      <span className="text-[#FF334B]">
-                        💥 {t.events.timeout_life_lost}{' '}
-                        <strong>{roomState.lastEvent.playerName}</strong> (-1 ❤️)
+                      <span className="inline-flex items-center gap-1.5 text-[#E5382B]">
+                        <Fire weight="fill" className="w-4 h-4 shrink-0" />
+                        <span>
+                          {t.events.timeout_life_lost}{' '}
+                          <strong>{roomState.lastEvent.playerName}</strong> (-1 vie)
+                        </span>
                       </span>
                     )}
                     {roomState.lastEvent.type === 'player_eliminated' && (
-                      <span className="text-[#FF334B]">
-                        💀 <strong>{roomState.lastEvent.playerName}</strong>{' '}
-                        {t.events.player_eliminated}
+                      <span className="inline-flex items-center gap-1.5 text-[#E5382B]">
+                        <Skull weight="fill" className="w-4 h-4 shrink-0" />
+                        <span>
+                          <strong>{roomState.lastEvent.playerName}</strong>{' '}
+                          {t.events.player_eliminated}
+                        </span>
                       </span>
                     )}
                   </div>
                 )}
               </>
             )}
-          </div>
+          </section>
 
-          {/* Bottom Panels: Bonus Alphabet + Recent Valid Words */}
+          {/* Bottom Panels: Alphabet Punch Card & Teleprinter Word Tape */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-            {/* Bonus Alphabet Tracker */}
             {roomState.settings.bonusAlphabetEnabled && myPlayer && (
-              <div className="sm:col-span-7 bg-[#1C1418] border border-[#38262E] rounded-2xl p-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#FF9F1C] flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5" />
+              <section className="sm:col-span-7 bg-[#FAF6EE] border-2 border-[#141312] rounded-[8px] p-3 shadow-[3px_3px_0_#141312]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bomb-mono text-[11px] font-bold uppercase tracking-wider text-[#141312] flex items-center gap-1.5">
+                    <Sparkle weight="fill" className="w-3.5 h-3.5 text-[#0B7A53]" />
                     {t.bonusAlphabetHeader}
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-[#FAF6F0]/70">
-                    {myPlayer.bonusLettersUsed.length} / {roomState.bonusAlphabetTarget.length}
+                  <span className="px-2 py-0.5 rounded-[3px] bg-[#141312] text-[#FAF6EE] font-bomb-mono text-[10px] font-bold">
+                    {myPlayer.bonusLettersUsed.length}/{roomState.bonusAlphabetTarget.length}
                   </span>
                 </div>
 
@@ -1414,10 +1703,10 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                     return (
                       <span
                         key={letter}
-                        className={`w-6 h-6 rounded-md text-[11px] font-black flex items-center justify-center border transition-all ${
+                        className={`w-6 h-6 rounded-[3px] font-bomb-mono text-xs font-bold flex items-center justify-center border transition-[background-color,color] ${
                           collected
-                            ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300 shadow-sm'
-                            : 'bg-[#110D10] border-[#38262E] text-[#FAF6F0]/40'
+                            ? 'bg-[#0B7A53] border-[#141312] text-[#FAF6EE]'
+                            : 'bg-[#F4EFE6] border-[#141312]/35 text-[#57524A]'
                         }`}
                       >
                         {letter}
@@ -1425,202 +1714,228 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                     );
                   })}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Recent Validated Words */}
-            <div
+            <section
               className={`${
                 roomState.settings.bonusAlphabetEnabled && myPlayer
                   ? 'sm:col-span-5'
                   : 'sm:col-span-12'
-              } bg-[#1C1418] border border-[#38262E] rounded-2xl p-3`}
+              } bg-[#FAF6EE] border-2 border-[#141312] rounded-[8px] p-3 shadow-[3px_3px_0_#141312]`}
             >
-              <span className="block text-[11px] font-black uppercase tracking-wider text-[#FAF6F0]/70 mb-1.5">
+              <span className="block font-bomb-mono text-[11px] font-bold uppercase tracking-wider text-[#57524A] mb-2">
                 {t.recentWordsHeader}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {roomState.recentValidWords.length === 0 ? (
-                  <span className="text-xs text-[#FAF6F0]/35 italic">—</span>
+                  <span className="text-xs text-[#57524A]">{t.noRecentWords}</span>
                 ) : (
                   roomState.recentValidWords.slice(0, 6).map((item, i) => (
                     <span
                       key={`${item.word}-${i}`}
-                      className="px-2 py-0.5 rounded-lg bg-[#110D10] border border-[#38262E] text-[11px] font-mono font-bold"
+                      className="px-2 py-0.5 rounded-[4px] bg-[#F4EFE6] border border-[#141312] font-bomb-mono text-xs font-bold text-[#141312]"
                     >
                       <HighlightedWord word={item.word} prompt={item.prompt} />
                     </span>
                   ))
                 )}
               </div>
-            </div>
+            </section>
           </div>
         </main>
       )}
 
-      {/* ==================== 4. GAME OVER SCREEN ==================== */}
+      {/* ==================== 4. GAME OVER : SPECIAL EDITION STANDINGS ==================== */}
       {roomState && roomState.status === 'GAME_OVER' && (
-        <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-4 flex flex-col justify-center gap-4">
-          <div className="bg-[#1C1418] border-2 border-[#FF9F1C] rounded-3xl p-6 text-center shadow-2xl space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-[#FF9F1C]/20 border border-[#FF9F1C] flex items-center justify-center mx-auto text-[#FF9F1C]">
-              <Trophy className="w-9 h-9" />
+        <main className="flex-1 w-full max-w-2xl mx-auto px-3 sm:px-6 py-4 flex flex-col justify-center">
+          <section className="bg-[#FAF6EE] border-2 border-[#141312] rounded-[10px] shadow-[6px_6px_0_#141312] overflow-hidden">
+            {/* Front-Page Headline Banner */}
+            <div className="bg-[#E5382B] text-[#FAF6EE] px-6 py-5 border-b-2 border-[#141312] text-center space-y-2">
+              <div className="w-12 h-12 rounded-[8px] bg-[#FAF6EE] text-[#141312] border-2 border-[#141312] shadow-[3px_3px_0_#141312] flex items-center justify-center mx-auto">
+                <Trophy weight="fill" className="w-7 h-7 text-[#E59A00]" />
+              </div>
+              <div className="font-bomb-mono text-[11px] font-bold uppercase tracking-widest">
+                {t.gameOverTitle}
+              </div>
+              <h1 className="font-bomb-display font-black text-3xl sm:text-5xl uppercase tracking-wide leading-none">
+                {roomState.winnerName
+                  ? `${roomState.winnerName} ${t.winnerAnnouncement}`
+                  : t.noWinner}
+              </h1>
             </div>
 
-            <h1 className="font-['Bricolage_Grotesque',_sans-serif] text-2xl sm:text-3xl font-extrabold text-white">
-              {roomState.winnerName
-                ? `🏆 ${roomState.winnerName} ${t.winnerAnnouncement}`
-                : t.noWinner}
-            </h1>
-
-            {/* Standings Table */}
-            <div className="mt-4 text-left space-y-2">
-              <h2 className="text-xs font-black uppercase tracking-wider text-[#FF9F1C]">
+            {/* Standings Ledger */}
+            <div className="p-5 sm:p-6 space-y-4">
+              <h2 className="font-bomb-mono text-xs font-bold uppercase tracking-widest text-[#57524A]">
                 {t.finalRanking}
               </h2>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {[...roomState.players]
                   .sort((a, b) => (a.finalRank || 99) - (b.finalRank || 99))
-                  .map((p, idx) => (
-                    <div
-                      key={p.id}
-                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl border ${
-                        p.id === roomState.winnerId
-                          ? 'bg-[#FF9F1C]/15 border-[#FF9F1C]'
-                          : 'bg-[#110D10] border-[#38262E]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-6 h-6 rounded-full bg-[#271C22] text-xs font-black flex items-center justify-center text-[#FF9F1C]">
-                          #{p.finalRank || idx + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="font-extrabold text-sm truncate">{p.name}</div>
-                          {p.longestWord && (
-                            <div className="text-[10px] text-[#FAF6F0]/60 font-mono">
-                              {t.longestWordCol}: <strong className="text-white">{p.longestWord}</strong>
+                  .map((p, idx) => {
+                    const isWinner = p.id === roomState.winnerId;
+                    return (
+                      <div
+                        key={p.id}
+                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-[7px] border-2 border-[#141312] ${
+                          isWinner ? 'bg-[#E59A00]/30' : 'bg-[#F4EFE6]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span
+                            className={`w-7 h-7 rounded-[4px] font-bomb-mono text-xs font-bold flex items-center justify-center border border-[#141312] shrink-0 ${
+                              isWinner
+                                ? 'bg-[#141312] text-[#E59A00]'
+                                : 'bg-[#FAF6EE] text-[#141312]'
+                            }`}
+                          >
+                            #{p.finalRank || idx + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="font-bold text-sm truncate text-[#141312]">
+                              {p.name}
                             </div>
+                            {p.longestWord && (
+                              <div className="font-bomb-mono text-[10px] text-[#57524A]">
+                                {t.longestWordCol} :{' '}
+                                <strong className="text-[#141312]">{p.longestWord}</strong>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 font-bomb-mono text-xs shrink-0">
+                          <span className="px-2.5 py-1 rounded-[4px] bg-[#FAF6EE] border border-[#141312] font-bold text-[#141312]">
+                            <strong>{p.wordsValidated}</strong> {t.wordsCountCol}
+                          </span>
+                          {p.bonusLivesEarned > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-[4px] bg-[#0B7A53] text-[#FAF6EE] border border-[#141312] font-bold">
+                              <span>+{p.bonusLivesEarned}</span>
+                              <Heart weight="fill" className="w-3 h-3" />
+                            </span>
                           )}
                         </div>
                       </div>
+                    );
+                  })}
+              </div>
 
-                      <div className="flex items-center gap-3 text-xs shrink-0">
-                        <span className="px-2.5 py-1 rounded-lg bg-[#1C1418] border border-[#38262E] font-bold">
-                          <strong className="text-[#FF9F1C]">{p.wordsValidated}</strong> {t.wordsCountCol}
-                        </span>
-                        {p.bonusLivesEarned > 0 && (
-                          <span className="px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold">
-                            +{p.bonusLivesEarned} ❤️
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+              {/* Action Controls */}
+              <div className="pt-3 border-t-2 border-[#141312] grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {isHost ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleStartGame}
+                      className="py-3 px-4 rounded-[7px] bg-[#E5382B] hover:bg-[#cf2d20] text-[#FAF6EE] border-2 border-[#141312] shadow-[3px_3px_0_#141312] font-bomb-display font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <ArrowCounterClockwise weight="bold" className="w-4 h-4" />
+                      <span>{t.playAgainBtn}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleReturnToLobby}
+                      className="py-3 px-4 rounded-[7px] bg-[#F4EFE6] hover:bg-[#E8E0D0] border-2 border-[#141312] font-bomb-mono text-xs font-bold uppercase tracking-wider text-[#141312] cursor-pointer"
+                    >
+                      {t.backToLobbyBtn}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleLeaveRoom}
+                    className="sm:col-span-2 py-3 px-4 rounded-[7px] bg-[#F4EFE6] border-2 border-[#141312] font-bomb-mono text-xs font-bold text-[#141312] cursor-pointer"
+                  >
+                    {t.waitingForHost} ({t.leaveRoom})
+                  </button>
+                )}
               </div>
             </div>
-
-            {/* Replay / Return to Lobby Buttons */}
-            <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {isHost ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleStartGame}
-                    className="py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#FF9F1C] to-[#FF334B] text-[#110D10] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>{t.playAgainBtn}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleReturnToLobby}
-                    className="py-3.5 px-4 rounded-2xl bg-[#110D10] hover:bg-[#271C22] border border-[#38262E] text-xs font-bold text-[#FAF6F0] cursor-pointer"
-                  >
-                    {t.backToLobbyBtn}
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleLeaveRoom}
-                  className="sm:col-span-2 py-3 px-4 rounded-2xl bg-[#110D10] border border-[#38262E] text-xs font-bold text-[#FAF6F0]/80 cursor-pointer"
-                >
-                  {t.waitingForHost} ({t.leaveRoom})
-                </button>
-              )}
-            </div>
-          </div>
+          </section>
         </main>
       )}
 
-      {/* Rules Modal */}
-      {showRulesModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#1C1418] border-2 border-[#FF9F1C] rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-lg font-extrabold text-[#FF9F1C]">
-                {t.rulesTitle}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowRulesModal(false)}
-                className="p-1.5 rounded-full bg-[#110D10] text-[#FAF6F0]/70 hover:text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <ul className="space-y-2.5 text-xs sm:text-sm text-[#FAF6F0]/90 leading-relaxed">
-              {t.rulesSteps.map((step, idx) => (
-                <li key={idx} className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-[#FF9F1C]/20 text-[#FF9F1C] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-                    {idx + 1}
-                  </span>
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ul>
-
+      {/* ==================== NATIVE <dialog closedby="any"> MODALS ==================== */}
+      <BombLightDialog
+        open={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
+        ariaLabel={t.rulesTitle}
+      >
+        <div className="bg-[#FAF6EE] text-[#141312] border-2 border-[#141312] rounded-[10px] p-5 sm:p-6 shadow-[6px_6px_0_#141312] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b-2 border-[#141312]">
+            <h3 className="font-bomb-display font-black text-2xl uppercase tracking-wide">
+              {t.rulesTitle}
+            </h3>
             <button
               type="button"
               onClick={() => setShowRulesModal(false)}
-              className="w-full py-3 rounded-2xl bg-[#FF9F1C] text-[#110D10] font-black text-xs uppercase tracking-wider cursor-pointer"
+              aria-label={t.close}
+              className="p-1.5 rounded-[5px] bg-[#E8E0D0] hover:bg-[#141312] hover:text-[#FAF6EE] border border-[#141312] cursor-pointer"
             >
-              {t.close}
+              <X weight="bold" className="w-4 h-4" />
             </button>
           </div>
-        </div>
-      )}
 
-      {/* QR Code Invitation Modal */}
-      {showQrModal && roomState && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#1C1418] border-2 border-[#FF9F1C] rounded-3xl p-6 max-w-xs w-full text-center shadow-2xl space-y-4">
-            <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-lg font-extrabold text-white">
-              Salon {roomState.roomCode}
-            </h3>
-            <p className="text-xs text-[#FAF6F0]/70">{t.scanToJoin}</p>
-            {qrDataUrl ? (
-              <img
-                src={qrDataUrl}
-                alt={`QR Code ${roomState.roomCode}`}
-                className="w-48 h-48 mx-auto rounded-2xl border-4 border-white shadow-lg"
-              />
-            ) : (
-              <div className="w-48 h-48 mx-auto rounded-2xl bg-[#110D10] flex items-center justify-center text-xs text-[#FAF6F0]/50">
-                ...
-              </div>
-            )}
+          <ol className="space-y-2.5 text-xs sm:text-sm text-[#141312] leading-relaxed">
+            {t.rulesSteps.map((step, idx) => (
+              <li key={idx} className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-[3px] bg-[#141312] text-[#FAF6EE] font-bomb-mono text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  {idx + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+
+          <button
+            type="button"
+            onClick={() => setShowRulesModal(false)}
+            className="w-full py-2.5 rounded-[6px] bg-[#E5382B] text-[#FAF6EE] border-2 border-[#141312] shadow-[3px_3px_0_#141312] font-bomb-mono text-xs font-bold uppercase tracking-wider cursor-pointer"
+          >
+            {t.close}
+          </button>
+        </div>
+      </BombLightDialog>
+
+      <BombLightDialog
+        open={Boolean(showQrModal && roomState)}
+        onClose={() => setShowQrModal(false)}
+        ariaLabel={t.qrCode}
+        maxWidthClass="max-w-xs"
+      >
+        {roomState && (
+          <div className="bg-[#FAF6EE] text-[#141312] border-2 border-[#141312] rounded-[10px] p-5 text-center shadow-[6px_6px_0_#141312] space-y-3.5">
+            <div className="font-bomb-mono text-[10px] font-bold uppercase tracking-widest text-[#E5382B]">
+              {t.qrCode}
+            </div>
+            <div className="font-bomb-display font-black text-3xl uppercase tracking-wider">
+              {roomState.roomCode}
+            </div>
+
+            <div className="bg-white p-3 rounded-[6px] border-2 border-[#141312] inline-block mx-auto">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt="QR Code" className="w-44 h-44 mx-auto" />
+              ) : (
+                <div className="w-44 h-44 flex items-center justify-center font-bomb-mono text-xs text-[#57524A]">
+                  ...
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs font-medium text-[#57524A]">{t.scanToJoin}</p>
+
             <button
               type="button"
               onClick={() => setShowQrModal(false)}
-              className="w-full py-2.5 rounded-2xl bg-[#FF9F1C] text-[#110D10] font-black text-xs uppercase cursor-pointer"
+              className="w-full py-2.5 rounded-[6px] bg-[#141312] text-[#FAF6EE] font-bomb-mono text-xs font-bold uppercase tracking-wider cursor-pointer"
             >
               {t.close}
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </BombLightDialog>
     </div>
   );
 };

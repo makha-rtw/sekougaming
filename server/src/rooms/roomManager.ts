@@ -267,7 +267,7 @@ export class Room {
     let canPassTurn = false;
 
     if (this.game && (this.game.status === 'in_game' || this.game.status === 'game_over')) {
-      publicState = this.game.getPublicState(hostId);
+      publicState = this.game.getPublicState(hostId, playerId);
       const gamePlayer = this.game.players.find(p => p.id === playerId);
       if (gamePlayer) {
         myHand = gamePlayer.hand;

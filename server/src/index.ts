@@ -34,7 +34,31 @@ const candidateDistPaths = [
   path.resolve(__dirname, '../../client/dist'),
 ];
 const clientDistPath = candidateDistPaths.find(p => fs.existsSync(p)) || candidateDistPaths[0];
-app.use(express.static(clientDistPath));
+const NO_CACHE_FILES = new Set([
+  'index.html',
+  'sw.js',
+  'registerSW.js',
+  'manifest.webmanifest',
+]);
+
+function applyNoStoreHeaders(res: express.Response) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+}
+
+app.use(
+  express.static(clientDistPath, {
+    setHeaders(res, filePath) {
+      const base = path.basename(filePath);
+      if (NO_CACHE_FILES.has(base) || filePath.endsWith('.html')) {
+        applyNoStoreHeaders(res);
+      } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
+  })
+);
 
 // API health endpoint
 app.get('/health', (_req, res) => {
@@ -360,9 +384,10 @@ app.get('{*path}', (req, res, next) => {
   }
   const indexPath = path.join(clientDistPath, 'index.html');
   if (fs.existsSync(indexPath)) {
+    applyNoStoreHeaders(res);
     res.sendFile(indexPath);
   } else {
-    res.status(200).send('Sekou-Gaming — Sekouno: Serveur backend opérationnel. En développement, utilisez http://localhost:3000.');
+    res.status(200).send('SekouGaming | Serveur backend opérationnel. En développement, utilisez http://localhost:3000.');
   }
 });
 

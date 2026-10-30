@@ -594,5 +594,39 @@ describe('Sekou-Gaming — Sekouno Test Suite', () => {
     // Turn advanced to Bob
     expect(game.getCurrentPlayer().id).toBe('p2');
   });
+
+  // 27. Confidentialité stricte lors de la pioche d'une carte jouable
+  it('ne divulgue jamais la carte jouable piochée aux adversaires ni dans lastActionMessage ni dans drawnCardPlayableId', () => {
+    const room = roomManager.createRoom();
+    const alice = room.addPlayer('Alice', 'sock_alice').player!;
+    const bob = room.addPlayer('Bob', 'sock_bob').player!;
+    room.startGame(alice.id);
+
+    const game = room.game!;
+    game.currentColor = 'red';
+    game.discardPile = [{ id: 'd_top', color: 'red', value: '5' }];
+    // Card ID follows real deck convention containing color & value
+    game.drawPile = [{ id: 'c_1_black_wild4_1', color: 'black', value: 'wild4' }];
+
+    const drawRes = game.drawCard(alice.id);
+    expect(drawRes.success).toBe(true);
+    expect(drawRes.canPlayDrawnCard).toBe(true);
+
+    // Public message must NEVER mention the card name, color, or value
+    expect(game.lastActionMessage).toBe('Alice a pioché une carte.');
+    expect(game.lastActionMessage).not.toContain('+4');
+    expect(game.lastActionMessage).not.toContain('Joker');
+    expect(game.lastActionMessage).not.toContain('jouable');
+
+    // Alice receives her own drawnCardPlayableId and canPassTurn
+    const aliceState = room.getClientState(alice.id)!;
+    expect(aliceState.canPassTurn).toBe(true);
+    expect(aliceState.public.drawnCardPlayableId).toBe('c_1_black_wild4_1');
+
+    // Bob MUST NOT receive Alice's drawnCardPlayableId
+    const bobState = room.getClientState(bob.id)!;
+    expect(bobState.canPassTurn).toBe(false);
+    expect(bobState.public.drawnCardPlayableId).toBeNull();
+  });
 });
 

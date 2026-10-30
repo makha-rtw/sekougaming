@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
-  Play,
-  Users,
-  ShieldAlert,
   ArrowLeft,
   ArrowRight,
-  Volume2,
-  VolumeX,
-  Layers,
-  Ban,
-} from 'lucide-react';
+  SpeakerHigh,
+  SpeakerSlash,
+  Prohibit,
+  Stack,
+  EyeSlash,
+  Ticket,
+  UsersThree,
+  WarningCircle,
+  Cards,
+} from '@phosphor-icons/react';
+import { Card } from '../../../shared/types.js';
 import { CardView } from '../components/CardView.js';
 import { sounds } from '../utils/sound.js';
 
@@ -25,6 +28,34 @@ interface HomeScreenProps {
   error?: string | null;
 }
 
+const SHOWCASE_CARDS: { card: Card; rot: number; note: string }[] = [
+  {
+    card: { id: 'sc_1', color: 'red', value: '7' },
+    rot: -13,
+    note: 'Couleur Rouge Cinabre ou chiffre identique.',
+  },
+  {
+    card: { id: 'sc_2', color: 'blue', value: 'reverse' },
+    rot: -6,
+    note: 'Inversion : bascule instantanément le sens autour du salon.',
+  },
+  {
+    card: { id: 'sc_3', color: 'yellow', value: 'draw2' },
+    rot: 0,
+    note: '+2 : cumulable avec un autre +2 ou un +4.',
+  },
+  {
+    card: { id: 'sc_4', color: 'green', value: 'skip' },
+    rot: 6,
+    note: 'Passe-tour : neutralise le siège suivant.',
+  },
+  {
+    card: { id: 'sc_5', color: 'black', value: 'wild4' },
+    rot: 13,
+    note: '+4 Obsidienne : impose la couleur, interdit en dernière carte.',
+  },
+];
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onCreateRoom,
   onJoinRoom,
@@ -35,12 +66,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   isConnected = true,
   error,
 }) => {
+  const reduceMotion = useReducedMotion();
   const [mode, setMode] = useState<'create' | 'join'>(invitedRoomCode ? 'join' : 'create');
   const [playerName, setPlayerName] = useState(savedPlayerName);
   const [roomCode, setRoomCode] = useState(invitedRoomCode || '');
   const [isInviteMode, setIsInviteMode] = useState(Boolean(invitedRoomCode));
   const [localError, setLocalError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(sounds.isSoundMuted());
+  const [selectedCardIdx, setSelectedCardIdx] = useState<number>(2);
 
   useEffect(() => {
     if (invitedRoomCode) {
@@ -63,12 +96,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     const name = playerName.trim();
     if (!name || name.length < 2) {
       sounds.penalty();
-      setLocalError('Votre pseudo doit comporter au moins 2 caractères.');
+      setLocalError('Votre pseudonyme doit comporter au moins 2 caractères.');
       return;
     }
     if (name.length > 20) {
       sounds.penalty();
-      setLocalError('Votre pseudo ne peut pas dépasser 20 caractères.');
+      setLocalError('Votre pseudonyme ne peut pas dépasser 20 caractères.');
       return;
     }
 
@@ -88,260 +121,354 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   return (
-    <div
-      className="min-h-[100dvh] w-full flex flex-col justify-between px-4 py-4 pt-safe pb-safe select-none text-[#F5EFE4] font-['Plus_Jakarta_Sans',_sans-serif] relative overflow-x-hidden"
-      style={{
-        background:
-          'radial-gradient(ellipse 90% 60% at 50% 15%, #113626 0%, #071911 55%, #030A07 100%)',
-      }}
-    >
-      {/* Top Bar */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto flex items-center justify-between">
-        {onBackToHub ? (
+    <div className="sekouno-salon-world min-h-[100dvh] w-full flex flex-col justify-between px-3 sm:px-6 py-3 pt-safe pb-safe select-none relative overflow-x-hidden">
+      {/* Top Architectural Salon Header */}
+      <header className="relative z-10 w-full max-w-6xl mx-auto">
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#F6F0E2]/15">
+          {onBackToHub ? (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.buttonClick();
+                onBackToHub();
+              }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-[#141924] hover:bg-[#1B2230] border border-[#F6F0E2]/20 font-sekouno-mono text-xs font-bold uppercase tracking-wider text-[#D4A548] transition-[background-color,border-color] cursor-pointer"
+            >
+              <ArrowLeft weight="bold" className="w-3.5 h-3.5" />
+              <span>Portail</span>
+            </button>
+          ) : (
+            <div />
+          )}
+
+          {/* 4-Suit Signature Bar */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1" aria-hidden="true">
+              <span className="w-2.5 h-2.5 rounded-[2px] bg-[#D92D20]" />
+              <span className="w-2.5 h-2.5 rounded-[2px] bg-[#155EEF]" />
+              <span className="w-2.5 h-2.5 rounded-[2px] bg-[#099250]" />
+              <span className="w-2.5 h-2.5 rounded-[2px] bg-[#DC9B06]" />
+            </div>
+            <span className="font-sekouno-mono text-[11px] font-bold uppercase tracking-widest text-[#D9D0BE] hidden sm:inline">
+              CASA SEKOUNO • SALON OFFICIEL
+            </span>
+          </div>
+
           <button
             type="button"
-            onClick={() => {
-              sounds.buttonClick();
-              onBackToHub();
-            }}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#091812]/90 border border-white/10 text-xs font-bold text-[#E5B84B] hover:bg-[#112A1F] transition-all cursor-pointer"
+            onClick={() => setIsMuted(sounds.toggleMute())}
+            aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
+            title={isMuted ? 'Activer le son' : 'Couper le son'}
+            className="p-2 rounded-[6px] bg-[#141924] hover:bg-[#1B2230] border border-[#F6F0E2]/20 text-[#D9D0BE] transition-[background-color] cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Tous les jeux</span>
+            {isMuted ? (
+              <SpeakerSlash weight="bold" className="w-4 h-4 text-[#D92D20]" />
+            ) : (
+              <SpeakerHigh weight="bold" className="w-4 h-4 text-[#D4A548]" />
+            )}
           </button>
-        ) : (
-          <div />
-        )}
+        </div>
+      </header>
 
-        <button
-          type="button"
-          onClick={() => setIsMuted(sounds.toggleMute())}
-          className="p-2.5 rounded-full bg-[#091812]/90 border border-white/10 text-[#B5C4B9] hover:text-white transition-colors cursor-pointer"
-          title={isMuted ? 'Activer le son' : 'Couper le son'}
-        >
-          {isMuted ? (
-            <VolumeX className="w-4 h-4 text-[#FF6B6B]" />
-          ) : (
-            <Volume2 className="w-4 h-4 text-[#E5B84B]" />
-          )}
-        </button>
-      </div>
-
-      {/* Main Split Content */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto my-auto py-4 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        {/* Left Column: Hero Identity & Interactive Card Fan */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+      {/* Main Architectural Split: Left Card Gallery + Right Perforated Club Ticket */}
+      <div className="relative z-10 w-full max-w-6xl mx-auto my-auto py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+        {/* Left Column: Architectural Masthead, Interactive Suit Fan & Official Ledger */}
+        <motion.section
+          initial={reduceMotion ? false : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55 }}
-          className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left"
+          transition={{ duration: 0.4 }}
+          className="lg:col-span-6 flex flex-col items-start text-left"
         >
-          {/* Interactive Fanned Cards */}
-          <div className="flex items-center justify-center lg:justify-start -space-x-3 sm:-space-x-4 mb-5 pt-2">
-            {[
-              { id: 'h1', color: 'red' as const, value: '7' as const, rot: '-14deg' },
-              { id: 'h2', color: 'blue' as const, value: 'reverse' as const, rot: '-5deg' },
-              { id: 'h3', color: 'yellow' as const, value: 'draw2' as const, rot: '5deg' },
-              { id: 'h4', color: 'black' as const, value: 'wild4' as const, rot: '14deg' },
-            ].map((c, idx) => (
-              <div
-                key={c.id}
-                style={{ transform: `rotate(${c.rot})`, zIndex: idx }}
-                className="transition-transform duration-200 hover:-translate-y-3 hover:z-30"
-              >
-                <CardView
-                  card={{ id: c.id, color: c.color, value: c.value }}
-                  size="sm"
-                  onClick={() => sounds.playCard({ id: c.id, color: c.color, value: c.value })}
-                />
-              </div>
-            ))}
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-[4px] bg-[#141924] border border-[#D4A548]/45 font-sekouno-mono text-[10px] font-bold uppercase tracking-widest text-[#D4A548] mb-3">
+            <span>TABLE 01</span>
+            <span className="text-[#F6F0E2]/30">•</span>
+            <span>02 À 15 JOUEURS EN DIRECT</span>
           </div>
 
-          <h1 className="font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[0.98] text-[#F5EFE4]">
-            Sekouno
+          <h1 className="font-sekouno-display font-black uppercase tracking-tight leading-[0.92] text-[clamp(2.8rem,7vw,4.6rem)] text-[#F6F0E2]">
+            SEKOUNO
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-[#B5C4B9] max-w-[38ch] leading-relaxed">
-            Prenez place autour du tapis vert. Multijoueur instantané de 2 à 15 joueurs, avec les vraies règles de surenchère.
+
+          {/* 4-Color Architectural Divider Strip */}
+          <div className="w-full max-w-md grid grid-cols-4 h-1.5 rounded-[2px] overflow-hidden my-3.5">
+            <div className="bg-[#D92D20]" />
+            <div className="bg-[#155EEF]" />
+            <div className="bg-[#099250]" />
+            <div className="bg-[#DC9B06]" />
+          </div>
+
+          <p className="text-sm sm:text-base text-[#D9D0BE] max-w-[44ch] leading-relaxed">
+            Prenez place autour du salon graphique à quatre couleurs. Surenchère croissante, arbitrage de table et confidentialité intégrale de la pioche.
           </p>
 
-          {/* Compact House Rules Cards */}
-          <div className="mt-5 w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left">
-            <div className="p-3.5 rounded-2xl bg-[#07140E]/90 border border-white/10">
-              <div className="flex items-center gap-2 text-xs font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-[#FF8787] mb-1">
-                <Ban className="w-3.5 h-3.5 shrink-0" />
-                <span>Pas de sortie sur carte noire</span>
-              </div>
-              <p className="text-[11px] text-[#9FB0A5] leading-snug">
-                Interdit de poser un Joker ou un +4 comme dernière carte.
-              </p>
+          {/* Interactive 5-Card Specimen Fan */}
+          <div className="mt-5 w-full p-4 rounded-[10px] bg-[#141924]/90 border border-[#F6F0E2]/12">
+            <div className="flex items-center justify-center sm:justify-start -space-x-2.5 sm:-space-x-3 pt-2 pb-3">
+              {SHOWCASE_CARDS.map((item, idx) => {
+                const active = selectedCardIdx === idx;
+                return (
+                  <div
+                    key={item.card.id}
+                    style={{
+                      transform: `rotate(${active ? 0 : item.rot}deg) translateY(${active ? -8 : 0}px)`,
+                      zIndex: active ? 25 : idx,
+                    }}
+                    className="transition-transform duration-200"
+                  >
+                    <CardView
+                      card={item.card}
+                      size="sm"
+                      onClick={() => {
+                        setSelectedCardIdx(idx);
+                        sounds.playCard(item.card);
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-[#07140E]/90 border border-white/10">
-              <div className="flex items-center gap-2 text-xs font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-[#E5B84B] mb-1">
-                <Layers className="w-3.5 h-3.5 shrink-0" />
-                <span>Surenchère croissante</span>
-              </div>
-              <p className="text-[11px] text-[#9FB0A5] leading-snug">
-                +2 ou +4 sur un +2. Aucun contre possible sur un +4.
-              </p>
+            <div className="pt-2.5 border-t border-[#F6F0E2]/10 flex items-center justify-between gap-2 font-sekouno-mono text-[11px] text-[#D9D0BE]">
+              <span>{SHOWCASE_CARDS[selectedCardIdx].note}</span>
+              <span className="text-[#D4A548] shrink-0 uppercase">Cliquer une carte</span>
             </div>
           </div>
-        </motion.div>
 
-        {/* Right Column: Table Creation / Join Card */}
+          {/* Architectural Ledger of Official House Rules (No SaaS Rounded Cards) */}
+          <dl className="mt-5 w-full divide-y divide-[#F6F0E2]/12 border-y border-[#F6F0E2]/12">
+            <div className="py-2.5 flex items-start gap-3">
+              <dt className="font-sekouno-mono text-[11px] font-bold text-[#D92D20] uppercase shrink-0 w-20 flex items-center gap-1 pt-0.5">
+                <Prohibit weight="bold" className="w-3.5 h-3.5" />
+                <span>Règle A</span>
+              </dt>
+              <dd className="text-xs text-[#D9D0BE] leading-snug">
+                <strong className="text-[#F6F0E2]">Sortie sur couleur pure :</strong> interdit de remporter la manche en posant un Joker ou un +4 comme dernière carte.
+              </dd>
+            </div>
+
+            <div className="py-2.5 flex items-start gap-3">
+              <dt className="font-sekouno-mono text-[11px] font-bold text-[#D4A548] uppercase shrink-0 w-20 flex items-center gap-1 pt-0.5">
+                <Stack weight="bold" className="w-3.5 h-3.5" />
+                <span>Règle B</span>
+              </dt>
+              <dd className="text-xs text-[#D9D0BE] leading-snug">
+                <strong className="text-[#F6F0E2]">Surenchère croissante :</strong> +2 ou +4 autorisé sur un +2. Aucun contre possible face à un +4.
+              </dd>
+            </div>
+
+            <div className="py-2.5 flex items-start gap-3">
+              <dt className="font-sekouno-mono text-[11px] font-bold text-[#099250] uppercase shrink-0 w-20 flex items-center gap-1 pt-0.5">
+                <EyeSlash weight="bold" className="w-3.5 h-3.5" />
+                <span>Règle C</span>
+              </dt>
+              <dd className="text-xs text-[#D9D0BE] leading-snug">
+                <strong className="text-[#F6F0E2]">Pioche secrète :</strong> une carte piochée jouable peut être posée ou gardée en main sans jamais être révélée aux adversaires.
+              </dd>
+            </div>
+          </dl>
+        </motion.section>
+
+        {/* Right Column: Physical Perforated Ivory & Obsidian Club Pass */}
         <motion.main
-          initial={{ opacity: 0, y: 24 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.08 }}
-          className="lg:col-span-6 bg-[#081610]/95 border-2 border-[#E5B84B]/30 rounded-[32px] p-5 sm:p-7 shadow-[0_24px_60px_rgba(0,0,0,0.75)] relative"
+          transition={{ duration: 0.45, delay: 0.05 }}
+          className="lg:col-span-6 rounded-[12px] border-2 border-[#D4A548]/75 bg-[#141924] shadow-[0_24px_60px_rgba(0,0,0,0.75)] overflow-hidden"
         >
-          {/* QR Invitation Banner */}
-          {isInviteMode && roomCode ? (
-            <div className="mb-5 p-4 rounded-2xl bg-[#0E241A] border border-[#E5B84B]/50 text-center">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#E5B84B]">
-                Invitation directe à la table
+          {/* Upper Raw-Ivory Ticket Stub */}
+          <div className="bg-[#F6F0E2] text-[#11131A] p-5 sm:px-6 sm:py-5">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <Ticket weight="fill" className="w-4 h-4 text-[#D92D20]" />
+                <span className="font-sekouno-mono text-[11px] font-bold uppercase tracking-widest">
+                  Billet d’admission table
+                </span>
+              </div>
+              <span className="font-sekouno-mono text-[11px] font-bold text-[#6E6656]">
+                {isConnected ? 'EN LIGNE' : 'CONNEXION...'}
               </span>
-              <div className="mt-1 font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-4xl font-extrabold text-[#F5EFE4] tracking-widest">
-                #{roomCode}
+            </div>
+
+            {isInviteMode && roomCode ? (
+              <div className="p-3.5 rounded-[8px] bg-[#11131A] text-[#F6F0E2] flex items-center justify-between">
+                <div>
+                  <span className="font-sekouno-mono text-[10px] font-bold uppercase tracking-widest text-[#D4A548] block">
+                    Invitation directe reçue
+                  </span>
+                  <span className="text-xs text-[#D9D0BE]">Siège réservé à la table</span>
+                </div>
+                <span className="font-sekouno-mono text-2xl font-bold tracking-[0.2em] text-[#D4A548]">
+                  #{roomCode}
+                </span>
               </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-[#040C08] rounded-2xl mb-5 border border-white/10">
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.buttonClick();
-                  setMode('create');
-                  setLocalError(null);
-                }}
-                className={`py-2.5 rounded-xl font-['Bricolage_Grotesque',_sans-serif] text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
-                  mode === 'create'
-                    ? 'bg-[#E5B84B] text-[#091510] shadow-md'
-                    : 'text-[#9FB0A5] hover:text-[#F5EFE4]'
-                }`}
+            ) : (
+              <div
+                role="tablist"
+                className="grid grid-cols-2 gap-1.5 p-1 rounded-[8px] bg-[#E3DAC8] border border-[#11131A]/15"
               >
-                Ouvrir une table
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.buttonClick();
-                  setMode('join');
-                  setLocalError(null);
-                }}
-                className={`py-2.5 rounded-xl font-['Bricolage_Grotesque',_sans-serif] text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
-                  mode === 'join'
-                    ? 'bg-[#E5B84B] text-[#091510] shadow-md'
-                    : 'text-[#9FB0A5] hover:text-[#F5EFE4]'
-                }`}
-              >
-                Rejoindre avec code
-              </button>
-            </div>
-          )}
-
-          {(error || localError) && (
-            <div className="mb-4 p-3 bg-[#2D0A0A] border border-[#E03131] rounded-2xl text-xs text-[#FFD8D8] flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-[#FF6B6B] shrink-0" />
-              <span>{error || localError}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label
-                htmlFor="sekouno-player-name"
-                className="block text-xs font-bold text-[#C7D4CB]"
-              >
-                Votre pseudo autour de la table
-              </label>
-              <input
-                id="sekouno-player-name"
-                type="text"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Ex : Sekou, Amina, Lucas..."
-                maxLength={20}
-                required
-                autoFocus={!playerName}
-                className="w-full px-4 py-3.5 bg-[#040C08] border border-white/15 focus:border-[#E5B84B] rounded-2xl text-[#F5EFE4] placeholder-[#5F7367] focus:outline-none text-sm font-semibold transition-colors"
-              />
-            </div>
-
-            {mode === 'join' && !isInviteMode && (
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="sekouno-room-code"
-                  className="block text-xs font-bold text-[#C7D4CB]"
-                >
-                  Code de la table (6 caractères)
-                </label>
-                <input
-                  id="sekouno-room-code"
-                  type="text"
-                  value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  placeholder="Ex : 8XF2M9"
-                  maxLength={6}
-                  required
-                  className="w-full px-4 py-3.5 bg-[#040C08] border border-white/15 focus:border-[#E5B84B] rounded-2xl text-[#E5B84B] font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-base uppercase tracking-widest placeholder-[#5F7367] focus:outline-none transition-colors"
-                />
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading || !isConnected}
-              className="w-full py-4 px-6 rounded-full bg-[#E5B84B] hover:bg-[#F0C75E] text-[#091510] font-['Bricolage_Grotesque',_sans-serif] font-extrabold text-sm sm:text-base transition-all active:scale-[0.98] shadow-[0_12px_30px_-8px_rgba(229,184,75,0.55)] flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-            >
-              {isLoading ? (
-                <span>Ouverture de la table...</span>
-              ) : !isConnected ? (
-                <span>Connexion au serveur...</span>
-              ) : isInviteMode ? (
-                <>
-                  <Users className="w-4 h-4" />
-                  <span>Prendre place à la table #{roomCode}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              ) : mode === 'create' ? (
-                <>
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>Créer une table privée</span>
-                </>
-              ) : (
-                <>
-                  <Users className="w-4 h-4" />
-                  <span>Rejoindre la table</span>
-                </>
-              )}
-            </button>
-
-            {isInviteMode && (
-              <div className="text-center pt-1">
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={mode === 'create'}
                   onClick={() => {
                     sounds.buttonClick();
-                    setIsInviteMode(false);
                     setMode('create');
-                    setRoomCode('');
+                    setLocalError(null);
                   }}
-                  className="text-xs text-[#9FB0A5] hover:text-[#E5B84B] underline transition-colors cursor-pointer"
+                  className={`py-2.5 px-3 rounded-[6px] font-sekouno-display font-black text-xs uppercase tracking-wider transition-[background-color,color] cursor-pointer ${
+                    mode === 'create'
+                      ? 'bg-[#11131A] text-[#F6F0E2]'
+                      : 'text-[#11131A]/70 hover:text-[#11131A]'
+                  }`}
                 >
-                  Créer une autre table ou saisir un autre code
+                  Ouvrir une table
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'join'}
+                  onClick={() => {
+                    sounds.buttonClick();
+                    setMode('join');
+                    setLocalError(null);
+                  }}
+                  className={`py-2.5 px-3 rounded-[6px] font-sekouno-display font-black text-xs uppercase tracking-wider transition-[background-color,color] cursor-pointer ${
+                    mode === 'join'
+                      ? 'bg-[#155EEF] text-[#FAF6EE]'
+                      : 'text-[#11131A]/70 hover:text-[#11131A]'
+                  }`}
+                >
+                  Entrer un code
                 </button>
               </div>
             )}
-          </form>
+          </div>
+
+          {/* Perforated Ticket Seam */}
+          <div className="relative flex items-center bg-[#141924] -my-2.5 z-10 pointer-events-none">
+            <div className="w-5 h-5 rounded-full bg-[#0D1017] border-2 border-[#D4A548]/75 -ml-3 shrink-0" />
+            <div className="flex-1 border-t-2 border-dashed border-[#D4A548]/45 mx-2" />
+            <div className="w-5 h-5 rounded-full bg-[#0D1017] border-2 border-[#D4A548]/75 -mr-3 shrink-0" />
+          </div>
+
+          {/* Lower Obsidian Entry Form */}
+          <div className="p-5 sm:p-6 pt-5">
+            {(error || localError) && (
+              <div
+                role="alert"
+                className="mb-4 p-3 bg-[#241216] border border-[#D92D20] rounded-[8px] text-xs text-[#FAD1CE] flex items-center gap-2"
+              >
+                <WarningCircle weight="fill" className="w-4 h-4 text-[#D92D20] shrink-0" />
+                <span>{error || localError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="sekouno-player-name"
+                    className="font-sekouno-mono text-xs font-bold uppercase tracking-wider text-[#D9D0BE]"
+                  >
+                    Pseudonyme autour du tapis
+                  </label>
+                  <span className="font-sekouno-mono text-[11px] text-[#D9D0BE]/60">
+                    {playerName.trim().length}/20
+                  </span>
+                </div>
+                <input
+                  id="sekouno-player-name"
+                  type="text"
+                  autoComplete="nickname"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder="Ex : Sekou, Amina, Lucas..."
+                  maxLength={20}
+                  required
+                  autoFocus={!playerName}
+                  className="w-full px-3.5 py-3 bg-[#0D1017] border border-[#F6F0E2]/20 focus:border-[#D4A548] rounded-[8px] text-[#F6F0E2] placeholder:text-[#D9D0BE]/40 outline-none text-sm font-semibold transition-[border-color]"
+                />
+              </div>
+
+              {mode === 'join' && !isInviteMode && (
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="sekouno-room-code"
+                    className="block font-sekouno-mono text-xs font-bold uppercase tracking-wider text-[#D9D0BE]"
+                  >
+                    Code de la table (6 caractères)
+                  </label>
+                  <input
+                    id="sekouno-room-code"
+                    type="text"
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={roomCode}
+                    onChange={(e) =>
+                      setRoomCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())
+                    }
+                    placeholder="EX : 8XF2M9"
+                    maxLength={6}
+                    required
+                    className="w-full px-4 py-3 bg-[#0D1017] border border-[#F6F0E2]/20 focus:border-[#D4A548] rounded-[8px] text-[#D4A548] font-sekouno-mono font-bold text-xl uppercase tracking-[0.28em] text-center placeholder:text-[#D9D0BE]/35 placeholder:text-sm placeholder:tracking-wider outline-none transition-[border-color]"
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading || !isConnected}
+                className="w-full py-3.5 px-5 rounded-[8px] bg-[#D4A548] hover:bg-[#e0b458] text-[#11131A] font-sekouno-display font-black text-sm sm:text-base uppercase tracking-wider transition-[transform,background-color] active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {isLoading ? (
+                  <span>Préparation de la table...</span>
+                ) : !isConnected ? (
+                  <span>Connexion au salon...</span>
+                ) : isInviteMode ? (
+                  <>
+                    <UsersThree weight="bold" className="w-4 h-4" />
+                    <span>Prendre place à la table #{roomCode}</span>
+                    <ArrowRight weight="bold" className="w-4 h-4" />
+                  </>
+                ) : mode === 'create' ? (
+                  <>
+                    <Cards weight="bold" className="w-5 h-5" />
+                    <span>Ouvrir une table privée</span>
+                  </>
+                ) : (
+                  <>
+                    <UsersThree weight="bold" className="w-5 h-5" />
+                    <span>Rejoindre la table</span>
+                  </>
+                )}
+              </button>
+
+              {isInviteMode && (
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.buttonClick();
+                      setIsInviteMode(false);
+                      setMode('create');
+                      setRoomCode('');
+                    }}
+                    className="font-sekouno-mono text-xs text-[#D9D0BE] hover:text-[#D4A548] underline transition-[color] cursor-pointer"
+                  >
+                    Ouvrir une nouvelle table ou saisir un autre code
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
         </motion.main>
       </div>
 
-      {/* Footer */}
-      <footer className="relative z-10 w-full max-w-4xl mx-auto flex items-center justify-between text-[11px] text-[#6D8275] pt-2">
-        <span>Sekouno Club • 2 à 15 joueurs</span>
-        <span>Synchronisation temps réel</span>
+      {/* Architectural Footer */}
+      <footer className="relative z-10 w-full max-w-6xl mx-auto pt-2 border-t border-[#F6F0E2]/10 flex items-center justify-between font-sekouno-mono text-[11px] text-[#D9D0BE]/65">
+        <span>CASA SEKOUNO • 02..15 SIÈGES</span>
+        <span>SYNCHRONISATION TEMPS RÉEL</span>
       </footer>
     </div>
   );

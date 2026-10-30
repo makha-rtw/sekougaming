@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { ClientGameState, PlayableColor } from '../../shared/types.js';
 import {
   socket,
@@ -12,6 +13,10 @@ import { LobbyScreen } from './screens/LobbyScreen.js';
 import { GameScreen } from './screens/GameScreen.js';
 import { GameOverScreen } from './screens/GameOverScreen.js';
 import { HubScreen } from './screens/HubScreen.js';
+import {
+  PlatformSplashScreen,
+  preloadPortalAssets,
+} from './components/PlatformSplashScreen.js';
 import LoupGarouApp from './games/loup-garou/LoupGarouApp.js';
 import PolychessApp from './games/polychess/PolychessApp.js';
 import SekouBombApp from './games/sekou-bomb/SekouBombApp.js';
@@ -64,6 +69,58 @@ export const App: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPortalReady, setIsPortalReady] = useState<boolean>(false);
+  const [portalLoadProgress, setPortalLoadProgress] = useState<number>(0.08);
+
+  // Preload and decode main portal visuals before revealing HubScreen
+  useEffect(() => {
+    let cancelled = false;
+    const elapsedSinceNav = typeof performance !== 'undefined' ? performance.now() : 0;
+    const minRemainingMs = elapsedSinceNav < 750 ? 750 - elapsedSinceNav : 220;
+
+    const minDelayPromise = new Promise<void>((resolve) => {
+      window.setTimeout(resolve, minRemainingMs);
+    });
+
+    const safetyTimeoutId = window.setTimeout(() => {
+      if (!cancelled) {
+        setPortalLoadProgress(1);
+        setIsPortalReady(true);
+      }
+    }, 4500);
+
+    const { promise, unsubscribe } = preloadPortalAssets((ratio) => {
+      if (!cancelled) {
+        setPortalLoadProgress(ratio);
+      }
+    });
+
+    Promise.all([promise, minDelayPromise]).then(() => {
+      if (!cancelled) {
+        window.clearTimeout(safetyTimeoutId);
+        setPortalLoadProgress(1);
+        setIsPortalReady(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      window.clearTimeout(safetyTimeoutId);
+    };
+  }, []);
+
+  // Signal active match status to the Service Worker controllerchange guard
+  useEffect(() => {
+    const inLiveMatch =
+      activeGame !== 'hub' &&
+      (activeGame !== 'sekouno' || gameState?.public.status === 'in_game');
+    if (inLiveMatch) {
+      document.documentElement.setAttribute('data-in-live-match', 'true');
+    } else {
+      document.documentElement.removeAttribute('data-in-live-match');
+    }
+  }, [activeGame, gameState?.public.status]);
 
   useEffect(() => {
     socket.connect();
@@ -272,9 +329,18 @@ export const App: React.FC = () => {
     });
   };
 
-  // 1. Hub Screen (Game Selector)
+  // 1. Hub Screen (Game Selector) with Platform Splash Screen
   if (activeGame === 'hub') {
-    return <HubScreen onSelectGame={(game) => setActiveGame(game)} />;
+    return (
+      <>
+        <AnimatePresence>
+          {!isPortalReady && (
+            <PlatformSplashScreen key="platform-splash" progress={portalLoadProgress} />
+          )}
+        </AnimatePresence>
+        {isPortalReady && <HubScreen onSelectGame={(game) => setActiveGame(game)} />}
+      </>
+    );
   }
 
   // 2. Loup-Garou Game

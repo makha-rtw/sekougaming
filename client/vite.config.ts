@@ -12,11 +12,39 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['sekouG_logo.jpg', 'apple-touch-icon.png', 'favicon.svg', 'logos/*.jpg'],
+      injectRegister: false,
+      includeAssets: [
+        'sekouG_logo.jpg',
+        'apple-touch-icon.png',
+        'favicon.svg',
+        'loading/*.png',
+        'logos/*.jpg',
+        'hub/*.jpg',
+      ],
+      workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        navigateFallback: null,
+        globPatterns: ['**/*.{js,css,ico,png,svg,jpg,jpeg,webp,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'sekougaming-pages-v4',
+              networkTimeoutSeconds: 3,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
+      },
       manifest: {
-        name: 'Sekou-Gaming — Portail Multi-Jeux',
+        name: 'SekouGaming | Portail Multi-Jeux',
         short_name: 'SekouGaming',
-        description: 'Sekou-Gaming : jouez à Sekouno et Loup-Garou en ligne et sur mobile',
+        description: 'SekouGaming : jouez entre amis à Sekouno, Loups-Garous, Polychess et Sekou Bomb en ligne et sur mobile.',
         theme_color: '#0f172a',
         background_color: '#090e1c',
         display: 'standalone',
