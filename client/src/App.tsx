@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { ClientGameState, PlayableColor } from '../../shared/types.js';
 import {
   socket,
@@ -329,118 +329,187 @@ export const App: React.FC = () => {
     });
   };
 
-  // 1. Hub Screen (Game Selector) with Platform Splash Screen
-  if (activeGame === 'hub') {
-    return (
-      <>
-        <AnimatePresence>
-          {!isPortalReady && (
-            <PlatformSplashScreen key="platform-splash" progress={portalLoadProgress} />
-          )}
-        </AnimatePresence>
-        {isPortalReady && <HubScreen onSelectGame={(game) => setActiveGame(game)} />}
-      </>
-    );
-  }
+  const reduceMotion = useReducedMotion();
 
-  // 2. Loup-Garou Game
-  if (activeGame === 'loup_garou') {
-    return <LoupGarouApp onBackToHub={() => setActiveGame('hub')} />;
-  }
+  // Navigation helper with history push and sound
+  const handleSelectGame = (game: ActiveGame) => {
+    sounds.buttonClick();
+    if (typeof window !== 'undefined') {
+      const url = game === 'hub' ? window.location.pathname : `${window.location.pathname}?game=${game}`;
+      window.history.pushState({}, '', url);
+    }
+    setActiveGame(game);
+  };
 
-  // 3. Polychess Game
-  if (activeGame === 'polychess') {
-    return (
-      <PolychessApp
-        socket={socket}
-        initialRoomCode={chessRoomCode}
-        onBackToHub={() => {
-          if (typeof window !== 'undefined' && window.location.search.includes('chessRoom=')) {
-            window.history.replaceState({}, '', window.location.pathname);
-          }
-          setActiveGame('hub');
-        }}
-      />
-    );
-  }
+  const handleReturnToHub = () => {
+    sounds.buttonClick();
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', window.location.pathname);
+    }
+    setBombRoomCode(null);
+    setChessRoomCode(null);
+    setActiveGame('hub');
+  };
 
-  // 4. Sekou Bomb Game
-  if (activeGame === 'sekou_bomb') {
-    return (
-      <SekouBombApp
-        socket={socket}
-        initialRoomCode={bombRoomCode}
-        onBackToHub={() => {
-          if (
-            typeof window !== 'undefined' &&
-            (window.location.search.includes('bombRoom=') ||
-              window.location.search.includes('game=sekou_bomb'))
-          ) {
-            window.history.replaceState({}, '', window.location.pathname);
-          }
-          setBombRoomCode(null);
-          setActiveGame('hub');
-        }}
-      />
-    );
-  }
+  // Sync browser back/forward buttons with active game state
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('room') || params.get('game') === 'sekouno') {
+        setActiveGame('sekouno');
+      } else if (params.get('game') === 'loup_garou') {
+        setActiveGame('loup_garou');
+      } else if (params.get('game') === 'polychess' || params.get('chessRoom')) {
+        setActiveGame('polychess');
+      } else if (params.get('game') === 'sekou_bomb' || params.get('bombRoom')) {
+        setActiveGame('sekou_bomb');
+      } else {
+        setActiveGame('hub');
+      }
+    };
 
-  // 5. Sekouno Flow
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   return (
-    <div className="relative min-h-screen text-slate-100 flex flex-col justify-between">
-      {/* Offline / Reconnecting banner for Sekouno multiplayer */}
-      {!isConnected && (
-        <div className="fixed top-0 inset-x-0 z-50 bg-red-600 text-white text-xs font-bold py-1.5 px-4 text-center flex items-center justify-center gap-2 shadow-lg">
-          <WifiOff className="w-4 h-4 animate-pulse" />
-          <span>Connexion perdue avec le serveur Sekouno. Reconnexion en cours...</span>
-        </div>
+    <div className="relative min-h-[100dvh] w-full bg-[#0A0F1E] overflow-x-hidden">
+      {/* 1. Platform Splash Screen on initial portal asset load */}
+      <AnimatePresence>
+        {!isPortalReady && (
+          <PlatformSplashScreen key="platform-splash" progress={portalLoadProgress} />
+        )}
+      </AnimatePresence>
+
+      {/* 2. Base Layer: Main Platform Portal (HubScreen) with smooth depth & scale when covered */}
+      {isPortalReady && (
+        <motion.div
+          className="relative min-h-[100dvh] w-full"
+          animate={
+            reduceMotion
+              ? { opacity: activeGame === 'hub' ? 1 : 0 }
+              : activeGame === 'hub'
+              ? { x: '0%', scale: 1, opacity: 1, filter: 'brightness(100%)' }
+              : { x: '-8%', scale: 0.95, opacity: 0.45, filter: 'brightness(60%)' }
+          }
+          transition={{
+            duration: 0.55,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          style={{
+            pointerEvents: activeGame === 'hub' ? 'auto' : 'none',
+            transformOrigin: 'center center',
+          }}
+          inert={activeGame !== 'hub' ? true : undefined}
+        >
+          <HubScreen onSelectGame={(game) => handleSelectGame(game as ActiveGame)} />
+        </motion.div>
       )}
 
-      {/* Screen Router */}
-      {!gameState ? (
-        <HomeScreen
-          onCreateRoom={handleCreateRoom}
-          onJoinRoom={handleJoinRoom}
-          onBackToHub={() => setActiveGame('hub')}
-          invitedRoomCode={invitedRoomCode}
-          savedPlayerName={getLastPlayerName()}
-          isConnected={isConnected}
-          isLoading={isLoading}
-          error={errorMessage}
-        />
-      ) : gameState.public.status === 'waiting' ? (
-        <LobbyScreen
-          publicState={gameState.public}
-          myPlayerId={gameState.myPlayerId}
-          onStartGame={handleStartGame}
-          onLeaveRoom={handleLeaveRoom}
-          onCloseRoom={handleCloseRoom}
-          isLoading={isLoading}
-          error={errorMessage}
-        />
-      ) : gameState.public.status === 'in_game' ? (
-        <GameScreen
-          clientState={gameState}
-          onPlayCard={handlePlayCard}
-          onDrawCard={handleDrawCard}
-          onPassTurn={handlePassTurn}
-          onCallUno={handleCallUno}
-          onCatchUno={handleCatchUno}
-          onHostGivePenalty={handleHostGivePenalty}
-          onLeaveRoom={handleLeaveRoom}
-          onCloseRoom={handleCloseRoom}
-          error={errorMessage}
-        />
-      ) : (
-        <GameOverScreen
-          publicState={gameState.public}
-          myPlayerId={gameState.myPlayerId}
-          onRestartGame={handleRestartGame}
-          onReturnToLobby={handleReturnToLobby}
-          onLeaveRoom={handleLeaveRoom}
-          isLoading={isLoading}
-        />
-      )}
+      {/* 3. Top Layer: Smooth "Cover" Page Transition for Active Game */}
+      <AnimatePresence initial={false}>
+        {activeGame !== 'hub' && (
+          <motion.div
+            key={activeGame}
+            className="fixed inset-0 z-40 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0A0F1E]"
+            style={{
+              boxShadow: '-24px 0 60px rgba(0, 0, 0, 0.85), -6px 0 20px rgba(0, 0, 0, 0.6)',
+            }}
+            initial={reduceMotion ? { opacity: 0 } : { x: '100%' }}
+            animate={reduceMotion ? { opacity: 1 } : { x: '0%' }}
+            exit={reduceMotion ? { opacity: 0 } : { x: '100%' }}
+            transition={{
+              duration: 0.52,
+              ease: [0.16, 1, 0.3, 1], // Smooth snappy curve
+            }}
+          >
+            {/* Visual sheet left border edge glow */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none fixed left-0 top-0 bottom-0 w-2 z-50 bg-gradient-to-r from-white/10 to-transparent"
+            />
+
+            {/* Sub-game router */}
+            {activeGame === 'sekou_bomb' && (
+              <SekouBombApp
+                socket={socket}
+                initialRoomCode={bombRoomCode}
+                onBackToHub={handleReturnToHub}
+              />
+            )}
+
+            {activeGame === 'polychess' && (
+              <PolychessApp
+                socket={socket}
+                initialRoomCode={chessRoomCode}
+                onBackToHub={handleReturnToHub}
+              />
+            )}
+
+            {activeGame === 'loup_garou' && (
+              <LoupGarouApp onBackToHub={handleReturnToHub} />
+            )}
+
+            {activeGame === 'sekouno' && (
+              <div className="relative min-h-screen text-slate-100 flex flex-col justify-between">
+                {/* Offline / Reconnecting banner for Sekouno multiplayer */}
+                {!isConnected && (
+                  <div className="fixed top-0 inset-x-0 z-50 bg-red-600 text-white text-xs font-bold py-1.5 px-4 text-center flex items-center justify-center gap-2 shadow-lg">
+                    <WifiOff className="w-4 h-4 animate-pulse" />
+                    <span>Connexion perdue avec le serveur Sekouno. Reconnexion en cours...</span>
+                  </div>
+                )}
+
+                {/* Screen Router */}
+                {!gameState ? (
+                  <HomeScreen
+                    onCreateRoom={handleCreateRoom}
+                    onJoinRoom={handleJoinRoom}
+                    onBackToHub={handleReturnToHub}
+                    invitedRoomCode={invitedRoomCode}
+                    savedPlayerName={getLastPlayerName()}
+                    isConnected={isConnected}
+                    isLoading={isLoading}
+                    error={errorMessage}
+                  />
+                ) : gameState.public.status === 'waiting' ? (
+                  <LobbyScreen
+                    publicState={gameState.public}
+                    myPlayerId={gameState.myPlayerId}
+                    onStartGame={handleStartGame}
+                    onLeaveRoom={handleLeaveRoom}
+                    onCloseRoom={handleCloseRoom}
+                    isLoading={isLoading}
+                    error={errorMessage}
+                  />
+                ) : gameState.public.status === 'in_game' ? (
+                  <GameScreen
+                    clientState={gameState}
+                    onPlayCard={handlePlayCard}
+                    onDrawCard={handleDrawCard}
+                    onPassTurn={handlePassTurn}
+                    onCallUno={handleCallUno}
+                    onCatchUno={handleCatchUno}
+                    onHostGivePenalty={handleHostGivePenalty}
+                    onLeaveRoom={handleLeaveRoom}
+                    onCloseRoom={handleCloseRoom}
+                    error={errorMessage}
+                  />
+                ) : (
+                  <GameOverScreen
+                    publicState={gameState.public}
+                    myPlayerId={gameState.myPlayerId}
+                    onRestartGame={handleRestartGame}
+                    onReturnToLobby={handleReturnToLobby}
+                    onLeaveRoom={handleLeaveRoom}
+                    isLoading={isLoading}
+                  />
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

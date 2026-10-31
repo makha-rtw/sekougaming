@@ -146,6 +146,21 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
 }) => {
   const reduceMotion = useReducedMotion();
 
+  // Staggered entrance variants for portal elements
+  const portalItemVariants = (index: number) => ({
+    hidden: reduceMotion ? { opacity: 1 } : { opacity: 0, y: 18, scale: 0.96 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.44,
+        delay: 0.14 + index * 0.06,
+        ease: [0.16, 1, 0.3, 1] as const,
+      },
+    },
+  });
+
   const [uiLang, setUiLang] = useState<BombLanguage>(() => {
     try {
       const saved = localStorage.getItem(UI_LANG_KEY);
@@ -612,17 +627,24 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
       }}
     >
       {/* ==================== 1. TOP HEADER / APP BAR (NEO-BRUTALIST) ==================== */}
-      <header className="w-full max-w-4xl mx-auto px-4 py-2 shrink-0">
+      <motion.header
+        initial={reduceMotion ? false : { opacity: 0, y: -24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-4xl mx-auto px-4 py-2 shrink-0"
+      >
         <div className="flex items-center justify-between gap-3 bg-white border-3 border-black rounded-2xl sm:rounded-3xl px-3.5 sm:px-5 py-2.5 shadow-[4px_4px_0_#000]">
           {/* Back Button */}
-          <button
+          <motion.button
             type="button"
+            whileHover={reduceMotion ? {} : { scale: 1.03 }}
+            whileTap={reduceMotion ? {} : { scale: 0.96 }}
             onClick={roomState ? handleLeaveRoom : onBackToHub}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black text-white hover:bg-[#FF5B36] font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_#000] transition-colors cursor-pointer"
           >
             <ArrowLeft weight="bold" className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{roomState ? t.leaveRoom : t.backToHub}</span>
-          </button>
+          </motion.button>
 
           {/* Logo */}
           <div className="flex items-center gap-2">
@@ -674,214 +696,286 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
             </button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Global Error Banner */}
-      {errorBanner && (
-        <div className="w-full max-w-md mx-auto px-4 mt-2">
-          <div
-            role="alert"
-            className="px-4 py-3 rounded-2xl bg-[#FF5B36] text-white border-3 border-black text-xs font-black uppercase tracking-wider flex items-center justify-between gap-3 shadow-[4px_4px_0_#000]"
+      <AnimatePresence>
+        {errorBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="w-full max-w-md mx-auto px-4 mt-2"
           >
-            <div className="flex items-center gap-2">
-              <WarningOctagon weight="fill" className="w-5 h-5 shrink-0" />
-              <span>{errorBanner}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setErrorBanner(null)}
-              aria-label={t.close}
-              className="p-1 rounded-lg hover:bg-black/20 cursor-pointer"
+            <div
+              role="alert"
+              className="px-4 py-3 rounded-2xl bg-[#FF5B36] text-white border-3 border-black text-xs font-black uppercase tracking-wider flex items-center justify-between gap-3 shadow-[4px_4px_0_#000]"
             >
-              <X weight="bold" className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+              <div className="flex items-center gap-2">
+                <WarningOctagon weight="fill" className="w-5 h-5 shrink-0" />
+                <span>{errorBanner}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorBanner(null)}
+                aria-label={t.close}
+                className="p-1 rounded-lg hover:bg-black/20 cursor-pointer"
+              >
+                <X weight="bold" className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ==================== 2. ACCUEIL (HOME) : PURE POP BRUTALISM ==================== */}
       {!roomState && (
         <main className="flex-1 w-full max-w-md mx-auto px-4 py-4 sm:py-6 flex items-center">
-          <BrutalistCard color="white" depth="lg" className="w-full p-6 sm:p-8 text-center space-y-5">
-            {/* Top Badges */}
-            <div className="flex items-center justify-between gap-2">
-              <BrutalistBadge color="lime" icon={<Lightning weight="fill" className="w-3.5 h-3.5" />}>
-                Party Game
-              </BrutalistBadge>
-              <BrutalistBadge color="yellow">
-                2 à 16 Joueurs
-              </BrutalistBadge>
-            </div>
-
-            {/* Title */}
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tight uppercase leading-none">
-                SEKOU{' '}
-                <span className="bg-[#FF5B36] text-white px-2 py-0.5 rounded-xl inline-block border-3 border-black shadow-[3px_3px_0_#000]">
-                  BOMB
-                </span>
-              </h1>
-              <p className="mt-2 text-black/75 font-bold text-xs sm:text-sm">
-                {t.subtitle}
-              </p>
-            </div>
-
-            {/* Syllable Specimen Preview Box */}
-            <div className="p-3.5 rounded-2xl bg-[#00F0FF] border-3 border-black shadow-[4px_4px_0_#000] text-left space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-wider text-black">
-                  Exemple de Défi
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setDemoIndex((i) => (i + 1) % demoList.length)}
-                  className="p-1 rounded-lg bg-white text-black border border-black shadow-[1px_1px_0_#000] hover:bg-[#FFE600] cursor-pointer"
-                  title="Changer d'exemple"
-                >
-                  <ArrowsClockwise weight="bold" className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-2.5 border-2 border-black">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-black uppercase text-black/60">Syllabe:</span>
-                  <span className="px-2 py-0.5 rounded-lg bg-[#FFE600] text-black font-black text-sm border border-black shadow-[1px_1px_0_#000]">
-                    {currentDemo.prompt}
-                  </span>
-                </div>
-                <div className="text-xs font-black text-black flex items-center gap-1">
-                  <CheckCircle weight="fill" className="w-3.5 h-3.5 text-[#0B7A53]" />
-                  <HighlightedWord word={currentDemo.sample} prompt={currentDemo.prompt} />
-                </div>
-              </div>
-            </div>
-
-            {/* Nickname Input */}
-            <div className="text-left space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-black uppercase text-black">
-                <label htmlFor="bomb-nickname-input">{t.yourNickname}</label>
-                <span className="text-black/50">{playerName.trim().length}/20</span>
-              </div>
-              <input
-                id="bomb-nickname-input"
-                type="text"
-                maxLength={20}
-                autoComplete="nickname"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder={t.nicknamePlaceholder}
-                className="w-full h-12 px-4 rounded-2xl bg-white border-3 border-black text-black font-black text-base outline-none shadow-[3px_3px_0_#000] focus:bg-[#FFFDE6] transition-colors placeholder:text-black/35"
-              />
-            </div>
-
-            {/* Segmented Mode Tabs */}
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-black/5 border-2 border-black">
-              <button
-                type="button"
-                onClick={() => setEntryMode('create')}
-                className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider border-2 transition-all cursor-pointer ${
-                  entryMode === 'create'
-                    ? 'bg-[#FF5B36] text-white border-black shadow-[2px_2px_0_#000] -translate-y-0.5'
-                    : 'bg-transparent text-black border-transparent hover:bg-black/5'
-                }`}
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 32, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.52, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full"
+          >
+            <BrutalistCard color="white" depth="lg" className="w-full p-6 sm:p-8 text-center space-y-5">
+              {/* Top Badges */}
+              <motion.div
+                variants={portalItemVariants(0)}
+                initial="hidden"
+                animate="visible"
+                className="flex items-center justify-between gap-2"
               >
-                {t.modeCreateTab}
-              </button>
-              <button
-                type="button"
-                onClick={() => setEntryMode('join')}
-                className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider border-2 transition-all cursor-pointer ${
-                  entryMode === 'join'
-                    ? 'bg-[#00F0FF] text-black border-black shadow-[2px_2px_0_#000] -translate-y-0.5'
-                    : 'bg-transparent text-black border-transparent hover:bg-black/5'
-                }`}
-              >
-                {t.modeJoinTab}
-              </button>
-            </div>
+                <BrutalistBadge color="lime" icon={<Lightning weight="fill" className="w-3.5 h-3.5" />}>
+                  Party Game
+                </BrutalistBadge>
+                <BrutalistBadge color="yellow">
+                  2 à 16 Joueurs
+                </BrutalistBadge>
+              </motion.div>
 
-            {/* Mode Actions */}
-            {entryMode === 'create' ? (
-              <form onSubmit={handleCreateRoom} className="space-y-4">
-                <div className="text-left">
-                  <span className="block text-xs font-black uppercase text-black mb-1.5">
-                    {t.dictLanguageLabel}
+              {/* Title */}
+              <motion.div
+                variants={portalItemVariants(1)}
+                initial="hidden"
+                animate="visible"
+              >
+                <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tight uppercase leading-none">
+                  SEKOU{' '}
+                  <motion.span
+                    animate={reduceMotion ? {} : { scale: [1, 1.04, 1] }}
+                    transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
+                    className="bg-[#FF5B36] text-white px-2 py-0.5 rounded-xl inline-block border-3 border-black shadow-[3px_3px_0_#000]"
+                  >
+                    BOMB
+                  </motion.span>
+                </h1>
+                <p className="mt-2 text-black/75 font-bold text-xs sm:text-sm">
+                  {t.subtitle}
+                </p>
+              </motion.div>
+
+              {/* Syllable Specimen Preview Box */}
+              <motion.div
+                variants={portalItemVariants(2)}
+                initial="hidden"
+                animate="visible"
+                className="p-3.5 rounded-2xl bg-[#00F0FF] border-3 border-black shadow-[4px_4px_0_#000] text-left space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-black">
+                    Exemple de Défi
                   </span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(['fr', 'en'] as const).map((lang) => (
-                      <button
-                        key={lang}
-                        type="button"
-                        onClick={() => setCreateDictLang(lang)}
-                        className={`py-2.5 px-3 rounded-xl border-3 border-black font-black text-xs uppercase transition-all cursor-pointer ${
-                          createDictLang === lang
-                            ? 'bg-[#FFE600] text-black shadow-[3px_3px_0_#000] -translate-y-0.5'
-                            : 'bg-white text-black/60 shadow-[1px_1px_0_#000]'
-                        }`}
-                      >
-                        {lang === 'fr' ? 'Français (FR)' : 'English (EN)'}
-                      </button>
-                    ))}
+                  <button
+                    type="button"
+                    onClick={() => setDemoIndex((i) => (i + 1) % demoList.length)}
+                    className="p-1 rounded-lg bg-white text-black border border-black shadow-[1px_1px_0_#000] hover:bg-[#FFE600] active:translate-x-[1px] active:translate-y-[1px] transition-transform cursor-pointer"
+                    title="Changer d'exemple"
+                  >
+                    <ArrowsClockwise weight="bold" className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-2.5 border-2 border-black">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-black uppercase text-black/60">Syllabe:</span>
+                    <span className="px-2 py-0.5 rounded-lg bg-[#FFE600] text-black font-black text-sm border border-black shadow-[1px_1px_0_#000]">
+                      {currentDemo.prompt}
+                    </span>
+                  </div>
+                  <div className="text-xs font-black text-black flex items-center gap-1">
+                    <CheckCircle weight="fill" className="w-3.5 h-3.5 text-[#0B7A53]" />
+                    <HighlightedWord word={currentDemo.sample} prompt={currentDemo.prompt} />
                   </div>
                 </div>
+              </motion.div>
 
-                <BrutalistButton
-                  type="submit"
-                  color="coral"
-                  size="lg"
-                  disabled={isLoading}
-                  className="w-full text-base"
-                >
-                  <Fire weight="fill" className="w-5 h-5" />
-                  <span>{isLoading ? t.creating : t.createRoomBtn}</span>
-                </BrutalistButton>
-              </form>
-            ) : (
-              <form onSubmit={handleJoinRoom} className="space-y-4">
-                <div className="text-left">
-                  <label
-                    htmlFor="bomb-join-code-input"
-                    className="block text-xs font-black uppercase text-black mb-1.5"
-                  >
-                    {t.roomCodeLabel} (6 {uiLang === 'fr' ? 'lettres' : 'letters'})
-                  </label>
-                  <input
-                    id="bomb-join-code-input"
-                    type="text"
-                    maxLength={6}
-                    autoCapitalize="characters"
-                    autoComplete="off"
-                    spellCheck={false}
-                    value={joinCodeInput}
-                    onChange={(e) =>
-                      setJoinCodeInput(
-                        e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
-                      )
-                    }
-                    placeholder={t.roomCodePlaceholder}
-                    className="w-full h-14 px-4 rounded-2xl bg-white border-3 border-black font-mono text-3xl font-black tracking-[0.25em] uppercase text-center text-black placeholder:text-black/30 shadow-[3px_3px_0_#000] focus:bg-[#FFFDE6] outline-none"
-                  />
+              {/* Nickname Input */}
+              <motion.div
+                variants={portalItemVariants(3)}
+                initial="hidden"
+                animate="visible"
+                className="text-left space-y-1.5"
+              >
+                <div className="flex items-center justify-between text-xs font-black uppercase text-black">
+                  <label htmlFor="bomb-nickname-input">{t.yourNickname}</label>
+                  <span className="text-black/50">{playerName.trim().length}/20</span>
                 </div>
+                <input
+                  id="bomb-nickname-input"
+                  type="text"
+                  maxLength={20}
+                  autoComplete="nickname"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder={t.nicknamePlaceholder}
+                  className="w-full h-12 px-4 rounded-2xl bg-white border-3 border-black text-black font-black text-base outline-none shadow-[3px_3px_0_#000] focus:bg-[#FFFDE6] transition-colors placeholder:text-black/35"
+                />
+              </motion.div>
 
-                <BrutalistButton
-                  type="submit"
-                  color="cyan"
-                  size="lg"
-                  disabled={isLoading}
-                  className="w-full text-base"
+              {/* Segmented Mode Tabs */}
+              <motion.div
+                variants={portalItemVariants(4)}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-black/5 border-2 border-black"
+              >
+                <button
+                  type="button"
+                  onClick={() => setEntryMode('create')}
+                  className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider border-2 transition-all cursor-pointer ${
+                    entryMode === 'create'
+                      ? 'bg-[#FF5B36] text-white border-black shadow-[2px_2px_0_#000] -translate-y-0.5'
+                      : 'bg-transparent text-black border-transparent hover:bg-black/5'
+                  }`}
                 >
-                  <Lightning weight="fill" className="w-5 h-5" />
-                  <span>{isLoading ? t.joining : t.joinRoomBtn}</span>
-                </BrutalistButton>
-              </form>
-            )}
-          </BrutalistCard>
+                  {t.modeCreateTab}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEntryMode('join')}
+                  className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider border-2 transition-all cursor-pointer ${
+                    entryMode === 'join'
+                      ? 'bg-[#00F0FF] text-black border-black shadow-[2px_2px_0_#000] -translate-y-0.5'
+                      : 'bg-transparent text-black border-transparent hover:bg-black/5'
+                  }`}
+                >
+                  {t.modeJoinTab}
+                </button>
+              </motion.div>
+
+              {/* Mode Actions Form */}
+              <motion.div
+                variants={portalItemVariants(5)}
+                initial="hidden"
+                animate="visible"
+              >
+                <AnimatePresence mode="wait">
+                  {entryMode === 'create' ? (
+                    <motion.form
+                      key="create-form"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ duration: 0.2 }}
+                      onSubmit={handleCreateRoom}
+                      className="space-y-4"
+                    >
+                      <div className="text-left">
+                        <span className="block text-xs font-black uppercase text-black mb-1.5">
+                          {t.dictLanguageLabel}
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(['fr', 'en'] as const).map((lang) => (
+                            <button
+                              key={lang}
+                              type="button"
+                              onClick={() => setCreateDictLang(lang)}
+                              className={`py-2.5 px-3 rounded-xl border-3 border-black font-black text-xs uppercase transition-all cursor-pointer ${
+                                createDictLang === lang
+                                  ? 'bg-[#FFE600] text-black shadow-[3px_3px_0_#000] -translate-y-0.5'
+                                  : 'bg-white text-black/60 shadow-[1px_1px_0_#000]'
+                              }`}
+                            >
+                              {lang === 'fr' ? 'Français (FR)' : 'English (EN)'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <BrutalistButton
+                        type="submit"
+                        color="coral"
+                        size="lg"
+                        disabled={isLoading}
+                        className="w-full text-base"
+                      >
+                        <Fire weight="fill" className="w-5 h-5" />
+                        <span>{isLoading ? t.creating : t.createRoomBtn}</span>
+                      </BrutalistButton>
+                    </motion.form>
+                  ) : (
+                    <motion.form
+                      key="join-form"
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      onSubmit={handleJoinRoom}
+                      className="space-y-4"
+                    >
+                      <div className="text-left">
+                        <label
+                          htmlFor="bomb-join-code-input"
+                          className="block text-xs font-black uppercase text-black mb-1.5"
+                        >
+                          {t.roomCodeLabel} (6 {uiLang === 'fr' ? 'lettres' : 'letters'})
+                        </label>
+                        <input
+                          id="bomb-join-code-input"
+                          type="text"
+                          maxLength={6}
+                          autoCapitalize="characters"
+                          autoComplete="off"
+                          spellCheck={false}
+                          value={joinCodeInput}
+                          onChange={(e) =>
+                            setJoinCodeInput(
+                              e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+                            )
+                          }
+                          placeholder={t.roomCodePlaceholder}
+                          className="w-full h-14 px-4 rounded-2xl bg-white border-3 border-black font-mono text-3xl font-black tracking-[0.25em] uppercase text-center text-black placeholder:text-black/30 shadow-[3px_3px_0_#000] focus:bg-[#FFFDE6] outline-none"
+                        />
+                      </div>
+
+                      <BrutalistButton
+                        type="submit"
+                        color="cyan"
+                        size="lg"
+                        disabled={isLoading}
+                        className="w-full text-base"
+                      >
+                        <Lightning weight="fill" className="w-5 h-5" />
+                        <span>{isLoading ? t.joining : t.joinRoomBtn}</span>
+                      </BrutalistButton>
+                    </motion.form>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </BrutalistCard>
+          </motion.div>
         </main>
       )}
 
       {/* ==================== 3. SALON (LOBBY) : RADICAL SIMPLICITY ==================== */}
       {roomState && roomState.status === 'LOBBY' && (
-        <main className="flex-1 w-full max-w-lg mx-auto px-4 py-4 space-y-5">
+        <motion.main
+          initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="flex-1 w-full max-w-lg mx-auto px-4 py-4 space-y-5"
+        >
           {/* Room Code Hero Card */}
           <BrutalistCard color="yellow" depth="lg" className="p-6 text-center space-y-4">
             <div className="flex items-center justify-between">
@@ -1060,7 +1154,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
               )}
             </div>
           </BrutalistCard>
-        </main>
+        </motion.main>
       )}
 
       {/* ==================== 4. ARÈNE DE JEU (GAME ARENA) ==================== */}
@@ -1362,7 +1456,12 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
 
       {/* ==================== 5. FIN DE PARTIE (GAME OVER / PODIUM) ==================== */}
       {roomState && roomState.status === 'GAME_OVER' && (
-        <main className="flex-1 w-full max-w-lg mx-auto px-4 py-6 flex flex-col justify-center">
+        <motion.main
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.45 }}
+          className="flex-1 w-full max-w-lg mx-auto px-4 py-6 flex flex-col justify-center"
+        >
           <BrutalistCard color="yellow" depth="lg" className="p-6 sm:p-8 space-y-6 text-center">
             {/* Winner Trophy Spotlight */}
             <div className="space-y-3">
@@ -1471,7 +1570,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
               )}
             </div>
           </BrutalistCard>
-        </main>
+        </motion.main>
       )}
 
       {/* ==================== 6. MODALS (RULES, QR, SETTINGS) ==================== */}
