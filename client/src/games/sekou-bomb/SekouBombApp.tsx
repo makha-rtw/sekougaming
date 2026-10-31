@@ -1130,45 +1130,57 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
 
                 {/* Word Submission Form (When my turn) */}
                 {isMyTurn ? (
-                  <form onSubmit={handleSubmitWord} className="space-y-3">
-                    <div className="flex items-stretch gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          ref={inputRef}
-                          type="text"
-                          inputMode="text"
-                          autoCapitalize="characters"
-                          autoComplete="off"
-                          autoCorrect="off"
-                          spellCheck={false}
-                          enterKeyHint="send"
-                          value={wordInput}
-                          onChange={(e) => handleWordInputChange(e.target.value)}
-                          placeholder={`${t.inputPlaceholder} « ${roomState.currentPrompt} »...`}
-                          className="w-full h-14 sm:h-16 px-4 pr-32 rounded-2xl bg-white border-3 border-black text-black font-black text-lg sm:text-xl uppercase tracking-wider placeholder:text-black/30 placeholder:text-sm placeholder:normal-case outline-none shadow-[4px_4px_0_#000] focus:bg-[#FFFDE6]"
-                        />
+                  <form onSubmit={handleSubmitWord} className="space-y-2.5">
+                    {/* Syllable match status pill (placed above the input so it never shrinks the typing area) */}
+                    <div className="flex items-center justify-between text-xs font-black uppercase text-black px-1">
+                      <span>Ton mot :</span>
+                      {wordInput.trim().length > 0 && (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-black uppercase tracking-wider border-2 border-black ${
+                            wordContainsPrompt
+                              ? 'bg-[#CCFF00] text-black shadow-[1px_1px_0_#000]'
+                              : 'bg-[#FF5B36] text-white shadow-[1px_1px_0_#000]'
+                          }`}
+                        >
+                          {wordContainsPrompt ? (
+                            <>
+                              <CheckCircle weight="fill" className="w-3.5 h-3.5" />
+                              <span>{t.promptMatchedHint}</span>
+                            </>
+                          ) : (
+                            <>
+                              <WarningOctagon weight="fill" className="w-3.5 h-3.5" />
+                              <span>{t.promptMissingHint}</span>
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </div>
 
-                        {wordInput.trim().length > 0 && (
-                          <span
-                            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border-2 border-black ${
-                              wordContainsPrompt
-                                ? 'bg-[#CCFF00] text-black shadow-[1px_1px_0_#000]'
-                                : 'bg-white text-black/60 shadow-[1px_1px_0_#000]'
-                            }`}
-                          >
-                            {wordContainsPrompt ? t.promptMatchedHint : t.promptMissingHint}
-                          </span>
-                        )}
-                      </div>
+                    <div className="flex items-stretch gap-2">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        inputMode="text"
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        enterKeyHint="send"
+                        value={wordInput}
+                        onChange={(e) => handleWordInputChange(e.target.value)}
+                        placeholder={`${t.inputPlaceholder} « ${roomState.currentPrompt} »...`}
+                        className="flex-1 min-w-0 h-14 sm:h-16 px-4 sm:px-5 rounded-2xl bg-white border-3 border-black text-black font-black text-xl sm:text-2xl uppercase tracking-wider placeholder:text-black/35 placeholder:text-sm placeholder:normal-case outline-none shadow-[4px_4px_0_#000] focus:bg-[#FFFDE6]"
+                      />
 
                       <BrutalistButton
                         type="submit"
                         color="lime"
                         size="md"
-                        className="px-6 h-14 sm:h-16 text-base"
+                        className="px-4 sm:px-7 h-14 sm:h-16 text-sm sm:text-base font-black shrink-0"
                       >
                         <span>{t.validateBtn}</span>
-                        <PaperPlaneRight weight="fill" className="w-5 h-5" />
+                        <PaperPlaneRight weight="fill" className="w-4 h-4 sm:w-5 sm:h-5" />
                       </BrutalistButton>
                     </div>
 
