@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
   Fire,
@@ -37,13 +38,16 @@ import {
 import { getBombTranslation } from './i18n.js';
 import { bombSounds } from './sound.js';
 import {
-  GameboxCard,
-  GameboxBadge,
-  GameboxChallengePrompt,
-  GameboxFuseBar,
-  GameboxPlayerCard,
-  GameboxDialog,
-} from './components/GameboxComponents.js';
+  BrutalistCard,
+  BrutalistButton,
+  BrutalistBadge,
+  BrutalistChallengeBox,
+  BrutalistFuseBar,
+  BrutalistPlayerTag,
+  BrutalistDialog,
+  PopColor,
+  POP_COLOR_MAP,
+} from './components/BrutalistUI.js';
 
 interface SekouBombAppProps {
   socket: Socket;
@@ -107,8 +111,7 @@ function clearBombSession() {
 }
 
 /**
- * Highlights the required prompt letters inside a word or live typing string
- * using vibrant party-game coral styling.
+ * Highlights required prompt letters inside a word using Neo-Brutalist Pop yellow badge.
  */
 const HighlightedWord: React.FC<{ word: string; prompt: string }> = ({ word, prompt }) => {
   if (!word) return null;
@@ -128,7 +131,7 @@ const HighlightedWord: React.FC<{ word: string; prompt: string }> = ({ word, pro
   return (
     <span>
       {before}
-      <span className="bg-[#FF5722] text-white px-1.5 py-0.5 rounded-md font-black shadow-sm shadow-[#FF5722]/30">
+      <span className="bg-[#FFE600] text-black px-1.5 py-0.5 rounded-md font-black border border-black shadow-[1px_1px_0_#000]">
         {match}
       </span>
       {after}
@@ -178,6 +181,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
   const [isMuted, setIsMuted] = useState<boolean>(bombSounds.isMuted());
   const [showRulesModal, setShowRulesModal] = useState<boolean>(false);
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
+  const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copiedType, setCopiedType] = useState<'code' | 'link' | null>(null);
 
@@ -197,6 +201,20 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     }, 3200);
     return () => window.clearInterval(id);
   }, [roomState, uiLang, reduceMotion]);
+
+  // Confetti on game over
+  useEffect(() => {
+    if (roomState?.status === 'GAME_OVER') {
+      try {
+        confetti({
+          particleCount: 90,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#FFE600', '#CCFF00', '#FF5B36', '#00F0FF', '#FF66C4', '#B8A1FF'],
+        });
+      } catch {}
+    }
+  }, [roomState?.status]);
 
   const toggleUiLang = () => {
     const next: BombLanguage = uiLang === 'fr' ? 'en' : 'fr';
@@ -323,7 +341,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     roomState?.turnDurationMs,
   ]);
 
-  // Actions
+  // Handlers
   const handleCreateRoom = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = playerName.trim();
@@ -568,34 +586,36 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
         paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 1rem)',
       }}
     >
-      {/* ==================== 1. TOP HEADER / APP BAR ==================== */}
-      <header className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-2 shrink-0">
-        <div className="flex items-center justify-between gap-3 bg-[#171E30] border border-white/10 rounded-2xl px-3 sm:px-5 py-2.5 shadow-lg shadow-black/20">
-          {/* Back Pill */}
+      {/* ==================== 1. TOP HEADER / APP BAR (NEO-BRUTALIST) ==================== */}
+      <header className="w-full max-w-4xl mx-auto px-4 py-2 shrink-0">
+        <div className="flex items-center justify-between gap-3 bg-white border-3 border-black rounded-2xl sm:rounded-3xl px-3.5 sm:px-5 py-2.5 shadow-[4px_4px_0_#000]">
+          {/* Back Button */}
           <button
             type="button"
             onClick={roomState ? handleLeaveRoom : onBackToHub}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1F2942] hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 transition-colors cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black text-white hover:bg-[#FF5B36] font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_#000] transition-colors cursor-pointer"
           >
             <ArrowLeft weight="bold" className="w-3.5 h-3.5" />
-            <span>{roomState ? t.leaveRoom : t.backToHub}</span>
+            <span className="hidden sm:inline">{roomState ? t.leaveRoom : t.backToHub}</span>
           </button>
 
-          {/* Logo & Category Badge */}
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF5722] animate-pulse shadow-sm shadow-[#FF5722]" />
-            <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white uppercase">
-              Sekou <span className="text-[#FF5722]">Bomb</span>
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-xl bg-[#FFE600] border-2 border-black flex items-center justify-center font-black shadow-[2px_2px_0_#000]">
+              <Fire weight="fill" className="w-4 h-4 text-[#FF5B36]" />
+            </span>
+            <span className="font-black text-lg sm:text-xl tracking-tight text-black uppercase">
+              SEKOU <span className="text-[#FF5B36]">BOMB</span>
             </span>
           </div>
 
           {/* Utilities (Lang, Rules, Mute) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={toggleUiLang}
-              aria-label="Basculer la langue"
-              className="px-2.5 py-1.5 rounded-full bg-[#1F2942] hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 transition-colors cursor-pointer"
+              aria-label="Changer de langue"
+              className="px-2.5 py-1.5 rounded-xl bg-[#00F0FF] text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0_#000] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer hover:bg-[#FFE600] transition-colors"
             >
               {uiLang.toUpperCase()}
             </button>
@@ -605,7 +625,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
               onClick={() => setShowRulesModal(true)}
               aria-label={t.rulesBtn}
               title={t.rulesBtn}
-              className="p-2 sm:px-3 sm:py-1.5 rounded-full bg-[#1F2942] hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-xl bg-[#B8A1FF] text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0_#000] active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5 cursor-pointer hover:bg-[#FFE600] transition-colors"
             >
               <BookOpenText weight="bold" className="w-4 h-4" />
               <span className="hidden sm:inline">{t.rulesBtn}</span>
@@ -615,10 +635,10 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
               type="button"
               onClick={() => setIsMuted(bombSounds.toggleMute())}
               aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
-              className={`p-2 rounded-full border transition-colors cursor-pointer ${
+              className={`p-2 rounded-xl border-2 border-black font-black text-xs shadow-[2px_2px_0_#000] active:translate-x-[1px] active:translate-y-[1px] transition-colors cursor-pointer ${
                 isMuted
-                  ? 'bg-[#EF4444] text-white border-[#EF4444]'
-                  : 'bg-[#1F2942] hover:bg-white/10 text-slate-200 border-white/10'
+                  ? 'bg-[#FF5B36] text-white'
+                  : 'bg-white text-black hover:bg-[#CCFF00]'
               }`}
             >
               {isMuted ? (
@@ -631,12 +651,12 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
         </div>
       </header>
 
-      {/* Error Banner */}
+      {/* Global Error Banner */}
       {errorBanner && (
-        <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 mt-2">
+        <div className="w-full max-w-md mx-auto px-4 mt-2">
           <div
             role="alert"
-            className="px-4 py-3 rounded-2xl bg-[#EF4444] text-white text-xs font-bold flex items-center justify-between gap-3 shadow-lg shadow-[#EF4444]/20 border border-white/10"
+            className="px-4 py-3 rounded-2xl bg-[#FF5B36] text-white border-3 border-black text-xs font-black uppercase tracking-wider flex items-center justify-between gap-3 shadow-[4px_4px_0_#000]"
           >
             <div className="flex items-center gap-2">
               <WarningOctagon weight="fill" className="w-5 h-5 shrink-0" />
@@ -646,7 +666,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
               type="button"
               onClick={() => setErrorBanner(null)}
               aria-label={t.close}
-              className="p-1 rounded-full hover:bg-black/20 cursor-pointer"
+              className="p-1 rounded-lg hover:bg-black/20 cursor-pointer"
             >
               <X weight="bold" className="w-4 h-4" />
             </button>
@@ -654,617 +674,381 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
         </div>
       )}
 
-      {/* ==================== 2. HOME SCREEN : SOCIAL GAMEBOX STYLE ==================== */}
+      {/* ==================== 2. ACCUEIL (HOME) : PURE POP BRUTALISM ==================== */}
       {!roomState && (
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-8 flex items-center">
-          <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            {/* Left Card: Game Presentation & Live Specimen */}
-            <GameboxCard className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <GameboxBadge tone="coral" icon={<Lightning weight="fill" className="w-3.5 h-3.5" />}>
-                    {t.studioKicker}
-                  </GameboxBadge>
-                  <GameboxBadge tone="neutral">
-                    2..16 Joueurs
-                  </GameboxBadge>
-                </div>
+        <main className="flex-1 w-full max-w-md mx-auto px-4 py-4 sm:py-6 flex items-center">
+          <BrutalistCard color="white" depth="lg" className="w-full p-6 sm:p-8 text-center space-y-5">
+            {/* Top Badges */}
+            <div className="flex items-center justify-between gap-2">
+              <BrutalistBadge color="lime" icon={<Lightning weight="fill" className="w-3.5 h-3.5" />}>
+                Party Game
+              </BrutalistBadge>
+              <BrutalistBadge color="yellow">
+                2 à 16 Joueurs
+              </BrutalistBadge>
+            </div>
 
-                <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight uppercase leading-none">
-                  Sekou <span className="text-[#FF5722]">Bomb</span>
-                </h1>
+            {/* Title */}
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tight uppercase leading-none">
+                SEKOU{' '}
+                <span className="bg-[#FF5B36] text-white px-2 py-0.5 rounded-xl inline-block border-3 border-black shadow-[3px_3px_0_#000]">
+                  BOMB
+                </span>
+              </h1>
+              <p className="mt-2 text-black/75 font-bold text-xs sm:text-sm">
+                {t.subtitle}
+              </p>
+            </div>
 
-                <p className="mt-3 text-slate-300 text-base sm:text-lg leading-relaxed max-w-xl">
-                  {t.subtitle}
-                </p>
+            {/* Syllable Specimen Preview Box */}
+            <div className="p-3.5 rounded-2xl bg-[#00F0FF] border-3 border-black shadow-[4px_4px_0_#000] text-left space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-wider text-black">
+                  Exemple de Défi
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDemoIndex((i) => (i + 1) % demoList.length)}
+                  className="p-1 rounded-lg bg-white text-black border border-black shadow-[1px_1px_0_#000] hover:bg-[#FFE600] cursor-pointer"
+                  title="Changer d'exemple"
+                >
+                  <ArrowsClockwise weight="bold" className="w-3.5 h-3.5" />
+                </button>
               </div>
 
-              {/* Live Challenge Specimen Box */}
-              <div className="my-6 p-4 sm:p-5 rounded-2xl bg-[#111625] border border-white/5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    {uiLang === 'fr' ? 'Exemple de défi' : 'Challenge specimen'}
+              <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-2.5 border-2 border-black">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black uppercase text-black/60">Syllabe:</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-[#FFE600] text-black font-black text-sm border border-black shadow-[1px_1px_0_#000]">
+                    {currentDemo.prompt}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setDemoIndex((i) => (i + 1) % demoList.length)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1F2942] hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 transition-colors cursor-pointer"
+                </div>
+                <div className="text-xs font-black text-black flex items-center gap-1">
+                  <CheckCircle weight="fill" className="w-3.5 h-3.5 text-[#0B7A53]" />
+                  <HighlightedWord word={currentDemo.sample} prompt={currentDemo.prompt} />
+                </div>
+              </div>
+            </div>
+
+            {/* Nickname Input */}
+            <div className="text-left space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-black uppercase text-black">
+                <label htmlFor="bomb-nickname-input">{t.yourNickname}</label>
+                <span className="text-black/50">{playerName.trim().length}/20</span>
+              </div>
+              <input
+                id="bomb-nickname-input"
+                type="text"
+                maxLength={20}
+                autoComplete="nickname"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder={t.nicknamePlaceholder}
+                className="w-full h-12 px-4 rounded-2xl bg-white border-3 border-black text-black font-black text-base outline-none shadow-[3px_3px_0_#000] focus:bg-[#FFFDE6] transition-colors placeholder:text-black/35"
+              />
+            </div>
+
+            {/* Segmented Mode Tabs */}
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-black/5 border-2 border-black">
+              <button
+                type="button"
+                onClick={() => setEntryMode('create')}
+                className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider border-2 transition-all cursor-pointer ${
+                  entryMode === 'create'
+                    ? 'bg-[#FF5B36] text-white border-black shadow-[2px_2px_0_#000] -translate-y-0.5'
+                    : 'bg-transparent text-black border-transparent hover:bg-black/5'
+                }`}
+              >
+                {t.modeCreateTab}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEntryMode('join')}
+                className={`py-2 px-3 rounded-xl font-black text-xs uppercase tracking-wider border-2 transition-all cursor-pointer ${
+                  entryMode === 'join'
+                    ? 'bg-[#00F0FF] text-black border-black shadow-[2px_2px_0_#000] -translate-y-0.5'
+                    : 'bg-transparent text-black border-transparent hover:bg-black/5'
+                }`}
+              >
+                {t.modeJoinTab}
+              </button>
+            </div>
+
+            {/* Mode Actions */}
+            {entryMode === 'create' ? (
+              <form onSubmit={handleCreateRoom} className="space-y-4">
+                <div className="text-left">
+                  <span className="block text-xs font-black uppercase text-black mb-1.5">
+                    {t.dictLanguageLabel}
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['fr', 'en'] as const).map((lang) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => setCreateDictLang(lang)}
+                        className={`py-2.5 px-3 rounded-xl border-3 border-black font-black text-xs uppercase transition-all cursor-pointer ${
+                          createDictLang === lang
+                            ? 'bg-[#FFE600] text-black shadow-[3px_3px_0_#000] -translate-y-0.5'
+                            : 'bg-white text-black/60 shadow-[1px_1px_0_#000]'
+                        }`}
+                      >
+                        {lang === 'fr' ? 'Français (FR)' : 'English (EN)'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <BrutalistButton
+                  type="submit"
+                  color="coral"
+                  size="lg"
+                  disabled={isLoading}
+                  className="w-full text-base"
+                >
+                  <Fire weight="fill" className="w-5 h-5" />
+                  <span>{isLoading ? t.creating : t.createRoomBtn}</span>
+                </BrutalistButton>
+              </form>
+            ) : (
+              <form onSubmit={handleJoinRoom} className="space-y-4">
+                <div className="text-left">
+                  <label
+                    htmlFor="bomb-join-code-input"
+                    className="block text-xs font-black uppercase text-black mb-1.5"
                   >
-                    <ArrowsClockwise weight="bold" className="w-3.5 h-3.5" />
-                    <span>{uiLang === 'fr' ? 'Changer' : 'Next'}</span>
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-400">Syllabe :</span>
-                    <span className="px-3.5 py-1.5 rounded-xl bg-[#FF5722] text-white font-black text-xl tracking-wider shadow-md shadow-[#FF5722]/30">
-                      {currentDemo.prompt}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white bg-[#1F2942] px-4 py-2 rounded-xl border border-white/10">
-                    <CheckCircle weight="fill" className="w-4 h-4 text-[#10B981] shrink-0" />
-                    <HighlightedWord word={currentDemo.sample} prompt={currentDemo.prompt} />
-                  </div>
-                </div>
-              </div>
-
-              {/* 3 Pillars / Feature Badges */}
-              <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/10 text-center sm:text-left">
-                <div>
-                  <div className="text-xs font-bold text-[#FF5722] uppercase tracking-wider">01 • Syllabe</div>
-                  <div className="text-xs font-semibold text-slate-300 mt-1">2 à 4 lettres imposées</div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-[#3B82F6] uppercase tracking-wider">02 • Relais</div>
-                  <div className="text-xs font-semibold text-slate-300 mt-1">Passe la bombe vite</div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-[#10B981] uppercase tracking-wider">03 • Bonus</div>
-                  <div className="text-xs font-semibold text-slate-300 mt-1">24 lettres = +1 vie</div>
-                </div>
-              </div>
-            </GameboxCard>
-
-            {/* Right Card: Player Setup & Mode Switcher */}
-            <GameboxCard className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase mb-4 flex items-center gap-2">
-                  <UsersThree weight="fill" className="w-6 h-6 text-[#FF5722]" />
-                  <span>{t.contestantLabel}</span>
-                </h2>
-
-                {/* Nickname Input */}
-                <div className="space-y-1.5 mb-5">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                    <label htmlFor="bomb-nickname-input">{t.yourNickname}</label>
-                    <span className="text-slate-500">{playerName.trim().length}/20</span>
-                  </div>
+                    {t.roomCodeLabel} (6 {uiLang === 'fr' ? 'lettres' : 'letters'})
+                  </label>
                   <input
-                    id="bomb-nickname-input"
+                    id="bomb-join-code-input"
                     type="text"
-                    maxLength={20}
-                    autoComplete="nickname"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder={t.nicknamePlaceholder}
-                    className="w-full h-13 px-4 rounded-2xl bg-[#111625] border border-white/10 focus:border-[#FF5722] text-white font-bold text-base outline-none transition-colors placeholder:text-slate-500"
+                    maxLength={6}
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={joinCodeInput}
+                    onChange={(e) =>
+                      setJoinCodeInput(
+                        e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+                      )
+                    }
+                    placeholder={t.roomCodePlaceholder}
+                    className="w-full h-14 px-4 rounded-2xl bg-white border-3 border-black font-mono text-3xl font-black tracking-[0.25em] uppercase text-center text-black placeholder:text-black/30 shadow-[3px_3px_0_#000] focus:bg-[#FFFDE6] outline-none"
                   />
                 </div>
 
-                {/* Mode Switcher Tabs */}
-                <div className="p-1 rounded-2xl bg-[#111625] border border-white/10 grid grid-cols-2 gap-1 mb-5">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={entryMode === 'create'}
-                    onClick={() => setEntryMode('create')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                      entryMode === 'create'
-                        ? 'bg-[#FF5722] text-white shadow-md shadow-[#FF5722]/30'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {t.modeCreateTab}
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={entryMode === 'join'}
-                    onClick={() => setEntryMode('join')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                      entryMode === 'join'
-                        ? 'bg-[#3B82F6] text-white shadow-md shadow-[#3B82F6]/30'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {t.modeJoinTab}
-                  </button>
-                </div>
-
-                {/* Mode Form */}
-                {entryMode === 'create' ? (
-                  <form onSubmit={handleCreateRoom} className="space-y-4">
-                    <div>
-                      <span className="block text-xs font-bold text-slate-300 mb-2">
-                        {t.dictLanguageLabel}
-                      </span>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(['fr', 'en'] as const).map((lang) => {
-                          const active = createDictLang === lang;
-                          return (
-                            <button
-                              key={lang}
-                              type="button"
-                              onClick={() => setCreateDictLang(lang)}
-                              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                                active
-                                  ? 'bg-[#1F2942] border-[#FFB300] text-white shadow-md'
-                                  : 'bg-[#111625] border-white/10 text-slate-400 hover:border-white/20'
-                              }`}
-                            >
-                              <div className="text-[11px] font-bold uppercase text-slate-400">
-                                {lang === 'fr' ? 'Édition' : 'Edition'}
-                              </div>
-                              <div className="text-sm font-extrabold text-white">
-                                {lang === 'fr' ? t.langFr : t.langEn}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full h-14 rounded-2xl bg-[#FF5722] hover:bg-[#F4511E] text-white font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#FF5722]/30 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <Fire weight="fill" className="w-5 h-5" />
-                      <span>{isLoading ? t.creating : t.createRoomBtn}</span>
-                    </button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleJoinRoom} className="space-y-4">
-                    <div>
-                      <label
-                        htmlFor="bomb-join-code-input"
-                        className="block text-xs font-bold text-slate-300 mb-2"
-                      >
-                        {t.roomCodeLabel} (6 {uiLang === 'fr' ? 'caractères' : 'characters'})
-                      </label>
-                      <input
-                        id="bomb-join-code-input"
-                        type="text"
-                        maxLength={6}
-                        autoCapitalize="characters"
-                        autoComplete="off"
-                        spellCheck={false}
-                        value={joinCodeInput}
-                        onChange={(e) =>
-                          setJoinCodeInput(
-                            e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
-                          )
-                        }
-                        placeholder={t.roomCodePlaceholder}
-                        className="w-full h-14 px-4 rounded-2xl bg-[#111625] border border-white/10 focus:border-[#3B82F6] font-mono text-2xl font-black tracking-[0.25em] uppercase text-center text-[#60A5FA] placeholder:text-slate-600 outline-none"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full h-14 rounded-2xl bg-[#3B82F6] hover:bg-[#2563EB] text-white font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#3B82F6]/30 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <Lightning weight="fill" className="w-5 h-5" />
-                      <span>{isLoading ? t.joining : t.joinRoomBtn}</span>
-                    </button>
-                  </form>
-                )}
-              </div>
-            </GameboxCard>
-          </div>
+                <BrutalistButton
+                  type="submit"
+                  color="cyan"
+                  size="lg"
+                  disabled={isLoading}
+                  className="w-full text-base"
+                >
+                  <Lightning weight="fill" className="w-5 h-5" />
+                  <span>{isLoading ? t.joining : t.joinRoomBtn}</span>
+                </BrutalistButton>
+              </form>
+            )}
+          </BrutalistCard>
         </main>
       )}
 
-      {/* ==================== 3. WAITING LOBBY : SOCIAL GAMEBOX STYLE ==================== */}
+      {/* ==================== 3. SALON (LOBBY) : RADICAL SIMPLICITY ==================== */}
       {roomState && roomState.status === 'LOBBY' && (
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Room Code Card & Players List */}
-          <div className="lg:col-span-5 space-y-5">
-            {/* Room Code Card */}
-            <GameboxCard className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <GameboxBadge tone="coral">{t.roomCodeLabel}</GameboxBadge>
-                <GameboxBadge tone="neutral">{roomState.settings.language.toUpperCase()}</GameboxBadge>
+        <main className="flex-1 w-full max-w-lg mx-auto px-4 py-4 space-y-5">
+          {/* Room Code Hero Card */}
+          <BrutalistCard color="yellow" depth="lg" className="p-6 text-center space-y-4">
+            <div className="flex items-center justify-between">
+              <BrutalistBadge color="lime">{t.roomCodeLabel}</BrutalistBadge>
+              <BrutalistBadge color="white">
+                {roomState.settings.language.toUpperCase()}
+              </BrutalistBadge>
+            </div>
+
+            {/* Room Code */}
+            <div className="py-4 px-4 rounded-2xl bg-white border-3 border-black text-center shadow-[4px_4px_0_#000]">
+              <span className="font-mono text-4xl sm:text-5xl font-black text-black tracking-[0.2em]">
+                {roomState.roomCode}
+              </span>
+            </div>
+
+            {/* 4 Action Pills */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="py-2.5 px-2 rounded-xl bg-white hover:bg-[#CCFF00] text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-center gap-1 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer transition-colors"
+              >
+                {copiedType === 'code' ? (
+                  <Check weight="bold" className="w-4 h-4 text-[#0B7A53]" />
+                ) : (
+                  <Copy weight="bold" className="w-4 h-4" />
+                )}
+                <span>{copiedType === 'code' ? t.copied : t.copyCode}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="py-2.5 px-2 rounded-xl bg-white hover:bg-[#00F0FF] text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-center gap-1 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer transition-colors"
+              >
+                {copiedType === 'link' ? (
+                  <Check weight="bold" className="w-4 h-4 text-[#0B7A53]" />
+                ) : (
+                  <Copy weight="bold" className="w-4 h-4" />
+                )}
+                <span>{copiedType === 'link' ? t.copied : t.copyLink}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleShareLink}
+                className="py-2.5 px-2 rounded-xl bg-white hover:bg-[#FF66C4] text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-center gap-1 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer transition-colors"
+              >
+                <ShareNetwork weight="bold" className="w-4 h-4" />
+                <span>{t.shareLink}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenQrModal}
+                className="py-2.5 px-2 rounded-xl bg-white hover:bg-[#B8A1FF] text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-center gap-1 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer transition-colors"
+              >
+                <QrCode weight="bold" className="w-4 h-4" />
+                <span>{t.qrCode}</span>
+              </button>
+            </div>
+          </BrutalistCard>
+
+          {/* Players List Card */}
+          <BrutalistCard color="white" depth="md" className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b-2 border-black">
+              <div className="flex items-center gap-2">
+                <UsersThree weight="bold" className="w-5 h-5 text-black" />
+                <h2 className="text-lg sm:text-xl font-black text-black uppercase tracking-tight">
+                  {t.playersTitle}
+                </h2>
               </div>
+              <BrutalistBadge color="yellow">
+                {roomState.players.length}/{roomState.settings.maxPlayers}
+              </BrutalistBadge>
+            </div>
 
-              <div className="py-3 px-4 rounded-2xl bg-[#111625] border border-white/5 text-center">
-                <span className="font-mono text-4xl sm:text-5xl font-black text-white tracking-[0.25em]">
-                  {roomState.roomCode}
-                </span>
-              </div>
-
-              {/* Action Pills Grid */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={handleCopyCode}
-                  className="py-2.5 px-3 rounded-xl bg-[#1F2942] hover:bg-white/10 text-xs font-bold text-white border border-white/10 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  {copiedType === 'code' ? (
-                    <Check weight="bold" className="w-4 h-4 text-[#10B981]" />
-                  ) : (
-                    <Copy weight="bold" className="w-4 h-4" />
-                  )}
-                  <span>{copiedType === 'code' ? t.copied : t.copyCode}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="py-2.5 px-3 rounded-xl bg-[#1F2942] hover:bg-white/10 text-xs font-bold text-white border border-white/10 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  {copiedType === 'link' ? (
-                    <Check weight="bold" className="w-4 h-4 text-[#10B981]" />
-                  ) : (
-                    <Copy weight="bold" className="w-4 h-4" />
-                  )}
-                  <span>{copiedType === 'link' ? t.copied : t.copyLink}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleShareLink}
-                  className="py-2.5 px-3 rounded-xl bg-[#1F2942] hover:bg-white/10 text-xs font-bold text-white border border-white/10 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <ShareNetwork weight="bold" className="w-4 h-4" />
-                  <span>{t.shareLink}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleOpenQrModal}
-                  className="py-2.5 px-3 rounded-xl bg-[#FFB300] hover:bg-[#FFA000] text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-md shadow-[#FFB300]/20"
-                >
-                  <QrCode weight="bold" className="w-4 h-4" />
-                  <span>{t.qrCode}</span>
-                </button>
-              </div>
-            </GameboxCard>
-
-            {/* Players List Card */}
-            <GameboxCard className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <UsersThree weight="bold" className="w-5 h-5 text-white" />
-                  <h2 className="text-xl font-black text-white uppercase tracking-tight">
-                    {t.playersTitle}
-                  </h2>
-                </div>
-                <GameboxBadge tone="gold">
-                  {roomState.players.length}/{roomState.settings.maxPlayers}
-                </GameboxBadge>
-              </div>
-
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {roomState.players.map((p, idx) => (
+            {/* Player chips */}
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {roomState.players.map((p, idx) => {
+                const colors: PopColor[] = ['lime', 'yellow', 'cyan', 'lavender', 'pink', 'coral'];
+                const tagColor = colors[idx % colors.length];
+                return (
                   <div
                     key={p.id}
-                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl border transition-colors ${
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 border-black transition-all ${
                       p.id === myPlayerId
-                        ? 'bg-[#1F2942] border-[#3B82F6]/50'
-                        : 'bg-[#111625] border-white/5'
+                        ? 'bg-[#FFFDE6] shadow-[3px_3px_0_#000]'
+                        : 'bg-white shadow-[2px_2px_0_#000]'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-7 h-7 rounded-full bg-[#FF5722] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                      <span
+                        className={`w-7 h-7 rounded-lg border border-black text-black font-black text-xs flex items-center justify-center shrink-0 ${
+                          POP_COLOR_MAP[tagColor].bg
+                        }`}
+                      >
                         {p.name.slice(0, 1).toUpperCase()}
                       </span>
-                      <span className="font-bold text-sm truncate text-white">{p.name}</span>
+                      <span className="font-black text-sm truncate text-black">{p.name}</span>
                       {p.isHost && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FFB300]/20 text-[#FFCA28] text-[10px] font-bold uppercase shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#FFE600] text-black border border-black text-[10px] font-black uppercase shrink-0">
                           <CrownSimple weight="fill" className="w-3 h-3" />
                           {t.hostBadge}
                         </span>
                       )}
                       {p.id === myPlayerId && (
-                        <span className="text-[10px] font-bold uppercase text-[#60A5FA] shrink-0">
+                        <span className="text-[10px] font-black uppercase text-[#0B7A53] shrink-0">
                           [{t.youBadge}]
                         </span>
                       )}
                     </div>
 
                     <span
-                      className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full shrink-0 ${
+                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border border-black shrink-0 ${
                         p.isConnected
-                          ? 'bg-[#10B981]/20 text-[#34D399]'
-                          : 'bg-[#FFB300]/20 text-[#FFCA28]'
+                          ? 'bg-[#CCFF00] text-black'
+                          : 'bg-slate-200 text-slate-600'
                       }`}
                     >
                       {p.isConnected ? t.online : t.offline}
                     </span>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </div>
 
-              {/* Start Button */}
-              <div className="pt-2">
-                {isHost ? (
-                  <button
+            {/* Launch & Settings Buttons */}
+            <div className="pt-2 space-y-2.5">
+              {isHost ? (
+                <>
+                  <BrutalistButton
                     type="button"
+                    color="lime"
+                    size="lg"
                     disabled={roomState.players.length < 2}
                     onClick={handleStartGame}
-                    className="w-full h-14 rounded-2xl bg-[#FF5722] hover:bg-[#F4511E] text-white font-black text-xl uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#FF5722]/30 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-40 disabled:shadow-none"
+                    className="w-full text-lg"
                   >
-                    <Fire weight="fill" className="w-5 h-5" />
+                    <Fire weight="fill" className="w-5 h-5 text-[#FF5B36]" />
                     <span>
                       {roomState.players.length < 2 ? t.needTwoPlayers : t.startGameBtn}
                     </span>
-                  </button>
-                ) : (
-                  <div className="py-3.5 px-4 rounded-2xl bg-[#111625] border border-white/5 text-center text-xs font-bold text-slate-400">
-                    {t.waitingForHost}
-                  </div>
-                )}
-              </div>
-            </GameboxCard>
-          </div>
+                  </BrutalistButton>
 
-          {/* Right Column: Settings Card */}
-          <GameboxCard className="lg:col-span-7 p-5 sm:p-7 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <Sliders weight="bold" className="w-5 h-5 text-[#FF5722]" />
-                <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-                  {t.settingsTitle}
-                </h2>
-              </div>
-              {!isHost && (
-                <GameboxBadge tone="neutral">{t.hostOnlyNote}</GameboxBadge>
+                  <BrutalistButton
+                    type="button"
+                    color="white"
+                    size="md"
+                    onClick={() => setShowSettingsModal(true)}
+                    className="w-full text-xs"
+                  >
+                    <Sliders weight="bold" className="w-4 h-4" />
+                    <span>{t.settingsTitle}</span>
+                  </BrutalistButton>
+                </>
+              ) : (
+                <div className="py-3 px-4 rounded-2xl bg-white border-2 border-black text-center text-xs font-black uppercase text-black/60 shadow-[2px_2px_0_#000]">
+                  {t.waitingForHost}
+                </div>
               )}
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
-              {/* 1. Dictionary */}
-              <div className="p-4 rounded-2xl bg-[#111625] border border-white/5 space-y-2">
-                <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  {t.dictLanguageLabel}
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['fr', 'en'] as const).map((lang) => (
-                    <button
-                      key={lang}
-                      type="button"
-                      disabled={!isHost}
-                      onClick={() => handleUpdateSettings({ language: lang })}
-                      className={`py-2 px-3 rounded-xl font-bold border transition-colors cursor-pointer disabled:cursor-default flex items-center justify-between ${
-                        roomState.settings.language === lang
-                          ? 'bg-[#FF5722] text-white border-[#FF5722]'
-                          : 'bg-[#171E30] text-slate-300 border-white/10 hover:border-white/20'
-                      }`}
-                    >
-                      <span>{lang === 'fr' ? t.langFr : t.langEn}</span>
-                      <span className="text-[10px] uppercase opacity-75">{lang}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 2. Difficulty */}
-              <div className="p-4 rounded-2xl bg-[#111625] border border-white/5 space-y-2">
-                <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  {t.difficultyLabel}
-                </span>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(
-                    [
-                      { id: 'easy', label: t.diffEasy },
-                      { id: 'normal', label: t.diffNormal },
-                      { id: 'hard', label: t.diffHard },
-                    ] as { id: BombDifficulty; label: string }[]
-                  ).map((d) => (
-                    <button
-                      key={d.id}
-                      type="button"
-                      disabled={!isHost}
-                      onClick={() => handleUpdateSettings({ difficulty: d.id })}
-                      className={`py-2 px-1.5 rounded-xl font-bold border text-center transition-colors cursor-pointer disabled:cursor-default ${
-                        roomState.settings.difficulty === d.id
-                          ? 'bg-[#FF5722] text-white border-[#FF5722]'
-                          : 'bg-[#171E30] text-slate-300 border-white/10 hover:border-white/20'
-                      }`}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 3. Starting Lives & Max Lives */}
-              <div className="p-4 rounded-2xl bg-[#111625] border border-white/5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-300">{t.initialLivesLabel}</span>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((val) => (
-                      <button
-                        key={val}
-                        type="button"
-                        disabled={!isHost}
-                        onClick={() => handleUpdateSettings({ initialLives: val })}
-                        className={`w-7 h-7 rounded-xl font-bold text-xs border transition-colors cursor-pointer disabled:cursor-default ${
-                          roomState.settings.initialLives === val
-                            ? 'bg-[#EF4444] text-white border-[#EF4444]'
-                            : 'bg-[#171E30] text-slate-400 border-white/10'
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                  <span className="font-bold text-slate-300">{t.maxLivesLabel}</span>
-                  <div className="flex items-center gap-1">
-                    {[3, 4, 5, 6].map((val) => (
-                      <button
-                        key={val}
-                        type="button"
-                        disabled={!isHost}
-                        onClick={() => handleUpdateSettings({ maxLives: val })}
-                        className={`w-7 h-7 rounded-xl font-bold text-xs border transition-colors cursor-pointer disabled:cursor-default ${
-                          roomState.settings.maxLives === val
-                            ? 'bg-[#FFB300] text-slate-950 font-black border-[#FFB300]'
-                            : 'bg-[#171E30] text-slate-400 border-white/10'
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* 4. Fuse Duration */}
-              <div className="p-4 rounded-2xl bg-[#111625] border border-white/5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-300">{t.minTurnSecLabel}</span>
-                  <select
-                    disabled={!isHost}
-                    value={roomState.settings.minTurnDurationSec}
-                    onChange={(e) =>
-                      handleUpdateSettings({ minTurnDurationSec: Number(e.target.value) })
-                    }
-                    className="px-2.5 py-1 rounded-xl bg-[#171E30] border border-white/10 font-bold text-white outline-none"
-                  >
-                    {[3, 4, 5, 6, 8, 10].map((s) => (
-                      <option key={s} value={s}>
-                        {s}s
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                  <span className="font-bold text-slate-300">{t.maxBombSecLabel}</span>
-                  <select
-                    disabled={!isHost}
-                    value={roomState.settings.maxBombDurationSec}
-                    onChange={(e) =>
-                      handleUpdateSettings({ maxBombDurationSec: Number(e.target.value) })
-                    }
-                    className="px-2.5 py-1 rounded-xl bg-[#171E30] border border-white/10 font-bold text-white outline-none"
-                  >
-                    {[10, 12, 15, 18, 20, 25].map((s) => (
-                      <option key={s} value={s}>
-                        {s}s
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* 5. Policies */}
-              <div className="p-4 rounded-2xl bg-[#111625] border border-white/5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-300">{t.wordRepetitionLabel}</span>
-                  <button
-                    type="button"
-                    disabled={!isHost}
-                    onClick={() =>
-                      handleUpdateSettings({
-                        wordRepetitionPolicy:
-                          roomState.settings.wordRepetitionPolicy === 'forbid'
-                            ? 'allow'
-                            : 'forbid',
-                      })
-                    }
-                    className="px-3 py-1 rounded-full bg-[#1F2942] border border-white/10 font-bold text-[#60A5FA] cursor-pointer disabled:cursor-default"
-                  >
-                    {roomState.settings.wordRepetitionPolicy === 'forbid'
-                      ? t.repForbid
-                      : t.repAllow}
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                  <span className="font-bold text-slate-300">{t.invalidPolicyLabel}</span>
-                  <button
-                    type="button"
-                    disabled={!isHost}
-                    onClick={() =>
-                      handleUpdateSettings({
-                        invalidAttemptPolicy:
-                          roomState.settings.invalidAttemptPolicy === 'retry'
-                            ? 'lose_life'
-                            : 'retry',
-                      })
-                    }
-                    className={`px-3 py-1 rounded-full border font-bold cursor-pointer disabled:cursor-default ${
-                      roomState.settings.invalidAttemptPolicy === 'lose_life'
-                        ? 'bg-[#EF4444] text-white border-[#EF4444]'
-                        : 'bg-[#1F2942] text-slate-300 border-white/10'
-                    }`}
-                  >
-                    {roomState.settings.invalidAttemptPolicy === 'retry'
-                      ? t.policyRetry
-                      : t.policyLoseLife}
-                  </button>
-                </div>
-              </div>
-
-              {/* 6. Bonus Alphabet */}
-              <div className="p-4 rounded-2xl bg-[#111625] border border-white/5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                    <Sparkle weight="fill" className="w-4 h-4 text-[#10B981]" />
-                    {t.bonusAlphabetLabel}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={!isHost}
-                    onClick={() =>
-                      handleUpdateSettings({
-                        bonusAlphabetEnabled: !roomState.settings.bonusAlphabetEnabled,
-                      })
-                    }
-                    className={`px-3 py-1 rounded-full font-bold border cursor-pointer disabled:cursor-default ${
-                      roomState.settings.bonusAlphabetEnabled
-                        ? 'bg-[#10B981] text-white border-[#10B981]'
-                        : 'bg-[#171E30] text-slate-400 border-white/10'
-                    }`}
-                  >
-                    {roomState.settings.bonusAlphabetEnabled ? t.enabled : t.disabled}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </GameboxCard>
+          </BrutalistCard>
         </main>
       )}
 
-      {/* ==================== 4. IN-GAME ARENA : SOCIAL GAMEBOX STYLE ==================== */}
+      {/* ==================== 4. ARÈNE DE JEU (GAME ARENA) ==================== */}
       {roomState && isInArena && (
-        <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-2 flex flex-col justify-start gap-4">
+        <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-2 flex flex-col justify-start gap-4">
           {/* Top Telemetry Header */}
-          <div className="flex items-center justify-between px-4 py-2 rounded-2xl bg-[#171E30] border border-white/10 text-xs font-bold text-slate-300">
+          <div className="flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-white border-3 border-black text-xs font-black uppercase text-black shadow-[3px_3px_0_#000]">
             <div className="flex items-center gap-2">
-              <GameboxBadge tone="gold">{roomState.settings.language.toUpperCase()}</GameboxBadge>
-              <span>
+              <BrutalistBadge color="cyan">
                 {t.roundLabel} #{roomState.roundNumber}
-              </span>
+              </BrutalistBadge>
+              <BrutalistBadge color="yellow">
+                {roomState.settings.language.toUpperCase()}
+              </BrutalistBadge>
             </div>
-            <div>
-              {t.wordsPlayedLabel} : <span className="text-[#FFB300] font-extrabold">{roomState.totalWordsPlayed}</span>
+            <div className="flex items-center gap-1.5">
+              <span>{t.wordsPlayedLabel}:</span>
+              <span className="px-2 py-0.5 rounded-lg bg-[#CCFF00] border border-black font-black text-black">
+                {roomState.totalWordsPlayed}
+              </span>
             </div>
           </div>
 
           {/* Players Carousel Strip */}
-          <div className="flex items-stretch gap-3 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-stretch gap-2.5 overflow-x-auto pb-1 no-scrollbar">
             {roomState.players.map((p, idx) => (
-              <GameboxPlayerCard
+              <BrutalistPlayerTag
                 key={p.id}
                 id={p.id}
                 name={p.name}
@@ -1277,46 +1061,49 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 currentTyping={p.currentTyping}
                 lastWord={p.lastWordSubmitted}
                 lastWordStatus={p.lastWordStatus}
-                currentPrompt={roomState.currentPrompt}
-                avatarColorIndex={idx}
+                avatarIndex={idx}
               />
             ))}
           </div>
 
-          {/* Central Challenge Card */}
-          <GameboxCard className="p-5 sm:p-7 space-y-4">
+          {/* Central Challenge Arena Card */}
+          <BrutalistCard color="white" depth="lg" className="p-5 sm:p-7 space-y-4">
             {roomState.status === 'COUNTDOWN' ? (
-              <div className="py-8 flex flex-col items-center justify-center text-center gap-3">
-                <GameboxBadge tone="gold">{t.countdownTitle}</GameboxBadge>
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-[#FF5722] text-white font-black text-6xl sm:text-7xl flex items-center justify-center shadow-xl shadow-[#FF5722]/30 animate-pulse">
+              <div className="py-8 flex flex-col items-center justify-center text-center gap-4">
+                <BrutalistBadge color="yellow">{t.countdownTitle}</BrutalistBadge>
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-[#FF5B36] text-white border-3 border-black font-black text-6xl sm:text-7xl flex items-center justify-center shadow-[6px_6px_0_#000] animate-bounce">
                   {countdownSec}
                 </div>
-                <p className="text-sm font-bold text-slate-400">{t.countdownSub}...</p>
+                <p className="text-sm font-black uppercase text-black/70">
+                  {t.countdownSub}...
+                </p>
               </div>
             ) : (
               <>
-                {/* Turn Header & Fuse Bar */}
+                {/* Turn Header Banner */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                    className={`px-3.5 py-1 rounded-xl text-xs font-black uppercase tracking-wider border-2 border-black ${
                       isMyTurn
-                        ? 'bg-[#FF5722] text-white shadow-md shadow-[#FF5722]/30 animate-bounce'
-                        : 'bg-[#1F2942] text-slate-300'
+                        ? 'bg-[#FF5B36] text-white shadow-[3px_3px_0_#000] animate-bounce'
+                        : 'bg-white text-black shadow-[2px_2px_0_#000]'
                     }`}
                   >
-                    {isMyTurn ? t.yourTurnBanner : `${activePlayer?.name || ''} ${t.otherTurnBanner}`}
+                    {isMyTurn
+                      ? t.yourTurnBanner
+                      : `${activePlayer?.name || ''} ${t.otherTurnBanner}`}
                   </span>
                 </div>
 
                 {/* Fuse Progress Gauge */}
-                <GameboxFuseBar
+                <BrutalistFuseBar
                   progressRatio={progressRatio}
                   remainingMs={remainingMs}
                   isCritical={isCriticalTime}
                 />
 
                 {/* Monumental Syllable Display */}
-                <GameboxChallengePrompt
+                <BrutalistChallengeBox
                   prompt={roomState.currentPrompt || '...'}
                   isCritical={isCriticalTime}
                   isMyTurn={isMyTurn}
@@ -1325,13 +1112,16 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
 
                 {/* Watching Other Player Live Typing Monitor */}
                 {!isMyTurn && activePlayer && (
-                  <div className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-[#111625] border border-white/5 flex items-center justify-center text-center">
+                  <div className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-[#FFFDE6] border-2 border-black text-center shadow-[2px_2px_0_#000] flex items-center justify-center">
                     {activePlayer.currentTyping ? (
-                      <span className="text-base font-extrabold text-white">
-                        <HighlightedWord word={activePlayer.currentTyping} prompt={roomState.currentPrompt} />
+                      <span className="text-base font-black text-black">
+                        <HighlightedWord
+                          word={activePlayer.currentTyping}
+                          prompt={roomState.currentPrompt}
+                        />
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-500 font-medium">
+                      <span className="text-xs text-black/60 font-bold uppercase">
                         {activePlayer.name} {t.waitingInput}
                       </span>
                     )}
@@ -1341,7 +1131,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 {/* Word Submission Form (When my turn) */}
                 {isMyTurn ? (
                   <form onSubmit={handleSubmitWord} className="space-y-3">
-                    <div className="flex items-stretch gap-2.5">
+                    <div className="flex items-stretch gap-2">
                       <div className="relative flex-1">
                         <input
                           ref={inputRef}
@@ -1355,15 +1145,15 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                           value={wordInput}
                           onChange={(e) => handleWordInputChange(e.target.value)}
                           placeholder={`${t.inputPlaceholder} « ${roomState.currentPrompt} »...`}
-                          className="w-full h-14 sm:h-16 px-4 pr-32 rounded-2xl bg-[#111625] border-2 border-[#FF5722] text-white font-extrabold text-lg sm:text-xl uppercase tracking-wider placeholder:text-slate-500 placeholder:text-sm placeholder:normal-case outline-none focus:ring-4 focus:ring-[#FF5722]/20"
+                          className="w-full h-14 sm:h-16 px-4 pr-32 rounded-2xl bg-white border-3 border-black text-black font-black text-lg sm:text-xl uppercase tracking-wider placeholder:text-black/30 placeholder:text-sm placeholder:normal-case outline-none shadow-[4px_4px_0_#000] focus:bg-[#FFFDE6]"
                         />
 
                         {wordInput.trim().length > 0 && (
                           <span
-                            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                            className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border-2 border-black ${
                               wordContainsPrompt
-                                ? 'bg-[#10B981] text-white'
-                                : 'bg-[#1F2942] text-slate-400'
+                                ? 'bg-[#CCFF00] text-black shadow-[1px_1px_0_#000]'
+                                : 'bg-white text-black/60 shadow-[1px_1px_0_#000]'
                             }`}
                           >
                             {wordContainsPrompt ? t.promptMatchedHint : t.promptMissingHint}
@@ -1371,13 +1161,15 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                         )}
                       </div>
 
-                      <button
+                      <BrutalistButton
                         type="submit"
-                        className="px-6 sm:px-8 h-14 sm:h-16 rounded-2xl bg-[#FF5722] hover:bg-[#F4511E] text-white font-black text-base sm:text-lg uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-[#FF5722]/30 active:scale-[0.98] transition-all cursor-pointer shrink-0"
+                        color="lime"
+                        size="md"
+                        className="px-6 h-14 sm:h-16 text-base"
                       >
                         <span>{t.validateBtn}</span>
                         <PaperPlaneRight weight="fill" className="w-5 h-5" />
-                      </button>
+                      </BrutalistButton>
                     </div>
 
                     <AnimatePresence mode="wait">
@@ -1388,7 +1180,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           role="alert"
-                          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EF4444] text-white text-xs font-bold shadow-md shadow-[#EF4444]/20"
+                          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FF5B36] text-white border-2 border-black text-xs font-black uppercase shadow-[2px_2px_0_#000]"
                         >
                           <WarningOctagon weight="fill" className="w-4 h-4 shrink-0" />
                           <span>{inlineInputError}</span>
@@ -1398,45 +1190,45 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                   </form>
                 ) : (
                   myPlayer?.isEliminated && (
-                    <div className="py-3 px-4 rounded-2xl bg-[#111625] border border-white/5 text-center text-xs font-bold text-slate-400">
+                    <div className="py-3 px-4 rounded-2xl bg-slate-200 border-2 border-black text-center text-xs font-black uppercase text-slate-700 shadow-[2px_2px_0_#000]">
                       {t.eliminatedBanner}
                     </div>
                   )
                 )}
 
-                {/* Event Dispatch Notice */}
+                {/* Event Notice */}
                 {roomState.lastEvent && (
-                  <div className="pt-2 border-t border-white/5 text-center text-xs font-bold">
+                  <div className="pt-2 border-t-2 border-black text-center text-xs font-black uppercase">
                     {roomState.lastEvent.type === 'word_accepted' && (
-                      <span className="text-[#34D399] flex items-center justify-center gap-1.5">
+                      <span className="text-[#0B7A53] flex items-center justify-center gap-1.5">
                         <CheckCircle weight="fill" className="w-4 h-4 shrink-0" />
                         <span>
-                          <strong>{roomState.lastEvent.playerName}</strong> {t.events.word_accepted}{' '}
-                          « <strong>{roomState.lastEvent.word}</strong> »
+                          {roomState.lastEvent.playerName} {t.events.word_accepted}{' '}
+                          « {roomState.lastEvent.word} »
                         </span>
                       </span>
                     )}
                     {roomState.lastEvent.type === 'bonus_life_earned' && (
-                      <span className="text-[#60A5FA] flex items-center justify-center gap-1.5">
-                        <Sparkle weight="fill" className="w-4 h-4 shrink-0" />
+                      <span className="text-[#00F0FF] flex items-center justify-center gap-1.5">
+                        <Sparkle weight="fill" className="w-4 h-4 shrink-0 text-black" />
                         <span>
-                          <strong>{roomState.lastEvent.playerName}</strong> {t.events.bonus_life_earned}
+                          {roomState.lastEvent.playerName} {t.events.bonus_life_earned}
                         </span>
                       </span>
                     )}
                     {roomState.lastEvent.type === 'timeout_life_lost' && (
-                      <span className="text-[#F87171] flex items-center justify-center gap-1.5">
+                      <span className="text-[#FF5B36] flex items-center justify-center gap-1.5">
                         <Fire weight="fill" className="w-4 h-4 shrink-0" />
                         <span>
-                          {t.events.timeout_life_lost} <strong>{roomState.lastEvent.playerName}</strong> (-1 vie)
+                          {t.events.timeout_life_lost} {roomState.lastEvent.playerName} (-1 ❤️)
                         </span>
                       </span>
                     )}
                     {roomState.lastEvent.type === 'player_eliminated' && (
-                      <span className="text-[#F87171] flex items-center justify-center gap-1.5">
-                        <Skull weight="fill" className="w-4 h-4 shrink-0" />
+                      <span className="text-[#FF5B36] flex items-center justify-center gap-1.5">
+                        <Skull weight="fill" className="w-4 h-4 shrink-0 text-black" />
                         <span>
-                          <strong>{roomState.lastEvent.playerName}</strong> {t.events.player_eliminated}
+                          {roomState.lastEvent.playerName} {t.events.player_eliminated}
                         </span>
                       </span>
                     )}
@@ -1444,32 +1236,36 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                 )}
               </>
             )}
-          </GameboxCard>
+          </BrutalistCard>
 
           {/* Bottom Panels: Bonus Alphabet & Recent Words */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
             {roomState.settings.bonusAlphabetEnabled && myPlayer && (
-              <GameboxCard className="sm:col-span-7 p-4 space-y-3">
+              <BrutalistCard
+                color="white"
+                depth="sm"
+                className="sm:col-span-7 p-4 space-y-3"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                    <Sparkle weight="fill" className="w-4 h-4 text-[#10B981]" />
+                  <span className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-1.5">
+                    <Sparkle weight="fill" className="w-4 h-4 text-[#FFE600]" />
                     {t.bonusAlphabetHeader}
                   </span>
-                  <GameboxBadge tone="emerald">
+                  <BrutalistBadge color="lime">
                     {myPlayer.bonusLettersUsed.length}/{roomState.bonusAlphabetTarget.length}
-                  </GameboxBadge>
+                  </BrutalistBadge>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                   {roomState.bonusAlphabetTarget.map((letter) => {
                     const collected = myPlayer.bonusLettersUsed.includes(letter);
                     return (
                       <span
                         key={letter}
-                        className={`w-7 h-7 rounded-xl font-extrabold text-xs flex items-center justify-center border transition-all ${
+                        className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center border-2 border-black transition-all ${
                           collected
-                            ? 'bg-[#10B981] text-white border-[#10B981] shadow-sm shadow-[#10B981]/30 scale-105'
-                            : 'bg-[#111625] text-slate-500 border-white/5'
+                            ? 'bg-[#CCFF00] text-black shadow-[1px_1px_0_#000]'
+                            : 'bg-white text-black/30'
                         }`}
                       >
                         {letter}
@@ -1477,49 +1273,53 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                     );
                   })}
                 </div>
-              </GameboxCard>
+              </BrutalistCard>
             )}
 
-            <GameboxCard
+            <BrutalistCard
+              color="white"
+              depth="sm"
               className={`${
                 roomState.settings.bonusAlphabetEnabled && myPlayer
                   ? 'sm:col-span-5'
                   : 'sm:col-span-12'
               } p-4 space-y-2`}
             >
-              <span className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className="block text-xs font-black uppercase tracking-wider text-black">
                 {t.recentWordsHeader}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {roomState.recentValidWords.length === 0 ? (
-                  <span className="text-xs text-slate-500 italic">{t.noRecentWords}</span>
+                  <span className="text-xs text-black/40 italic font-bold">
+                    {t.noRecentWords}
+                  </span>
                 ) : (
-                  roomState.recentValidWords.slice(0, 6).map((item, i) => (
+                  roomState.recentValidWords.slice(0, 5).map((item, i) => (
                     <span
                       key={`${item.word}-${i}`}
-                      className="px-2.5 py-1 rounded-xl bg-[#111625] border border-white/10 text-xs font-bold text-slate-200"
+                      className="px-2 py-0.5 rounded-lg bg-white border border-black text-xs font-black text-black shadow-[1px_1px_0_#000]"
                     >
                       <HighlightedWord word={item.word} prompt={item.prompt} />
                     </span>
                   ))
                 )}
               </div>
-            </GameboxCard>
+            </BrutalistCard>
           </div>
         </main>
       )}
 
-      {/* ==================== 5. GAME OVER : SOCIAL GAMEBOX STYLE ==================== */}
+      {/* ==================== 5. FIN DE PARTIE (GAME OVER / PODIUM) ==================== */}
       {roomState && roomState.status === 'GAME_OVER' && (
-        <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 flex flex-col justify-center">
-          <GameboxCard className="p-6 sm:p-8 space-y-6">
-            {/* Winner Spotlight */}
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 rounded-full bg-[#FFB300]/20 text-[#FFB300] border border-[#FFB300]/30 flex items-center justify-center mx-auto shadow-lg shadow-[#FFB300]/20">
-                <Trophy weight="fill" className="w-9 h-9" />
+        <main className="flex-1 w-full max-w-lg mx-auto px-4 py-6 flex flex-col justify-center">
+          <BrutalistCard color="yellow" depth="lg" className="p-6 sm:p-8 space-y-6 text-center">
+            {/* Winner Trophy Spotlight */}
+            <div className="space-y-3">
+              <div className="w-20 h-20 rounded-3xl bg-white text-black border-3 border-black flex items-center justify-center mx-auto shadow-[6px_6px_0_#000]">
+                <Trophy weight="fill" className="w-10 h-10 text-[#FF5B36]" />
               </div>
-              <GameboxBadge tone="gold">{t.gameOverTitle}</GameboxBadge>
-              <h1 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tight">
+              <BrutalistBadge color="coral">{t.gameOverTitle}</BrutalistBadge>
+              <h1 className="text-3xl sm:text-4xl font-black text-black uppercase tracking-tight">
                 {roomState.winnerName
                   ? `${roomState.winnerName} ${t.winnerAnnouncement}`
                   : t.noWinner}
@@ -1527,8 +1327,8 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
             </div>
 
             {/* Standings Table */}
-            <div className="space-y-2.5">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="space-y-2.5 text-left">
+              <h2 className="text-xs font-black uppercase tracking-wider text-black">
                 {t.finalRanking}
               </h2>
 
@@ -1540,42 +1340,40 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                     return (
                       <div
                         key={p.id}
-                        className={`flex items-center justify-between px-4 py-3 rounded-2xl border transition-colors ${
+                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-3 border-black transition-all ${
                           isWinner
-                            ? 'bg-[#1F2942] border-[#FFB300]/50 shadow-md'
-                            : 'bg-[#111625] border-white/5'
+                            ? 'bg-white shadow-[4px_4px_0_#000]'
+                            : 'bg-white/70 shadow-[2px_2px_0_#000]'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <span
-                            className={`w-8 h-8 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${
-                              isWinner
-                                ? 'bg-[#FFB300] text-slate-950 shadow-md'
-                                : 'bg-[#171E30] text-white border border-white/10'
+                            className={`w-7 h-7 rounded-xl font-black text-xs flex items-center justify-center border-2 border-black shrink-0 ${
+                              isWinner ? 'bg-[#FFE600] text-black' : 'bg-white text-black'
                             }`}
                           >
                             #{p.finalRank || idx + 1}
                           </span>
                           <div className="min-w-0">
-                            <div className="font-extrabold text-sm truncate text-white">
+                            <div className="font-black text-sm truncate text-black">
                               {p.name}
                             </div>
                             {p.longestWord && (
-                              <div className="text-xs text-slate-400">
-                                {t.longestWordCol} : <strong className="text-white">{p.longestWord}</strong>
+                              <div className="text-[10px] text-black/60 font-bold">
+                                {t.longestWordCol}: <strong className="text-black">{p.longestWord}</strong>
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs font-bold shrink-0">
-                          <span className="px-2.5 py-1 rounded-full bg-[#171E30] border border-white/10 text-white">
+                        <div className="flex items-center gap-1.5 text-xs font-black shrink-0">
+                          <span className="px-2 py-0.5 rounded-lg bg-black text-white border border-black">
                             {p.wordsValidated} {t.wordsCountCol}
                           </span>
                           {p.bonusLivesEarned > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/30">
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg bg-[#CCFF00] text-black border border-black">
                               <span>+{p.bonusLivesEarned}</span>
-                              <Heart weight="fill" className="w-3.5 h-3.5" />
+                              <Heart weight="fill" className="w-3 h-3 text-[#FF5B36]" />
                             </span>
                           )}
                         </div>
@@ -1586,57 +1384,61 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {isHost ? (
                 <>
-                  <button
+                  <BrutalistButton
                     type="button"
+                    color="lime"
+                    size="lg"
                     onClick={handleStartGame}
-                    className="h-14 rounded-2xl bg-[#FF5722] hover:bg-[#F4511E] text-white font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#FF5722]/30 active:scale-[0.98] transition-all cursor-pointer"
+                    className="w-full text-base"
                   >
                     <ArrowCounterClockwise weight="bold" className="w-5 h-5" />
                     <span>{t.playAgainBtn}</span>
-                  </button>
-                  <button
+                  </BrutalistButton>
+                  <BrutalistButton
                     type="button"
+                    color="white"
+                    size="md"
                     onClick={handleReturnToLobby}
-                    className="h-14 rounded-2xl bg-[#1F2942] hover:bg-white/10 text-white font-bold text-sm uppercase tracking-wider border border-white/10 flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer"
+                    className="w-full text-xs"
                   >
-                    {t.backToLobbyBtn}
-                  </button>
+                    <span>{t.backToLobbyBtn}</span>
+                  </BrutalistButton>
                 </>
               ) : (
-                <button
+                <BrutalistButton
                   type="button"
+                  color="white"
+                  size="md"
                   onClick={handleLeaveRoom}
-                  className="sm:col-span-2 h-14 rounded-2xl bg-[#1F2942] hover:bg-white/10 text-white font-bold text-sm uppercase tracking-wider border border-white/10 flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer"
+                  className="sm:col-span-2 w-full text-xs"
                 >
-                  {t.waitingForHost} ({t.leaveRoom})
-                </button>
+                  <span>{t.waitingForHost} ({t.leaveRoom})</span>
+                </BrutalistButton>
               )}
             </div>
-          </GameboxCard>
+          </BrutalistCard>
         </main>
       )}
 
-      {/* ==================== 6. MODALS : SOCIAL GAMEBOX STYLE ==================== */}
-      <GameboxDialog
+      {/* ==================== 6. MODALS (RULES, QR, SETTINGS) ==================== */}
+      {/* 6.1 Rules Modal */}
+      <BrutalistDialog
         open={showRulesModal}
         onClose={() => setShowRulesModal(false)}
-        ariaLabel={t.rulesTitle}
+        title={t.rulesTitle}
+        color="white"
       >
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-white/10">
-            <BookOpenText weight="fill" className="w-6 h-6 text-[#FF5722]" />
-            <h3 className="text-xl font-black text-white uppercase tracking-tight">
-              {t.rulesTitle}
-            </h3>
-          </div>
-
-          <ol className="space-y-3 text-sm text-slate-300 leading-relaxed">
+        <div className="space-y-4 text-left">
+          <ol className="space-y-2.5 text-xs sm:text-sm font-bold text-black leading-relaxed">
             {t.rulesSteps.map((step, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-[#FF5722] text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+              <li
+                key={idx}
+                className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#FFFDE6] border-2 border-black shadow-[2px_2px_0_#000]"
+              >
+                <span className="w-6 h-6 rounded-lg bg-[#FF5B36] text-white border border-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
                   {idx + 1}
                 </span>
                 <span>{step}</span>
@@ -1644,51 +1446,235 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
             ))}
           </ol>
 
-          <button
+          <BrutalistButton
             type="button"
+            color="yellow"
+            size="md"
             onClick={() => setShowRulesModal(false)}
-            className="w-full h-12 rounded-2xl bg-[#FF5722] hover:bg-[#F4511E] text-white font-black text-sm uppercase tracking-wider transition-colors cursor-pointer"
+            className="w-full"
           >
             {t.close}
-          </button>
+          </BrutalistButton>
         </div>
-      </GameboxDialog>
+      </BrutalistDialog>
 
-      <GameboxDialog
+      {/* 6.2 QR Code Modal */}
+      <BrutalistDialog
         open={Boolean(showQrModal && roomState)}
         onClose={() => setShowQrModal(false)}
-        ariaLabel={t.qrCode}
+        title={t.qrCode}
+        color="yellow"
         maxWidthClass="max-w-xs"
       >
         {roomState && (
           <div className="text-center space-y-4">
-            <GameboxBadge tone="coral">{t.qrCode}</GameboxBadge>
-            <div className="font-mono text-3xl font-black text-white tracking-widest">
+            <div className="font-mono text-3xl font-black text-black tracking-widest bg-white border-2 border-black rounded-xl py-2 shadow-[3px_3px_0_#000]">
               {roomState.roomCode}
             </div>
 
-            <div className="bg-white p-4 rounded-2xl inline-block mx-auto shadow-lg">
+            <div className="bg-white p-3 rounded-2xl border-3 border-black inline-block mx-auto shadow-[4px_4px_0_#000]">
               {qrDataUrl ? (
                 <img src={qrDataUrl} alt="QR Code" className="w-44 h-44 mx-auto" />
               ) : (
-                <div className="w-44 h-44 flex items-center justify-center font-mono text-xs text-slate-500">
+                <div className="w-44 h-44 flex items-center justify-center font-mono text-xs text-black">
                   Chargement...
                 </div>
               )}
             </div>
 
-            <p className="text-xs text-slate-400 font-medium">{t.scanToJoin}</p>
+            <p className="text-xs text-black font-bold uppercase">{t.scanToJoin}</p>
 
-            <button
+            <BrutalistButton
               type="button"
+              color="white"
+              size="md"
               onClick={() => setShowQrModal(false)}
-              className="w-full h-12 rounded-2xl bg-[#1F2942] hover:bg-white/10 text-white font-bold text-sm uppercase tracking-wider border border-white/10 transition-colors cursor-pointer"
+              className="w-full"
             >
               {t.close}
-            </button>
+            </BrutalistButton>
           </div>
         )}
-      </GameboxDialog>
+      </BrutalistDialog>
+
+      {/* 6.3 Host Settings Modal */}
+      {roomState && (
+        <BrutalistDialog
+          open={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          title={t.settingsTitle}
+          color="white"
+          maxWidthClass="max-w-md"
+        >
+          <div className="space-y-4 text-left text-xs font-black uppercase text-black">
+            {/* Dictionary */}
+            <div className="p-3 rounded-xl bg-white border-2 border-black shadow-[2px_2px_0_#000] space-y-1.5">
+              <span>{t.dictLanguageLabel}</span>
+              <div className="grid grid-cols-2 gap-2">
+                {(['fr', 'en'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    disabled={!isHost}
+                    onClick={() => handleUpdateSettings({ language: lang })}
+                    className={`py-2 px-2 rounded-lg border-2 border-black font-black transition-colors cursor-pointer ${
+                      roomState.settings.language === lang
+                        ? 'bg-[#FFE600] text-black shadow-[2px_2px_0_#000]'
+                        : 'bg-white text-black/60'
+                    }`}
+                  >
+                    {lang === 'fr' ? t.langFr : t.langEn}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Difficulty */}
+            <div className="p-3 rounded-xl bg-white border-2 border-black shadow-[2px_2px_0_#000] space-y-1.5">
+              <span>{t.difficultyLabel}</span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(
+                  [
+                    { id: 'easy', label: t.diffEasy },
+                    { id: 'normal', label: t.diffNormal },
+                    { id: 'hard', label: t.diffHard },
+                  ] as { id: BombDifficulty; label: string }[]
+                ).map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    disabled={!isHost}
+                    onClick={() => handleUpdateSettings({ difficulty: d.id })}
+                    className={`py-1.5 rounded-lg border-2 border-black font-black text-center transition-colors cursor-pointer ${
+                      roomState.settings.difficulty === d.id
+                        ? 'bg-[#FF5B36] text-white shadow-[2px_2px_0_#000]'
+                        : 'bg-white text-black/60'
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Initial Lives */}
+            <div className="p-3 rounded-xl bg-white border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-between">
+              <span>{t.initialLivesLabel}</span>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    disabled={!isHost}
+                    onClick={() => handleUpdateSettings({ initialLives: val })}
+                    className={`w-7 h-7 rounded-lg border-2 border-black font-black text-xs transition-colors cursor-pointer ${
+                      roomState.settings.initialLives === val
+                        ? 'bg-[#FF5B36] text-white shadow-[2px_2px_0_#000]'
+                        : 'bg-white text-black/50'
+                    }`}
+                  >
+                    {val}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Max Lives */}
+            <div className="p-3 rounded-xl bg-white border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-between">
+              <span>{t.maxLivesLabel}</span>
+              <div className="flex items-center gap-1">
+                {[3, 4, 5, 6].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    disabled={!isHost}
+                    onClick={() => handleUpdateSettings({ maxLives: val })}
+                    className={`w-7 h-7 rounded-lg border-2 border-black font-black text-xs transition-colors cursor-pointer ${
+                      roomState.settings.maxLives === val
+                        ? 'bg-[#FFE600] text-black shadow-[2px_2px_0_#000]'
+                        : 'bg-white text-black/50'
+                    }`}
+                  >
+                    {val}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Durations */}
+            <div className="p-3 rounded-xl bg-white border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-between">
+              <span>{t.maxBombSecLabel}</span>
+              <select
+                disabled={!isHost}
+                value={roomState.settings.maxBombDurationSec}
+                onChange={(e) =>
+                  handleUpdateSettings({ maxBombDurationSec: Number(e.target.value) })
+                }
+                className="px-2.5 py-1 rounded-lg bg-white border-2 border-black font-black text-black outline-none"
+              >
+                {[10, 12, 15, 18, 20, 25].map((s) => (
+                  <option key={s} value={s}>
+                    {s}s
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Repetition Policy */}
+            <div className="p-3 rounded-xl bg-white border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-between">
+              <span>{t.wordRepetitionLabel}</span>
+              <button
+                type="button"
+                disabled={!isHost}
+                onClick={() =>
+                  handleUpdateSettings({
+                    wordRepetitionPolicy:
+                      roomState.settings.wordRepetitionPolicy === 'forbid'
+                        ? 'allow'
+                        : 'forbid',
+                  })
+                }
+                className="px-3 py-1 rounded-lg bg-[#00F0FF] text-black border-2 border-black font-black shadow-[2px_2px_0_#000] cursor-pointer"
+              >
+                {roomState.settings.wordRepetitionPolicy === 'forbid'
+                  ? t.repForbid
+                  : t.repAllow}
+              </button>
+            </div>
+
+            {/* Bonus Alphabet */}
+            <div className="p-3 rounded-xl bg-white border-2 border-black shadow-[2px_2px_0_#000] flex items-center justify-between">
+              <span>{t.bonusAlphabetLabel}</span>
+              <button
+                type="button"
+                disabled={!isHost}
+                onClick={() =>
+                  handleUpdateSettings({
+                    bonusAlphabetEnabled: !roomState.settings.bonusAlphabetEnabled,
+                  })
+                }
+                className={`px-3 py-1 rounded-lg border-2 border-black font-black shadow-[2px_2px_0_#000] cursor-pointer ${
+                  roomState.settings.bonusAlphabetEnabled
+                    ? 'bg-[#CCFF00] text-black'
+                    : 'bg-white text-black/50'
+                }`}
+              >
+                {roomState.settings.bonusAlphabetEnabled ? t.enabled : t.disabled}
+              </button>
+            </div>
+
+            <BrutalistButton
+              type="button"
+              color="coral"
+              size="md"
+              onClick={() => setShowSettingsModal(false)}
+              className="w-full"
+            >
+              {t.close}
+            </BrutalistButton>
+          </div>
+        </BrutalistDialog>
+      )}
     </div>
   );
 };

@@ -186,39 +186,33 @@
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* ==================== SEKOU BOMB : SOCIAL GAMEBOX WORLD ==================== */
+/* ==================== SEKOU BOMB : NEO-BRUTALIST POP WORLD ==================== */
 .sekou-bomb-world {
-  --sg-bg: #0D111D;
-  --sg-surface: #171E30;
-  --sg-surface-hover: #1F2942;
-  --sg-surface-sunken: #111625;
-  --sg-border: rgba(255, 255, 255, 0.08);
-  --sg-border-highlight: rgba(255, 255, 255, 0.16);
-  --sg-coral: #FF5722;
-  --sg-coral-hover: #F4511E;
-  --sg-gold: #FFB300;
-  --sg-emerald: #10B981;
-  --sg-cobalt: #3B82F6;
-  --sg-crimson: #EF4444;
-  --sg-text-primary: #FFFFFF;
-  --sg-text-secondary: #CBD5E1;
-  --sg-text-muted: #94A3B8;
+  --sb-bg: #0C0F17;
+  --sb-lime: #CCFF00;
+  --sb-yellow: #FFE600;
+  --sb-coral: #FF5B36;
+  --sb-cyan: #00F0FF;
+  --sb-pink: #FF66C4;
+  --sb-lavender: #B8A1FF;
 
-  background-color: var(--sg-bg);
-  background-image: radial-gradient(50rem 32rem at 50% -8%, rgba(255, 87, 34, 0.10), transparent 75%),
-                    radial-gradient(40rem 26rem at 90% 110%, rgba(59, 130, 246, 0.08), transparent 70%);
-  color: var(--sg-text-primary);
+  background-color: var(--sb-bg);
+  background-image: 
+    radial-gradient(rgba(255, 255, 255, 0.12) 1.5px, transparent 1.5px),
+    radial-gradient(40rem 30rem at 50% 0%, rgba(204, 255, 0, 0.08), transparent 70%);
+  background-size: 24px 24px, 100% 100%;
+  color: #FFFFFF;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color-scheme: dark;
 }
 
 .sekou-bomb-world ::selection {
-  background-color: #FF5722;
-  color: #FFFFFF;
+  background-color: #CCFF00;
+  color: #000000;
 }
 
 .sekou-bomb-world :focus-visible {
-  outline: 2px solid #FF5722;
+  outline: 3px solid #CCFF00;
   outline-offset: 2px;
 }
 
