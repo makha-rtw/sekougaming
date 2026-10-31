@@ -209,24 +209,52 @@ export function setupSekouBombSockets(io: Server): SekouBombManager {
     });
 
     // 9. Leave Room
-    socket.on('bomb_leave_room', (callback) => {
-      const session = bombManager.getSessionBySocketId(socket.id);
-      if (session) {
-        const { room, player } = session;
+    socket.on('bomb_leave_room', (data, callback) => {
+      const cb = typeof data === 'function' ? data : callback;
+      const payload = typeof data === 'object' && data !== null ? data : {};
+
+      let session = bombManager.getSessionBySocketId(socket.id);
+      let room = session?.room;
+      let player = session?.player;
+
+      if (!room && payload.roomCode) {
+        room = bombManager.getRoom(payload.roomCode);
+        if (room && payload.playerId) {
+          player = room.players.get(payload.playerId);
+        }
+      }
+
+      if (room && player) {
         socket.leave(`bomb_${room.code}`);
         room.removePlayer(player.id);
         if (room.players.size === 0) {
           bombManager.removeRoom(room.code);
         }
       }
-      callback?.({ success: true });
+      cb?.({ success: true });
     });
 
-    // 10. Disconnect
+    // 10. Kick Player from Lobby (Host only)
+    socket.on(
+      'bomb_kick_player',
+      ({ targetPlayerId }: { targetPlayerId: string }, callback) => {
+        const session = bombManager.getSessionBySocketId(socket.id);
+        if (!session) {
+          return callback?.({ success: false, error: 'Non connecté à un salon.' });
+        }
+        const res = session.room.kickPlayer(session.player.id, targetPlayerId);
+        callback?.(res);
+      }
+    );
+
+    // 11. Disconnect
     socket.on('disconnect', () => {
       const session = bombManager.getSessionBySocketId(socket.id);
       if (session) {
         session.room.handleDisconnect(socket.id);
+        if (session.room.players.size === 0) {
+          bombManager.removeRoom(session.room.code);
+        }
       }
     });
   });

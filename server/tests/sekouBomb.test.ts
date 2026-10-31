@@ -359,6 +359,28 @@ describe('SEKOU BOMB — Tests Automatisés Complets (Section 13)', () => {
         await new Promise((r) => c1.emit('bomb_leave_room', r));
         expect(room.players.get(joinRes2.playerId)?.isHost).toBe(true);
 
+        // 9. Disconnect in LOBBY removes player immediately
+        room.status = 'LOBBY';
+        room.settings.maxPlayers = 8;
+        const p2SocketId = room.players.get(joinRes2.playerId)?.socketId;
+        if (p2SocketId) {
+          room.handleDisconnect(p2SocketId);
+          expect(room.players.has(joinRes2.playerId)).toBe(false);
+        }
+
+        // 10. Host kicking a player in LOBBY
+        const addP3 = room.addPlayer('TestKick', 'sock_p3');
+        expect(addP3.success).toBe(true);
+        const p3Id = addP3.player!.id;
+        const addHost = room.addPlayer('NewHost', 'sock_host');
+        expect(addHost.success).toBe(true);
+        addHost.player!.isHost = true;
+        expect(room.players.has(p3Id)).toBe(true);
+
+        const kickRes = room.kickPlayer(addHost.player!.id, p3Id);
+        expect(kickRes.success).toBe(true);
+        expect(room.players.has(p3Id)).toBe(false);
+
         room.clearAllTimers();
       } finally {
         c1.disconnect();

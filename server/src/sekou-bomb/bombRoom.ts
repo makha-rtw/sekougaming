@@ -296,15 +296,52 @@ export class SekouBombRoom {
         player.isConnected = false;
         player.disconnectedAt = Date.now();
 
-        // If host disconnects in LOBBY, reassign host to another connected player if available
+        // 1. In LOBBY or GAME_OVER, immediately remove player so they don't linger on other screens
+        if (this.status === 'LOBBY' || this.status === 'GAME_OVER') {
+          this.removePlayer(player.id);
+          return;
+        }
+
+        // 2. In active game, reassign host if host left
         if (player.isHost) {
           this.reassignHostIfPossible(player.id);
+        }
+
+        // 3. If disconnected player held the bomb, eliminate them immediately so players don't wait!
+        if (this.activePlayerId === player.id && this.status === 'PLAYING') {
+          this.removePlayer(player.id);
+          return;
+        }
+
+        // 4. If only 1 connected alive player remains, finish the match immediately with victory
+        const connectedAlive = this.getAlivePlayers().filter((p) => p.isConnected);
+        if (connectedAlive.length <= 1) {
+          player.lives = 0;
+          player.isEliminated = true;
+          player.eliminatedAtRound = this.roundNumber;
+          this.finishGame(connectedAlive[0] || null);
+          return;
         }
 
         this.notify();
         return;
       }
     }
+  }
+
+  public kickPlayer(requesterId: string, targetPlayerId: string): { success: boolean; error?: string } {
+    const requester = this.players.get(requesterId);
+    if (!requester || !requester.isHost) {
+      return { success: false, error: "Seul l'hôte peut expulser un joueur." };
+    }
+    if (requesterId === targetPlayerId) {
+      return { success: false, error: "Vous ne pouvez pas vous expulser vous-même." };
+    }
+    if (this.status !== 'LOBBY') {
+      return { success: false, error: "L'expulsion n'est possible que dans le salon d'attente." };
+    }
+    this.removePlayer(targetPlayerId);
+    return { success: true };
   }
 
   public removePlayer(playerId: string): void {
@@ -413,8 +450,17 @@ export class SekouBombRoom {
       return { success: false, error: 'La partie a déjà commencé.' };
     }
 
-    if (this.players.size < 2) {
-      return { success: false, error: 'Il faut au moins 2 joueurs pour lancer Sekou Bomb.' };
+    // Clean up any disconnected players before starting
+    for (const [id, p] of Array.from(this.players.entries())) {
+      if (!p.isConnected) {
+        this.players.delete(id);
+      }
+    }
+    this.reindexPlayers();
+
+    const connectedPlayers = Array.from(this.players.values()).filter((p) => p.isConnected);
+    if (connectedPlayers.length < 2) {
+      return { success: false, error: 'Il faut au moins 2 joueurs connectés pour lancer Sekou Bomb.' };
     }
 
     this.clearAllTimers();
@@ -790,12 +836,36 @@ export class SekouBombRoom {
       const candidateIndex = (currentIndex + offset) % allOrdered.length;
       const candidate = allOrdered[candidateIndex];
       if (!candidate.isEliminated && !candidate.isSpectator) {
+        // If candidate is disconnected, eliminate them so the room never waits for a ghost!
+        if (!candidate.isConnected) {
+          const aliveBefore = this.getAlivePlayers().length;
+          candidate.isEliminated = true;
+          candidate.lives = 0;
+          candidate.eliminatedAtRound = this.roundNumber;
+          candidate.finalRank = aliveBefore;
+          this.emitEvent({
+            type: 'player_eliminated',
+            playerId: candidate.id,
+            playerName: candidate.name,
+            prompt: this.currentPrompt,
+            livesRemaining: 0,
+            timestamp: Date.now(),
+          });
+          continue;
+        }
+
         if (candidateIndex <= currentIndex) {
           this.roundNumber++;
         }
         nextPlayer = candidate;
         break;
       }
+    }
+
+    const aliveRemaining = this.getAlivePlayers();
+    if (aliveRemaining.length <= 1) {
+      this.finishGame(aliveRemaining[0] || null);
+      return;
     }
 
     if (!nextPlayer) {

@@ -261,6 +261,19 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
       serverOffsetMsRef.current = (state.serverNowMs || Date.now()) - Date.now();
       setRoomState(state);
 
+      // If this player was removed or kicked from the room:
+      if (myPlayerId && !state.players.some((p) => p.id === myPlayerId)) {
+        clearBombSession();
+        setRoomState(null);
+        setMyPlayerId(null);
+        setErrorBanner(
+          uiLang === 'fr'
+            ? 'Vous avez quitté ou été retiré du salon.'
+            : 'You have left or were removed from the room.'
+        );
+        return;
+      }
+
       if (state.lastEvent && state.lastEvent.id !== lastEventIdRef.current) {
         lastEventIdRef.current = state.lastEvent.id;
         const ev = state.lastEvent;
@@ -438,11 +451,23 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
   };
 
   const handleLeaveRoom = () => {
-    socket.emit('bomb_leave_room', () => {
-      clearBombSession();
-      setRoomState(null);
-      setMyPlayerId(null);
-      setErrorBanner(null);
+    socket.emit(
+      'bomb_leave_room',
+      { roomCode: roomState?.roomCode, playerId: myPlayerId },
+      () => {
+        clearBombSession();
+        setRoomState(null);
+        setMyPlayerId(null);
+        setErrorBanner(null);
+      }
+    );
+  };
+
+  const handleKickPlayer = (targetPlayerId: string) => {
+    socket.emit('bomb_kick_player', { targetPlayerId }, (res: any) => {
+      if (!res?.success && res?.error) {
+        setErrorBanner(res.error);
+      }
     });
   };
 
@@ -971,15 +996,29 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                       )}
                     </div>
 
-                    <span
-                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border border-black shrink-0 ${
-                        p.isConnected
-                          ? 'bg-[#CCFF00] text-black'
-                          : 'bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      {p.isConnected ? t.online : t.offline}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border border-black shrink-0 ${
+                          p.isConnected
+                            ? 'bg-[#CCFF00] text-black'
+                            : 'bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {p.isConnected ? t.online : t.offline}
+                      </span>
+
+                      {isHost && p.id !== myPlayerId && (
+                        <button
+                          type="button"
+                          onClick={() => handleKickPlayer(p.id)}
+                          title={uiLang === 'fr' ? 'Expulser du salon' : 'Kick from lobby'}
+                          aria-label="Expulser"
+                          className="w-6 h-6 rounded-lg bg-black text-white hover:bg-[#FF5B36] flex items-center justify-center text-xs font-black transition-colors cursor-pointer"
+                        >
+                          <X weight="bold" className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
