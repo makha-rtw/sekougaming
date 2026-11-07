@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useScreenEnterChoreography } from '../../animations/jawooEngine';
 import {
   GameState,
   NightTargets,
@@ -99,6 +100,9 @@ export default function LoupGarouApp({ onBackToHub }: LoupGarouAppProps = {}) {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useScreenEnterChoreography(containerRef, [gameState.phase, gameState.round]);
 
   // Initial Resource Preloading (13 Icons + 23 Voice Audio files)
   const [preloadProgress, setPreloadProgress] = useState<PreloadProgress>(() => assetPreloader.progress);
@@ -656,7 +660,10 @@ export default function LoupGarouApp({ onBackToHub }: LoupGarouAppProps = {}) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5efe3] text-[#22160c] flex flex-col font-body selection:bg-[#824716]/20 selection:text-[#542a06]">
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-[#f5efe3] text-[#22160c] flex flex-col font-body selection:bg-[#824716]/20 selection:text-[#542a06]"
+    >
       {/* Fullscreen Medieval Phase Transition */}
       {phaseTransition && (
         <TurnTransition

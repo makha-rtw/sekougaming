@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import {
   ArrowLeft,
@@ -16,6 +16,7 @@ import {
 import { Card } from '../../../shared/types.js';
 import { CardView } from '../components/CardView.js';
 import { sounds } from '../utils/sound.js';
+import { useScreenEnterChoreography } from '../animations/jawooEngine.js';
 
 interface HomeScreenProps {
   onCreateRoom: (name: string) => void;
@@ -74,6 +75,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [localError, setLocalError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(sounds.isSoundMuted());
   const [selectedCardIdx, setSelectedCardIdx] = useState<number>(2);
+  const screenRef = useRef<HTMLDivElement>(null);
+
+  useScreenEnterChoreography(screenRef, [mode]);
 
   useEffect(() => {
     if (invitedRoomCode) {
@@ -121,9 +125,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   return (
-    <div className="sekouno-salon-world min-h-[100dvh] w-full flex flex-col justify-between px-3 sm:px-6 py-3 pt-safe pb-safe select-none relative overflow-x-hidden">
+    <div
+      ref={screenRef}
+      className="sekouno-salon-world min-h-[100dvh] w-full flex flex-col justify-between px-3 sm:px-6 py-3 pt-safe pb-safe select-none relative overflow-x-hidden"
+    >
       {/* Top Architectural Salon Header */}
-      <header className="relative z-10 w-full max-w-6xl mx-auto">
+      <header data-jawoo-header="" className="relative z-10 w-full max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#F6F0E2]/15">
           {onBackToHub ? (
             <button
@@ -132,7 +139,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 sounds.buttonClick();
                 onBackToHub();
               }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-[#141924] hover:bg-[#1B2230] border border-[#F6F0E2]/20 font-sekouno-mono text-xs font-bold uppercase tracking-wider text-[#D4A548] transition-[background-color,border-color] cursor-pointer"
+              className="jawoo-rise-btn inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-[#141924] hover:text-white border border-[#F6F0E2]/20 font-sekouno-mono text-xs font-bold uppercase tracking-wider text-[#D4A548] transition-[background-color,border-color] cursor-pointer"
             >
               <ArrowLeft weight="bold" className="w-3.5 h-3.5" />
               <span>Portail</span>
@@ -179,36 +186,52 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           transition={{ duration: 0.4 }}
           className="lg:col-span-6 flex flex-col items-start text-left"
         >
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-[4px] bg-[#141924] border border-[#D4A548]/45 font-sekouno-mono text-[10px] font-bold uppercase tracking-widest text-[#D4A548] mb-3">
+          <div
+            data-jawoo-pop=""
+            className="inline-flex items-center gap-2 px-2.5 py-1 rounded-[4px] bg-[#141924] border border-[#D4A548]/45 font-sekouno-mono text-[10px] font-bold uppercase tracking-widest text-[#D4A548] mb-3"
+          >
             <span>TABLE 01</span>
             <span className="text-[#F6F0E2]/30">•</span>
             <span>02 À 15 JOUEURS EN DIRECT</span>
           </div>
 
-          <h1 className="font-sekouno-display font-black uppercase tracking-tight leading-[0.92] text-[clamp(2.8rem,7vw,4.6rem)] text-[#F6F0E2]">
+          <h1
+            data-jawoo-title=""
+            className="font-sekouno-display font-black uppercase tracking-tight leading-[0.92] text-[clamp(2.8rem,7vw,4.6rem)] text-[#F6F0E2]"
+          >
             SEKOUNO
           </h1>
 
           {/* 4-Color Architectural Divider Strip */}
-          <div className="w-full max-w-md grid grid-cols-4 h-1.5 rounded-[2px] overflow-hidden my-3.5">
+          <div
+            data-jawoo-line=""
+            className="w-full max-w-md grid grid-cols-4 h-1.5 rounded-[2px] overflow-hidden my-3.5"
+          >
             <div className="bg-[#D92D20]" />
             <div className="bg-[#155EEF]" />
             <div className="bg-[#099250]" />
             <div className="bg-[#DC9B06]" />
           </div>
 
-          <p className="text-sm sm:text-base text-[#D9D0BE] max-w-[44ch] leading-relaxed">
+          <p
+            data-jawoo-reveal=""
+            className="text-sm sm:text-base text-[#D9D0BE] max-w-[44ch] leading-relaxed"
+          >
             Prenez place autour du salon graphique à quatre couleurs. Surenchère croissante, arbitrage de table et confidentialité intégrale de la pioche.
           </p>
 
           {/* Interactive 5-Card Specimen Fan */}
-          <div className="mt-5 w-full p-4 rounded-[10px] bg-[#141924]/90 border border-[#F6F0E2]/12">
+          <div
+            data-jawoo-card=""
+            className="mt-5 w-full p-4 rounded-[10px] bg-[#141924]/90 border border-[#F6F0E2]/12"
+          >
             <div className="flex items-center justify-center sm:justify-start -space-x-2.5 sm:-space-x-3 pt-2 pb-3">
               {SHOWCASE_CARDS.map((item, idx) => {
                 const active = selectedCardIdx === idx;
                 return (
                   <div
                     key={item.card.id}
+                    data-jawoo-pop=""
                     style={{
                       transform: `rotate(${active ? 0 : item.rot}deg) translateY(${active ? -8 : 0}px)`,
                       zIndex: active ? 25 : idx,
@@ -235,7 +258,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
 
           {/* Architectural Ledger of Official House Rules (No SaaS Rounded Cards) */}
-          <dl className="mt-5 w-full divide-y divide-[#F6F0E2]/12 border-y border-[#F6F0E2]/12">
+          <dl
+            data-jawoo-card=""
+            className="mt-5 w-full divide-y divide-[#F6F0E2]/12 border-y border-[#F6F0E2]/12"
+          >
             <div className="py-2.5 flex items-start gap-3">
               <dt className="font-sekouno-mono text-[11px] font-bold text-[#D92D20] uppercase shrink-0 w-20 flex items-center gap-1 pt-0.5">
                 <Prohibit weight="bold" className="w-3.5 h-3.5" />
@@ -270,6 +296,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         {/* Right Column: Physical Perforated Ivory & Obsidian Club Pass */}
         <motion.main
+          data-jawoo-card=""
           initial={reduceMotion ? false : { opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.05 }}
@@ -419,7 +446,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <button
                 type="submit"
                 disabled={isLoading || !isConnected}
-                className="w-full py-3.5 px-5 rounded-[8px] bg-[#D4A548] hover:bg-[#e0b458] text-[#11131A] font-sekouno-display font-black text-sm sm:text-base uppercase tracking-wider transition-[transform,background-color] active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="jawoo-rise-btn w-full py-3.5 px-5 rounded-[8px] bg-[#D4A548] hover:text-white text-[#11131A] font-sekouno-display font-black text-sm sm:text-base uppercase tracking-wider transition-[transform,background-color,color] active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {isLoading ? (
                   <span>Préparation de la table...</span>

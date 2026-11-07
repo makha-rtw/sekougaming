@@ -272,13 +272,87 @@ dialog.sekou-dialog::backdrop {
   backdrop-filter: blur(4px);
 }
 
+/* ==================== JAWOO.IO ANIMATION & PORTAL DESIGN SYSTEM ==================== */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.jawoo-portal-world {
+  --jw-bg: #FFFFFF;
+  --jw-bg-muted: #F7F7F7;
+  --jw-ink: #181818;
+  --jw-accent: #EF4C05;
+  --jw-yellow: #F5C542;
+  --jw-blue: #2F4ACB;
+  background-color: var(--jw-bg);
+  color: var(--jw-ink);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+
+.jawoo-portal-world ::selection {
+  background-color: #EF4C05;
+  color: #FFFFFF;
+}
+
+/* Signature jawoo.io "riseBand" button hover effect (cubic-bezier(0.19, 1, 0.22, 1)) */
+.jawoo-rise-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: color 0.35s cubic-bezier(0.19, 1, 0.22, 1),
+    border-color 0.35s cubic-bezier(0.19, 1, 0.22, 1),
+    transform 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.jawoo-rise-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--jw-rise-color, #EF4C05);
+  transform: translateY(102%);
+  transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.jawoo-rise-btn:hover::before,
+.jawoo-rise-btn:focus-visible::before {
+  transform: translateY(0%);
+}
+
+.jawoo-rise-btn:active {
+  transform: translateY(1px);
+}
+
+.jawoo-rise-btn-dark {
+  --jw-rise-color: #181818;
+}
+
+.jawoo-rise-btn-light {
+  --jw-rise-color: #FFFFFF;
+}
+
+.jawoo-rise-btn-gold {
+  --jw-rise-color: #F5C542;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flame-banner,
   .animate-spin-slow,
   .animate-pulse-fast,
   .flying-draw-card,
   .flying-play-card,
-  .solari-flap-enter {
+  .solari-flap-enter,
+  .jawoo-rise-btn::before {
     animation: none !important;
     transition: none !important;
   }

@@ -20,6 +20,7 @@ import {
   ArrowsDownUp,
 } from '@phosphor-icons/react';
 import { sounds } from '../utils/sound.js';
+import { useScreenEnterChoreography } from '../animations/jawooEngine.js';
 
 interface FlyingCardAnim {
   id: string;
@@ -103,6 +104,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [selectedPenaltyTarget, setSelectedPenaltyTarget] = useState<PlayerPublic | null>(null);
   const [isMuted, setIsMuted] = useState(sounds.isSoundMuted());
   const [sortMode, setSortMode] = useState<'none' | 'color' | 'value'>('none');
+  const screenRef = useRef<HTMLDivElement>(null);
+
+  useScreenEnterChoreography(screenRef, [pub.roomCode]);
 
   const [flyingCards, setFlyingCards] = useState<FlyingCardAnim[]>([]);
   const [discardHistory, setDiscardHistory] = useState<DiscardHistoryItem[]>(() =>
@@ -342,9 +346,12 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     (clientState.canCallUno || (myHand.length <= 2 && myHand.length >= 1 && !mePublic?.hasCalledUno));
 
   return (
-    <div className="sekouno-salon-world h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between pt-safe pl-safe pr-safe select-none relative">
+    <div
+      ref={screenRef}
+      className="sekouno-salon-world h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between pt-safe pl-safe pr-safe select-none relative"
+    >
       {/* 1. TOP ARCHITECTURAL SALON RAIL + OPPONENTS */}
-      <header className="relative z-20 flex-shrink-0 px-2.5 pt-1.5 pb-1">
+      <header data-jawoo-header="" className="relative z-20 flex-shrink-0 px-2.5 pt-1.5 pb-1">
         <div className="flex items-center justify-between py-1.5 px-3 mb-1.5 rounded-[9px] bg-[#141924] border border-[#F6F0E2]/15">
           <div className="flex items-center gap-2.5">
             <span className="font-sekouno-mono font-bold text-xs tracking-wider text-[#11131A] bg-[#D4A548] px-2 py-0.5 rounded-[4px]">

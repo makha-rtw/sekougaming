@@ -37,6 +37,7 @@ import {
 } from '../../../../shared/sekouBombTypes.js';
 import { getBombTranslation } from './i18n.js';
 import { bombSounds } from './sound.js';
+import { useScreenEnterChoreography } from '../../animations/jawooEngine.js';
 import {
   BrutalistCard,
   BrutalistButton,
@@ -207,6 +208,9 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
   const lastEventIdRef = useRef<string | null>(null);
   const lastTickSecondRef = useRef<number>(-1);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const screenRef = useRef<HTMLDivElement>(null);
+
+  useScreenEnterChoreography(screenRef, [roomState?.status]);
 
   // Cycle the demonstration specimen on Home screen when idle
   useEffect(() => {
@@ -620,6 +624,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
 
   return (
     <div
+      ref={screenRef}
       className="sekou-bomb-world min-h-[100dvh] w-full flex flex-col justify-between overflow-x-hidden select-none"
       style={{
         paddingTop: 'max(env(safe-area-inset-top, 0px), 0.75rem)',
@@ -628,6 +633,7 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
     >
       {/* ==================== 1. TOP HEADER / APP BAR (NEO-BRUTALIST) ==================== */}
       <motion.header
+        data-jawoo-header=""
         initial={reduceMotion ? false : { opacity: 0, y: -24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}

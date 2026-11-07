@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import { TimeControlKey, UserPublic } from '../../../../shared/chessTypes.js';
 import { fetchCurrentUser, clearStoredToken, getStoredToken } from './services/api.js';
@@ -9,6 +9,10 @@ import { PolychessOnlineScreen } from './screens/PolychessOnlineScreen.js';
 import { PolychessLeaderboardScreen } from './screens/PolychessLeaderboardScreen.js';
 import { PolychessHistoryScreen } from './screens/PolychessHistoryScreen.js';
 import { Loader2 } from 'lucide-react';
+import {
+  triggerJawooTransition,
+  useScreenEnterChoreography,
+} from '../../animations/jawooEngine.js';
 
 export type PolychessScreen =
   | 'auth'
@@ -32,6 +36,13 @@ export const PolychessApp: React.FC<PolychessAppProps> = ({
   const [user, setUser] = useState<UserPublic | null>(null);
   const [screen, setScreen] = useState<PolychessScreen>('auth');
   const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useScreenEnterChoreography(containerRef, [screen, isLoadingAuth]);
+
+  const navigateScreen = (next: PolychessScreen, label: string, subtitle = 'POLYCHESS // FIDE ELO') => {
+    triggerJawooTransition(label, () => setScreen(next), subtitle);
+  };
 
   // Online game launch state
   const [onlineConfig, setOnlineConfig] = useState<{
@@ -87,23 +98,35 @@ export const PolychessApp: React.FC<PolychessAppProps> = ({
   }, [initialRoomCode]);
 
   const handleAuthSuccess = (authenticatedUser: UserPublic) => {
-    setUser(authenticatedUser);
-    if (initialRoomCode) {
-      setOnlineConfig({
-        mode: 'join_private',
-        timeControl: '5m',
-        roomCode: initialRoomCode,
-      });
-      setScreen('online');
-    } else {
-      setScreen('main');
-    }
+    triggerJawooTransition(
+      initialRoomCode ? `Salon #${initialRoomCode}` : 'Club Polychess',
+      () => {
+        setUser(authenticatedUser);
+        if (initialRoomCode) {
+          setOnlineConfig({
+            mode: 'join_private',
+            timeControl: '5m',
+            roomCode: initialRoomCode,
+          });
+          setScreen('online');
+        } else {
+          setScreen('main');
+        }
+      },
+      'POLYCHESS // BIENVENUE'
+    );
   };
 
   const handleLogout = () => {
-    clearStoredToken();
-    setUser(null);
-    setScreen('auth');
+    triggerJawooTransition(
+      'Connexion Polychess',
+      () => {
+        clearStoredToken();
+        setUser(null);
+        setScreen('auth');
+      },
+      'POLYCHESS // SESSION FERMÉE'
+    );
   };
 
   if (isLoadingAuth) {
@@ -115,77 +138,97 @@ export const PolychessApp: React.FC<PolychessAppProps> = ({
     );
   }
 
-  // 1. Auth Screen (when not logged in and trying to access main/online)
-  if (!user || screen === 'auth') {
-    return (
-      <AuthScreen
-        onSuccess={handleAuthSuccess}
-        onBackToHub={onBackToHub}
-      />
-    );
-  }
-
-  // 2. Local Mode
-  if (screen === 'local') {
-    return <PolychessLocalScreen onBackToMenu={() => setScreen('main')} />;
-  }
-
-  // 3. Online Mode
-  if (screen === 'online') {
-    const token = getStoredToken() || '';
-    return (
-      <PolychessOnlineScreen
-        socket={socket}
-        currentUser={user}
-        token={token}
-        initialMode={onlineConfig.mode}
-        timeControl={onlineConfig.timeControl}
-        roomCodeToJoin={onlineConfig.roomCode}
-        onBackToMenu={() => setScreen('main')}
-        onUserEloUpdated={(newElo) => {
-          setUser((prev) => (prev ? { ...prev, elo: newElo } : null));
-        }}
-      />
-    );
-  }
-
-  // 4. Leaderboard Screen
-  if (screen === 'leaderboard') {
-    return (
-      <PolychessLeaderboardScreen
-        onBackToMenu={() => setScreen('main')}
-        currentUserId={user.id}
-      />
-    );
-  }
-
-  // 5. Match History Screen
-  if (screen === 'history') {
-    return <PolychessHistoryScreen onBackToMenu={() => setScreen('main')} />;
-  }
-
-  // 6. Main Dashboard
   return (
-    <PolychessMainScreen
-      user={user}
-      onPlayLocal={() => setScreen('local')}
-      onQuickMatch={(tc) => {
-        setOnlineConfig({ mode: 'quick', timeControl: tc });
-        setScreen('online');
-      }}
-      onCreatePrivate={(tc) => {
-        setOnlineConfig({ mode: 'create_private', timeControl: tc });
-        setScreen('online');
-      }}
-      onJoinPrivate={(code) => {
-        setOnlineConfig({ mode: 'join_private', timeControl: '5m', roomCode: code });
-        setScreen('online');
-      }}
-      onOpenLeaderboard={() => setScreen('leaderboard')}
-      onOpenHistory={() => setScreen('history')}
-      onLogout={handleLogout}
-      onBackToHub={onBackToHub}
-    />
+    <div ref={containerRef} className="min-h-[100dvh] w-full">
+      {/* 1. Auth Screen (when not logged in and trying to access main/online) */}
+      {(!user || screen === 'auth') && (
+        <AuthScreen onSuccess={handleAuthSuccess} onBackToHub={onBackToHub} />
+      )}
+
+      {/* 2. Local Mode */}
+      {user && screen === 'local' && (
+        <PolychessLocalScreen
+          onBackToMenu={() => navigateScreen('main', 'Club Polychess')}
+        />
+      )}
+
+      {/* 3. Online Mode */}
+      {user && screen === 'online' && (
+        <PolychessOnlineScreen
+          socket={socket}
+          currentUser={user}
+          token={getStoredToken() || ''}
+          initialMode={onlineConfig.mode}
+          timeControl={onlineConfig.timeControl}
+          roomCodeToJoin={onlineConfig.roomCode}
+          onBackToMenu={() => navigateScreen('main', 'Club Polychess')}
+          onUserEloUpdated={(newElo) => {
+            setUser((prev) => (prev ? { ...prev, elo: newElo } : null));
+          }}
+        />
+      )}
+
+      {/* 4. Leaderboard Screen */}
+      {user && screen === 'leaderboard' && (
+        <PolychessLeaderboardScreen
+          onBackToMenu={() => navigateScreen('main', 'Club Polychess')}
+          currentUserId={user.id}
+        />
+      )}
+
+      {/* 5. Match History Screen */}
+      {user && screen === 'history' && (
+        <PolychessHistoryScreen
+          onBackToMenu={() => navigateScreen('main', 'Club Polychess')}
+        />
+      )}
+
+      {/* 6. Main Dashboard */}
+      {user && screen === 'main' && (
+        <PolychessMainScreen
+          user={user}
+          onPlayLocal={() => navigateScreen('local', 'Échiquier Local', 'POLYCHESS // PASS & PLAY')}
+          onQuickMatch={(tc) => {
+            triggerJawooTransition(
+              `Match Classé (${tc})`,
+              () => {
+                setOnlineConfig({ mode: 'quick', timeControl: tc });
+                setScreen('online');
+              },
+              'POLYCHESS // ARÈNE EN LIGNE'
+            );
+          }}
+          onCreatePrivate={(tc) => {
+            triggerJawooTransition(
+              `Salon Privé (${tc})`,
+              () => {
+                setOnlineConfig({ mode: 'create_private', timeControl: tc });
+                setScreen('online');
+              },
+              'POLYCHESS // TABLE PRIVÉE'
+            );
+          }}
+          onJoinPrivate={(code) => {
+            triggerJawooTransition(
+              `Salon #${code}`,
+              () => {
+                setOnlineConfig({ mode: 'join_private', timeControl: '5m', roomCode: code });
+                setScreen('online');
+              },
+              'POLYCHESS // TABLE PRIVÉE'
+            );
+          }}
+          onOpenLeaderboard={() =>
+            navigateScreen('leaderboard', 'Classement Elo', 'POLYCHESS // CLASSEMENT OFFICIEL')
+          }
+          onOpenHistory={() =>
+            navigateScreen('history', 'Historique des Matchs', 'POLYCHESS // ARCHIVES')
+          }
+          onLogout={handleLogout}
+          onBackToHub={onBackToHub}
+        />
+      )}
+    </div>
   );
 };
 

@@ -116,41 +116,47 @@ export const LobbyConfigView: React.FC<LobbyConfigViewProps> = ({
     <div className="w-full max-w-md mx-auto p-4 space-y-6 pb-28">
       {/* Title & Introduction */}
       <div className="text-center space-y-1">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-[#22160c]">
+        <h1
+          data-jawoo-title=""
+          className="font-display text-2xl font-bold tracking-tight text-[#22160c]"
+        >
           Création de la Partie
         </h1>
-        <p className="text-xs text-[#5c4936]">
+        <p data-jawoo-reveal="" className="text-xs text-[#5c4936]">
           Configurez les participants et l'attribution des cartes secrètes dans le grimoire.
         </p>
       </div>
 
       {/* Quick Presets */}
-      <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1">
+      <div data-jawoo-pop="" className="flex items-center justify-center gap-2 overflow-x-auto pb-1">
         <button
           type="button"
           onClick={() => applyPreset(8)}
-          className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[#efe4cf] border border-[#cfbe9f] text-[#3d2b1b] hover:bg-[#e4d6bd] transition-colors shrink-0 cursor-pointer shadow-2xs"
+          className="jawoo-rise-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[#efe4cf] border border-[#cfbe9f] text-[#3d2b1b] hover:text-white transition-colors shrink-0 cursor-pointer shadow-2xs"
         >
           8 Joueurs
         </button>
         <button
           type="button"
           onClick={() => applyPreset(10)}
-          className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[#efe4cf] border border-[#cfbe9f] text-[#3d2b1b] hover:bg-[#e4d6bd] transition-colors shrink-0 cursor-pointer shadow-2xs"
+          className="jawoo-rise-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[#efe4cf] border border-[#cfbe9f] text-[#3d2b1b] hover:text-white transition-colors shrink-0 cursor-pointer shadow-2xs"
         >
           10 Joueurs
         </button>
         <button
           type="button"
           onClick={() => applyPreset(12)}
-          className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[#efe4cf] border border-[#cfbe9f] text-[#3d2b1b] hover:bg-[#e4d6bd] transition-colors shrink-0 cursor-pointer shadow-2xs"
+          className="jawoo-rise-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[#efe4cf] border border-[#cfbe9f] text-[#3d2b1b] hover:text-white transition-colors shrink-0 cursor-pointer shadow-2xs"
         >
           12 Joueurs
         </button>
       </div>
 
       {/* Total Players Selector */}
-      <div className="bg-[#fcf9f2] border border-[#d8c5aa] rounded-2xl p-4 shadow-sm space-y-3">
+      <div
+        data-jawoo-card=""
+        className="bg-[#fcf9f2] border border-[#d8c5aa] rounded-2xl p-4 shadow-sm space-y-3"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#f7e6e3] border border-[#dfaba2] flex items-center justify-center text-[#871c1c]">
@@ -195,7 +201,10 @@ export const LobbyConfigView: React.FC<LobbyConfigViewProps> = ({
         </h2>
 
         {/* Loup-Garou Counter */}
-        <div className="bg-[#faecea] border border-[#dea299] rounded-2xl p-3.5 flex items-center justify-between shadow-2xs">
+        <div
+          data-jawoo-card=""
+          className="bg-[#faecea] border border-[#dea299] rounded-2xl p-3.5 flex items-center justify-between shadow-2xs"
+        >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#f4d5d0] border border-[#dea299] flex items-center justify-center text-[#871c1c]">
               <RoleIcon roleId="loup_garou" className="w-5 h-5" />
@@ -229,7 +238,10 @@ export const LobbyConfigView: React.FC<LobbyConfigViewProps> = ({
         </div>
 
         {/* Simple Villageois Counter */}
-        <div className="bg-[#fcf7ec] border border-[#d8c39b] rounded-2xl p-3.5 flex items-center justify-between shadow-2xs">
+        <div
+          data-jawoo-card=""
+          className="bg-[#fcf7ec] border border-[#d8c39b] rounded-2xl p-3.5 flex items-center justify-between shadow-2xs"
+        >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#ede0c3] border border-[#d8c39b] flex items-center justify-center text-[#63431a]">
               <RoleIcon roleId="villageois" className="w-5 h-5" />
@@ -379,7 +391,7 @@ export const LobbyConfigView: React.FC<LobbyConfigViewProps> = ({
             type="button"
             onClick={onStartDistribution}
             disabled={!isValid}
-            className="w-full h-12 rounded-xl bg-[#824716] hover:bg-[#6c390f] disabled:opacity-40 disabled:hover:bg-[#824716] text-[#fffdf8] font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-[#824716]/25 border border-[#542a06] active:scale-[0.99] transition-all cursor-pointer disabled:cursor-not-allowed"
+            className="jawoo-rise-btn w-full h-12 rounded-xl bg-[#824716] hover:text-white disabled:opacity-40 text-[#fffdf8] font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-[#824716]/25 border border-[#542a06] active:scale-[0.99] transition-all cursor-pointer disabled:cursor-not-allowed"
           >
             <Sparkles className="w-4 h-4" />
             <span>Commencer la Distribution Secrète</span>

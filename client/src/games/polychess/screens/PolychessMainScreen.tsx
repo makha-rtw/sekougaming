@@ -65,11 +65,11 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between p-4 max-w-xl mx-auto pt-safe pb-safe select-none">
       {/* Top Navigation */}
-      <header className="flex items-center justify-between mb-3">
+      <header data-jawoo-header="" className="flex items-center justify-between mb-3">
         <button
           type="button"
           onClick={onBackToHub}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-bold text-amber-400 hover:text-white hover:bg-slate-800 transition-all shadow-md active:scale-95 cursor-pointer"
+          className="jawoo-rise-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-bold text-amber-400 hover:text-white transition-all shadow-md active:scale-95 cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Accueil SekouGaming</span>
@@ -78,7 +78,7 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
         <button
           type="button"
           onClick={onLogout}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-all cursor-pointer"
+          className="jawoo-rise-btn inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs font-semibold text-slate-400 hover:text-white transition-all cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Déconnexion</span>
@@ -86,13 +86,19 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
       </header>
 
       {/* Profile Card & Elo Badge */}
-      <section className="bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950/95 border-2 border-slate-800 rounded-3xl p-5 shadow-2xl relative overflow-hidden mb-4">
+      <section
+        data-jawoo-card=""
+        className="bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950/95 border-2 border-slate-800 rounded-3xl p-5 shadow-2xl relative overflow-hidden mb-4"
+      >
         {/* Glow */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
 
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-yellow-500 flex items-center justify-center shadow-lg text-slate-950 font-black text-xl shrink-0">
+            <div
+              data-jawoo-pop=""
+              className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-yellow-500 flex items-center justify-center shadow-lg text-slate-950 font-black text-xl shrink-0"
+            >
               ♚
             </div>
             <div className="min-w-0">
@@ -108,12 +114,15 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
             </div>
           </div>
 
-          {/* Elo Badge */}
+          {/* Elo Badge with Jawoo Counter */}
           <div className="text-right shrink-0">
             <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
               POLYCHESS ELO
             </div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 drop-shadow">
+            <div
+              data-jawoo-counter={user.elo}
+              className="text-2xl sm:text-3xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 drop-shadow tabular-nums"
+            >
               {user.elo}
             </div>
           </div>
@@ -121,21 +130,29 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
 
         {/* Stats Row */}
         <div className="grid grid-cols-4 gap-2 pt-3 border-t border-slate-800/80 text-center">
-          <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
+          <div data-jawoo-pop="" className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
             <div className="text-[10px] uppercase font-bold text-slate-400">Parties</div>
-            <div className="text-base font-black text-white">{user.rankedGames}</div>
+            <div data-jawoo-counter={user.rankedGames} className="text-base font-black text-white tabular-nums">
+              {user.rankedGames}
+            </div>
           </div>
-          <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
+          <div data-jawoo-pop="" className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
             <div className="text-[10px] uppercase font-bold text-emerald-400">Victoires</div>
-            <div className="text-base font-black text-emerald-300">{user.wins}</div>
+            <div data-jawoo-counter={user.wins} className="text-base font-black text-emerald-300 tabular-nums">
+              {user.wins}
+            </div>
           </div>
-          <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
+          <div data-jawoo-pop="" className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
             <div className="text-[10px] uppercase font-bold text-slate-400">Nuls</div>
-            <div className="text-base font-black text-slate-300">{user.draws}</div>
+            <div data-jawoo-counter={user.draws} className="text-base font-black text-slate-300 tabular-nums">
+              {user.draws}
+            </div>
           </div>
-          <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
+          <div data-jawoo-pop="" className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/80">
             <div className="text-[10px] uppercase font-bold text-red-400">Défaites</div>
-            <div className="text-base font-black text-red-300">{user.losses}</div>
+            <div data-jawoo-counter={user.losses} className="text-base font-black text-red-300 tabular-nums">
+              {user.losses}
+            </div>
           </div>
         </div>
       </section>
@@ -144,6 +161,7 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
       <div className="space-y-3 mb-4">
         {/* 1. Jouer en Ligne (Ranked Elo) */}
         <div
+          data-jawoo-card=""
           onClick={() => setShowOnlineModal(true)}
           className="group relative rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 border-2 border-amber-600/40 hover:border-amber-400 transition-all p-4 flex items-center justify-between shadow-xl cursor-pointer active:scale-98 overflow-hidden"
         >
@@ -170,6 +188,7 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
 
         {/* 2. Mode Local (Pass & Play) */}
         <div
+          data-jawoo-card=""
           onClick={onPlayLocal}
           className="group relative rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/60 border-2 border-slate-800 hover:border-indigo-400/80 transition-all p-4 flex items-center justify-between shadow-xl cursor-pointer active:scale-98 overflow-hidden"
         >

@@ -40,11 +40,11 @@ export const PolychessLeaderboardScreen: React.FC<PolychessLeaderboardScreenProp
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between p-3 sm:p-4 max-w-2xl mx-auto pt-safe pb-safe select-none">
       {/* Header */}
-      <header className="flex items-center justify-between mb-3">
+      <header data-jawoo-header="" className="flex items-center justify-between mb-3">
         <button
           type="button"
           onClick={onBackToMenu}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-amber-400 hover:text-white transition-all cursor-pointer"
+          className="jawoo-rise-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-amber-400 hover:text-white transition-all cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Menu Polychess</span>
@@ -57,10 +57,16 @@ export const PolychessLeaderboardScreen: React.FC<PolychessLeaderboardScreenProp
       </header>
 
       {/* Main Container */}
-      <main className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-md flex-1 flex flex-col overflow-hidden">
+      <main
+        data-jawoo-card=""
+        className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-md flex-1 flex flex-col overflow-hidden"
+      >
         {/* Title */}
         <div className="text-center mb-3">
-          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center justify-center gap-2">
+          <h2
+            data-jawoo-title=""
+            className="text-xl sm:text-2xl font-black text-white flex items-center justify-center gap-2"
+          >
             <span>CLASSEMENT OFFICIEL</span>
           </h2>
           <p className="text-[11px] text-slate-400 mt-0.5">

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { GameStatePublic } from '../../../shared/types.js';
 import confetti from 'canvas-confetti';
@@ -10,6 +10,7 @@ import {
   CrownSimple,
 } from '@phosphor-icons/react';
 import { sounds } from '../utils/sound.js';
+import { useScreenEnterChoreography } from '../animations/jawooEngine.js';
 
 interface GameOverScreenProps {
   publicState: GameStatePublic;
@@ -32,6 +33,9 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
   const winner = publicState.winner;
   const isWinner = winner?.id === myPlayerId;
   const isHost = publicState.hostId === myPlayerId;
+  const screenRef = useRef<HTMLDivElement>(null);
+
+  useScreenEnterChoreography(screenRef, [publicState.roomCode]);
 
   useEffect(() => {
     sounds.victory();
@@ -46,8 +50,12 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
   }, [reduceMotion]);
 
   return (
-    <div className="sekouno-salon-world min-h-[100dvh] w-full flex flex-col items-center justify-center p-4 pt-safe pb-safe select-none">
+    <div
+      ref={screenRef}
+      className="sekouno-salon-world min-h-[100dvh] w-full flex flex-col items-center justify-center p-4 pt-safe pb-safe select-none"
+    >
       <motion.div
+        data-jawoo-card=""
         initial={reduceMotion ? false : { scale: 0.94, opacity: 0, y: 14 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
@@ -55,7 +63,10 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
       >
         {/* Top Raw-Ivory Winner Crest */}
         <div className="bg-[#F6F0E2] text-[#11131A] px-6 py-5 border-b border-[#D4A548]">
-          <div className="w-14 h-14 rounded-[10px] bg-[#11131A] text-[#D4A548] flex items-center justify-center mx-auto mb-3 border border-[#D4A548]">
+          <div
+            data-jawoo-pop=""
+            className="w-14 h-14 rounded-[10px] bg-[#11131A] text-[#D4A548] flex items-center justify-center mx-auto mb-3 border border-[#D4A548]"
+          >
             <Trophy weight="fill" className="w-8 h-8" />
           </div>
 
@@ -64,7 +75,10 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
             <span>Acte de victoire • Table #{publicState.roomCode}</span>
           </span>
 
-          <h2 className="font-sekouno-display font-black text-2xl sm:text-3xl uppercase tracking-tight leading-tight text-[#11131A]">
+          <h2
+            data-jawoo-title=""
+            className="font-sekouno-display font-black text-2xl sm:text-3xl uppercase tracking-tight leading-tight text-[#11131A]"
+          >
             {isWinner ? 'Victoire magistrale' : `${winner?.name || 'Un joueur'} remporte la table`}
           </h2>
         </div>

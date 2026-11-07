@@ -13,6 +13,7 @@ import {
 } from '@phosphor-icons/react';
 import { getPlayerColor } from '../components/OpponentRing.js';
 import { sounds } from '../utils/sound.js';
+import { useScreenEnterChoreography } from '../animations/jawooEngine.js';
 
 interface LobbyScreenProps {
   publicState: GameStatePublic;
@@ -37,6 +38,9 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const screenRef = useRef<HTMLDivElement>(null);
+
+  useScreenEnterChoreography(screenRef, [publicState.roomCode]);
 
   const isHost = publicState.hostId === myPlayerId;
   const connectedPlayers = publicState.players.filter((p) => p.isConnected);
@@ -86,15 +90,18 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   };
 
   return (
-    <div className="sekouno-salon-world min-h-[100dvh] w-full flex flex-col justify-between px-3 sm:px-6 py-3 pt-safe pb-safe select-none">
+    <div
+      ref={screenRef}
+      className="sekouno-salon-world min-h-[100dvh] w-full flex flex-col justify-between px-3 sm:px-6 py-3 pt-safe pb-safe select-none"
+    >
       <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col justify-between">
         {/* Top Salon Rail */}
-        <header className="flex items-center justify-between py-2 border-b border-[#F6F0E2]/15">
+        <header data-jawoo-header="" className="flex items-center justify-between py-2 border-b border-[#F6F0E2]/15">
           {isHost ? (
             <button
               type="button"
               onClick={onCloseRoom || onLeaveRoom}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-[#241216] hover:bg-[#381A20] border border-[#D92D20]/60 font-sekouno-mono text-xs font-bold uppercase text-[#F98076] transition-[background-color] cursor-pointer"
+              className="jawoo-rise-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-[#241216] hover:text-white border border-[#D92D20]/60 font-sekouno-mono text-xs font-bold uppercase text-[#F98076] transition-[background-color,color] cursor-pointer"
             >
               <XCircle weight="bold" className="w-4 h-4" />
               <span>Fermer la table</span>
@@ -103,7 +110,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
             <button
               type="button"
               onClick={onLeaveRoom}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-[#141924] hover:bg-[#1B2230] border border-[#F6F0E2]/20 font-sekouno-mono text-xs font-bold uppercase text-[#D9D0BE] transition-[background-color] cursor-pointer"
+              className="jawoo-rise-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-[#141924] hover:text-white border border-[#F6F0E2]/20 font-sekouno-mono text-xs font-bold uppercase text-[#D9D0BE] transition-[background-color,color] cursor-pointer"
             >
               <SignOut weight="bold" className="w-4 h-4" />
               <span>Quitter</span>
@@ -123,6 +130,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         <main className="my-auto py-4 grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
           {/* Left: Detachable Ivory & Obsidian Invitation Pass */}
           <motion.section
+            data-jawoo-card=""
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             className="md:col-span-5 rounded-[12px] border-2 border-[#D4A548]/75 bg-[#141924] flex flex-col justify-between overflow-hidden shadow-2xl"
@@ -133,7 +141,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                 Billet d’invitation directe
               </span>
 
-              <div className="mt-3 p-2.5 bg-white rounded-[8px] border border-[#11131A]/20 inline-block">
+              <div
+                data-jawoo-image=""
+                className="mt-3 p-2.5 bg-white rounded-[8px] border border-[#11131A]/20 inline-block"
+              >
                 {qrCodeUrl ? (
                   <img
                     src={qrCodeUrl}
@@ -160,7 +171,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
               <span className="font-sekouno-mono text-[10px] font-bold uppercase tracking-widest text-[#D9D0BE]/70 block">
                 Code de la table
               </span>
-              <div className="font-sekouno-mono text-3xl sm:text-4xl font-bold text-[#D4A548] tracking-[0.22em] my-1.5">
+              <div
+                data-jawoo-title=""
+                className="font-sekouno-mono text-3xl sm:text-4xl font-bold text-[#D4A548] tracking-[0.22em] my-1.5"
+              >
                 {publicState.roomCode}
               </div>
 
@@ -168,7 +182,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyCode}
-                  className="py-2.5 px-3 bg-[#1B2230] hover:bg-[#242D3F] text-[#F6F0E2] rounded-[6px] font-sekouno-mono text-xs font-bold flex items-center justify-center gap-1.5 border border-[#F6F0E2]/15 transition-[background-color] cursor-pointer"
+                  className="jawoo-rise-btn py-2.5 px-3 bg-[#1B2230] hover:text-white text-[#F6F0E2] rounded-[6px] font-sekouno-mono text-xs font-bold flex items-center justify-center gap-1.5 border border-[#F6F0E2]/15 transition-[background-color,color] cursor-pointer"
                 >
                   {copiedCode ? (
                     <Check weight="bold" className="w-4 h-4 text-[#099250]" />
@@ -180,7 +194,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="py-2.5 px-3 bg-[#1B2230] hover:bg-[#242D3F] text-[#F6F0E2] rounded-[6px] font-sekouno-mono text-xs font-bold flex items-center justify-center gap-1.5 border border-[#F6F0E2]/15 transition-[background-color] cursor-pointer"
+                  className="jawoo-rise-btn py-2.5 px-3 bg-[#1B2230] hover:text-white text-[#F6F0E2] rounded-[6px] font-sekouno-mono text-xs font-bold flex items-center justify-center gap-1.5 border border-[#F6F0E2]/15 transition-[background-color,color] cursor-pointer"
                 >
                   {copiedLink ? (
                     <Check weight="bold" className="w-4 h-4 text-[#099250]" />
@@ -195,6 +209,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
           {/* Right: Architectural Seating Ledger */}
           <motion.section
+            data-jawoo-card=""
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}

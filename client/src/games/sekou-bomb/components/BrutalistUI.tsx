@@ -45,6 +45,7 @@ export const BrutalistCard: React.FC<BrutalistCardProps> = ({
 
   return (
     <div
+      data-jawoo-card=""
       className={`rounded-2xl sm:rounded-3xl border-3 border-black ${c.bg} ${c.text} ${shadowClass} transition-transform ${className}`}
     >
       {children}
@@ -83,7 +84,11 @@ export const BrutalistButton: React.FC<BrutalistButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`font-black uppercase tracking-wider border-3 border-black ${c.bg} ${c.text} ${sizeClasses} active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_#000] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed select-none flex items-center justify-center gap-2 ${className}`}
+      className={`jawoo-rise-btn ${
+        color === 'coral' || color === 'dark'
+          ? 'jawoo-rise-btn-gold hover:text-black'
+          : 'jawoo-rise-btn-dark hover:text-white'
+      } font-black uppercase tracking-wider border-3 border-black ${c.bg} ${c.text} ${sizeClasses} active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_#000] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed select-none flex items-center justify-center gap-2 ${className}`}
     >
       {children}
     </button>
@@ -107,6 +112,7 @@ export const BrutalistBadge: React.FC<BrutalistBadgeProps> = ({
 
   return (
     <span
+      data-jawoo-pop=""
       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border-2 border-black ${c.bg} ${c.text} shadow-[2px_2px_0_#000] text-xs font-black uppercase tracking-wider select-none ${className}`}
     >
       {icon}

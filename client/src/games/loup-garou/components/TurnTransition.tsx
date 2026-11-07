@@ -163,9 +163,16 @@ export const TurnTransition: React.FC<TurnTransitionProps> = ({
               <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.textColor} border ${theme.badgeBorder} shadow-2xs font-display`}>
                 {theme.tagText}
               </span>
-              <h2 className={`font-display font-extrabold text-xl md:text-2xl ${theme.textColor} tracking-tight leading-snug`}>
-                {title}
-              </h2>
+              <div className="overflow-hidden py-0.5">
+                <motion.h2
+                  initial={{ y: '110%' }}
+                  animate={{ y: '0%' }}
+                  transition={{ duration: 0.65, ease: [0.19, 1, 0.22, 1] }}
+                  className={`font-display font-extrabold text-xl md:text-2xl ${theme.textColor} tracking-tight leading-snug`}
+                >
+                  {title}
+                </motion.h2>
+              </div>
               {subTitle && (
                 <p className={`font-serif italic text-xs md:text-sm ${theme.textColor} opacity-85 leading-relaxed max-w-[260px] mx-auto`}>
                   {subTitle}

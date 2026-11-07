@@ -51,7 +51,10 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-[#f6efe1]/95 backdrop-blur-md border-b border-[#d8c5aa] shadow-xs px-4 pt-safe-header pb-3">
+    <header
+      data-jawoo-header=""
+      className="sticky top-0 z-30 w-full bg-[#f6efe1]/95 backdrop-blur-md border-b border-[#d8c5aa] shadow-xs px-4 pt-safe-header pb-3"
+    >
       <div className="max-w-md mx-auto flex items-center justify-between gap-3">
         {/* Brand Wordmark & Phase badge */}
         <div className="flex items-center gap-2 min-w-0">
@@ -59,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={onBackToHub}
-              className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-[#7c4714] hover:bg-[#ede1cc] rounded-lg border border-[#d8c5aa] transition-colors cursor-pointer mr-0.5 shrink-0"
+              className="jawoo-rise-btn flex items-center gap-1 px-2 py-1 text-xs font-bold text-[#7c4714] hover:text-white rounded-lg border border-[#d8c5aa] transition-colors cursor-pointer mr-0.5 shrink-0"
               title="Retourner à l'accueil SekouGaming"
             >
               <ArrowLeft className="w-3.5 h-3.5" />

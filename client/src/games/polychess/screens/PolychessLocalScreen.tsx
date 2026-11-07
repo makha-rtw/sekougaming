@@ -108,11 +108,11 @@ export const PolychessLocalScreen: React.FC<PolychessLocalScreenProps> = ({ onBa
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between p-3 sm:p-4 max-w-lg mx-auto pt-safe pb-safe select-none">
       {/* Top Controls */}
-      <header className="flex items-center justify-between mb-2">
+      <header data-jawoo-header="" className="flex items-center justify-between mb-2">
         <button
           type="button"
           onClick={onBackToMenu}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-bold text-amber-400 hover:text-white transition-all cursor-pointer"
+          className="jawoo-rise-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-bold text-amber-400 hover:text-white transition-all cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Menu Polychess</span>
@@ -162,7 +162,7 @@ export const PolychessLocalScreen: React.FC<PolychessLocalScreenProps> = ({ onBa
       </div>
 
       {/* Main Central Chessboard */}
-      <div className="my-auto py-1">
+      <div data-jawoo-card="" className="my-auto py-1">
         <ChessBoard
           chess={chess}
           orientation={orientation}

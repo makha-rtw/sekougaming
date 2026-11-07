@@ -73,11 +73,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between p-4 max-w-md mx-auto pt-safe pb-safe select-none">
       {/* Top Bar: Back to Hub */}
-      <div className="w-full flex justify-start mb-2">
+      <div data-jawoo-header="" className="w-full flex justify-start mb-2">
         <button
           type="button"
           onClick={onBackToHub}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-bold text-amber-400 hover:text-white hover:bg-slate-800 transition-all shadow-md active:scale-95 cursor-pointer"
+          className="jawoo-rise-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-bold text-amber-400 hover:text-white transition-all shadow-md active:scale-95 cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Accueil SekouGaming</span>
@@ -86,27 +86,36 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onBackToHub }
 
       {/* Brand Header */}
       <header className="text-center my-auto py-3 flex flex-col items-center">
-        <div className="relative mb-2.5 group">
+        <div data-jawoo-pop="" className="relative mb-2.5 group">
           <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-600 opacity-60 blur-md" />
           <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-900 border-2 border-amber-400/80 flex items-center justify-center shadow-xl">
             <Crown className="w-8 h-8 text-amber-400" />
           </div>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow">
+        <h1
+          data-jawoo-title=""
+          className="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow"
+        >
           POLY<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500">CHESS</span>
         </h1>
-        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-950/70 border border-amber-500/40 text-[10px] font-black text-amber-300 uppercase tracking-widest mt-1">
+        <div
+          data-jawoo-pop=""
+          className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-950/70 border border-amber-500/40 text-[10px] font-black text-amber-300 uppercase tracking-widest mt-1"
+        >
           <Sparkles className="w-3 h-3 text-amber-400" />
           <span>Échecs en Ligne & Classement Elo</span>
         </div>
-        <p className="text-xs text-slate-400 mt-1.5 max-w-xs leading-relaxed">
+        <p data-jawoo-reveal="" className="text-xs text-slate-400 mt-1.5 max-w-xs leading-relaxed">
           Connectez-vous avec votre département ou jouez immédiatement en mode invité.
         </p>
       </header>
 
       {/* Main Auth Card */}
-      <main className="bg-slate-900/95 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-md relative overflow-hidden my-auto">
+      <main
+        data-jawoo-card=""
+        className="bg-slate-900/95 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-md relative overflow-hidden my-auto"
+      >
         {/* Toggle Mode */}
         <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-950 rounded-2xl mb-4 border border-slate-800">
           <button
