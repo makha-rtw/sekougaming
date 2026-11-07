@@ -131,7 +131,7 @@ const ParallaxArtwork: React.FC<{
     <div
       data-image-reveal=""
       style={{ backgroundColor: fallbackColor }}
-      className="relative aspect-[16/10] w-full overflow-hidden border-b-2 border-[#181818]"
+      className="relative aspect-[16/8.5] sm:aspect-[16/10] w-full overflow-hidden border-b-2 border-[#181818]"
     >
       <div ref={parallaxRef} className="absolute inset-x-0 -top-[6%] h-[112%] w-full">
         <img
@@ -891,22 +891,22 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </header>
 
-      {/* ==================== SECTION 1: HERO (Exact jawoo.io module 322504 + Animated Gaming Background) ==================== */}
+      {/* ==================== SECTION 1: HERO (Compact & direct on Mobile, Full Hero on Desktop) ==================== */}
       <section
         id="top"
         ref={heroRef}
-        className="relative mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-[1380px] flex-col justify-center px-4 sm:px-8 md:px-12 py-10 sm:py-16"
+        className="relative mx-auto flex md:min-h-[calc(100dvh-5rem)] w-full max-w-[1380px] flex-col justify-center px-4 sm:px-8 md:px-12 pt-5 pb-3 md:py-16"
       >
         {/* ==================== ANIMATED GAMING PLATFORM BACKGROUND LAYER ==================== */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
-          {/* 1. Floating Geometric Arcade D-Pad Crosshair (Top-Left) */}
+          {/* 1. Floating Geometric Arcade D-Pad Crosshair (Top-Left, Desktop only) */}
           <div
             data-hero-geo=""
             data-depth="0.9"
-            className="absolute left-3 top-4 sm:left-10 sm:top-10 opacity-90"
+            className="hidden md:block absolute left-3 top-4 sm:left-10 sm:top-10 opacity-90"
           >
             <svg viewBox="0 0 56 56" className="h-9 w-9 sm:h-12 sm:w-12 drop-shadow-[3px_3px_0_#181818]">
               <path
@@ -919,65 +919,65 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             </svg>
           </div>
 
-          {/* 2. Floating 6-Sided Die Token (Bottom-Left / Center-Right) */}
+          {/* 2. Floating 6-Sided Die Token (Subtle top-right on mobile, Center-Right on Desktop) */}
           <div
             data-hero-geo=""
             data-depth="1.3"
-            className="absolute right-6 top-6 sm:right-[36%] sm:top-12"
+            className="absolute right-4 top-3 md:right-[36%] md:top-12"
           >
-            <div className="grid h-10 w-10 sm:h-12 sm:w-12 grid-cols-2 place-items-center border-2 border-[#181818] bg-white p-1.5 shadow-[4px_4px_0_0_#181818] rotate-12">
-              <span className="h-2 w-2 rounded-full bg-[#EF4C05]" />
-              <span className="h-2 w-2 rounded-full bg-[#181818]" />
-              <span className="h-2 w-2 rounded-full bg-[#181818]" />
-              <span className="h-2 w-2 rounded-full bg-[#EF4C05]" />
+            <div className="grid h-9 w-9 sm:h-12 sm:w-12 grid-cols-2 place-items-center border-2 border-[#181818] bg-white p-1.5 shadow-[3px_3px_0_0_#181818] sm:shadow-[4px_4px_0_0_#181818] rotate-12">
+              <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#EF4C05]" />
+              <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#181818]" />
+              <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#181818]" />
+              <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#EF4C05]" />
             </div>
           </div>
 
-          {/* 3. Token A: Sekouno +4 Playing Card (Top-Right) */}
+          {/* 3. Token A: Sekouno +4 Playing Card (Desktop Top-Right) */}
           <button
             type="button"
             tabIndex={-1}
             data-hero-token=""
             data-depth="1.4"
             onClick={() => onSelectGame('sekouno')}
-            className="pointer-events-auto absolute right-3 top-20 sm:right-10 sm:top-14 z-10 cursor-pointer group"
+            className="pointer-events-auto hidden md:block absolute right-10 top-14 z-10 cursor-pointer group"
           >
             <div
               data-token-float=""
-              className="flex h-24 w-17 sm:h-36 sm:w-26 flex-col justify-between border-2 border-[#181818] bg-[#D92D20] p-2 sm:p-2.5 text-white shadow-[4px_4px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818] -rotate-12 transition-transform group-hover:scale-105"
+              className="flex h-36 w-26 flex-col justify-between border-2 border-[#181818] bg-[#D92D20] p-2.5 text-white shadow-[6px_6px_0_0_#181818] -rotate-12 transition-transform group-hover:scale-105"
             >
-              <span className="font-mono text-xs sm:text-base font-black leading-none">+4</span>
-              <div className="mx-auto flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center border-2 border-[#181818] bg-[#F5C542] rotate-45 shadow-[2px_2px_0_0_#181818]">
-                <span className="-rotate-45 font-mono text-[9px] sm:text-xs font-black text-[#181818]">
+              <span className="font-mono text-base font-black leading-none">+4</span>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center border-2 border-[#181818] bg-[#F5C542] rotate-45 shadow-[2px_2px_0_0_#181818]">
+                <span className="-rotate-45 font-mono text-xs font-black text-[#181818]">
                   UNO
                 </span>
               </div>
-              <span className="self-end font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider">
+              <span className="self-end font-mono text-[10px] font-bold uppercase tracking-wider">
                 SEKOUNO
               </span>
             </div>
           </button>
 
-          {/* 4. Token B: Sekou Bomb Chrono Tile (Bottom-Right) */}
+          {/* 4. Token B: Sekou Bomb Chrono Tile (Desktop Bottom-Right) */}
           <button
             type="button"
             tabIndex={-1}
             data-hero-token=""
             data-depth="1.7"
             onClick={() => onSelectGame('sekou_bomb')}
-            className="pointer-events-auto absolute right-3 bottom-6 sm:right-14 sm:bottom-14 z-10 cursor-pointer group"
+            className="pointer-events-auto hidden md:block absolute right-14 bottom-14 z-10 cursor-pointer group"
           >
             <div
               data-token-float=""
-              className="flex flex-col gap-1 border-2 border-[#181818] bg-[#F5C542] p-2.5 sm:p-3.5 text-[#181818] shadow-[4px_4px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818] rotate-6 transition-transform group-hover:scale-105"
+              className="flex flex-col gap-1 border-2 border-[#181818] bg-[#F5C542] p-3.5 text-[#181818] shadow-[6px_6px_0_0_#181818] rotate-6 transition-transform group-hover:scale-105"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="bg-[#181818] px-1.5 py-0.5 font-mono text-[9px] sm:text-[10px] font-black text-[#F5C542]">
+                <span className="bg-[#181818] px-1.5 py-0.5 font-mono text-[10px] font-black text-[#F5C542]">
                   💣 03.8s
                 </span>
                 <span className="h-2.5 w-2.5 rounded-full bg-[#EF4C05] animate-ping" />
               </div>
-              <span className="font-mono text-sm sm:text-xl font-black tracking-widest">
+              <span className="font-mono text-xl font-black tracking-widest">
                 [KAR]
               </span>
               <span className="font-mono text-[9px] font-bold uppercase text-[#181818]/75">
@@ -1011,27 +1011,27 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             </div>
           </button>
 
-          {/* 6. Token D: Loups-Garous Grimoire Moon Card (Desktop Bottom-Center-Right / Mobile Bottom-Left) */}
+          {/* 6. Token D: Loups-Garous Grimoire Moon Card (Desktop Bottom-Center-Right) */}
           <button
             type="button"
             tabIndex={-1}
             data-hero-token=""
             data-depth="1.25"
             onClick={() => onSelectGame('loup_garou')}
-            className="pointer-events-auto absolute left-4 bottom-4 sm:left-auto sm:right-80 sm:bottom-16 z-10 cursor-pointer group"
+            className="pointer-events-auto hidden md:block absolute right-80 bottom-16 z-10 cursor-pointer group"
           >
             <div
               data-token-float=""
-              className="flex items-center gap-2 sm:gap-2.5 border-2 border-[#181818] bg-[#2F4ACB] px-2.5 py-1.5 sm:px-3.5 sm:py-2.5 text-white shadow-[4px_4px_0_0_#181818] -rotate-6 transition-transform group-hover:scale-105"
+              className="flex items-center gap-2.5 border-2 border-[#181818] bg-[#2F4ACB] px-3.5 py-2.5 text-white shadow-[4px_4px_0_0_#181818] -rotate-6 transition-transform group-hover:scale-105"
             >
-              <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center border border-white/40 bg-[#181818] text-sm sm:text-base text-[#F5C542]">
+              <span className="flex h-8 w-8 items-center justify-center border border-white/40 bg-[#181818] text-base text-[#F5C542]">
                 ☾
               </span>
               <div className="text-left">
-                <span className="block font-mono text-[9px] sm:text-[10px] font-bold uppercase text-[#F5C542]">
+                <span className="block font-mono text-[10px] font-bold uppercase text-[#F5C542]">
                   GRIMOIRE
                 </span>
-                <span className="block font-mono text-xs sm:text-sm font-black">
+                <span className="block font-mono text-sm font-black">
                   LOUPS-GAROUS
                 </span>
               </div>
@@ -1040,8 +1040,8 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
 
         <div className="relative z-20 max-w-4xl flex flex-col items-start text-left">
-          {/* Top Live Arcade Pill */}
-          <div className="mb-4 inline-flex items-center gap-2 border-2 border-[#181818] bg-white px-3 py-1 shadow-[3px_3px_0_0_#181818]">
+          {/* Top Live Arcade Pill (Desktop only) */}
+          <div className="hidden md:inline-flex mb-4 items-center gap-2 border-2 border-[#181818] bg-white px-3 py-1 shadow-[3px_3px_0_0_#181818]">
             <span className="h-2.5 w-2.5 bg-[#099250] border border-[#181818]" />
             <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#181818]">
               PLATEFORME DE JEUX MULTIJOUEURS · 4 UNIVERS
@@ -1050,40 +1050,40 @@ export const HubScreen: React.FC<HubScreenProps> = ({
 
           <h1
             data-hero-title=""
-            className="font-['Bricolage_Grotesque',_sans-serif] text-[2.55rem] sm:text-6xl xl:text-[4.65rem] font-black tracking-tight leading-[1.06] text-[#181818]"
+            className="font-['Bricolage_Grotesque',_sans-serif] text-[1.95rem] sm:text-6xl xl:text-[4.65rem] font-black tracking-tight leading-[1.08] text-[#181818] pr-12 md:pr-0"
           >
             Quatre jeux cultes.{' '}
-            <span className="block mt-1.5">
+            <span className="block mt-1">
               Un salon{' '}
-              <span className="relative inline-block border-2 border-[#181818] bg-[#FFF0D8] px-3 pb-1 text-[#EF4C05] align-baseline">
+              <span className="relative inline-block border-2 border-[#181818] bg-[#FFF0D8] px-2.5 sm:px-3 pb-0.5 sm:pb-1 text-[#EF4C05] align-baseline">
                 instantané.
                 {/* 4 Figma Selection Handles */}
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -top-1.5 -left-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
+                  className="pointer-events-none absolute -top-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 border-[#181818] bg-white"
                 />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -top-1.5 -right-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
+                  className="pointer-events-none absolute -top-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 border-[#181818] bg-white"
                 />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -bottom-1.5 -left-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
+                  className="pointer-events-none absolute -bottom-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 border-[#181818] bg-white"
                 />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -bottom-1.5 -right-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
+                  className="pointer-events-none absolute -bottom-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 border-[#181818] bg-white"
                 />
-                {/* Floating Animated SVG Cursor Badge */}
+                {/* Floating Animated SVG Cursor Badge (Desktop only) */}
                 <span
                   data-hero-cursor=""
                   aria-hidden="true"
-                  className="pointer-events-none absolute -right-2 -bottom-7 sm:-right-6 sm:-bottom-8 z-20 inline-flex items-center gap-1 border-2 border-[#181818] bg-[#F5C542] px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#181818] shadow-[3px_3px_0_0_#181818]"
+                  className="pointer-events-none hidden md:inline-flex absolute -right-6 -bottom-8 z-20 items-center gap-1 border-2 border-[#181818] bg-[#F5C542] px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[#181818] shadow-[3px_3px_0_0_#181818]"
                 >
                   <svg
                     viewBox="0 0 18 18"
                     fill="none"
-                    className=" -ml-1 -mt-3 h-4 w-4 text-[#181818]"
+                    className="-ml-1 -mt-3 h-4 w-4 text-[#181818]"
                   >
                     <path
                       d="M2 2L8.2 15.5L10.5 9.8L16.2 7.5L2 2Z"
@@ -1100,13 +1100,13 @@ export const HubScreen: React.FC<HubScreenProps> = ({
 
           <p
             data-hero-sub=""
-            className="mt-7 max-w-[46ch] text-base sm:text-lg font-medium leading-relaxed text-[#181818]/75"
+            className="hidden md:block mt-7 max-w-[46ch] text-base sm:text-lg font-medium leading-relaxed text-[#181818]/75"
           >
             Ouvrez une table en trois secondes sur téléphone ou ordinateur et partagez le code à vos amis.
           </p>
 
-          {/* Primary CTA + Direct Game Button */}
-          <div data-hero-cta="" className="mt-8 flex flex-wrap items-center gap-3.5">
+          {/* Primary CTA + Direct Game Button (Desktop only — on Mobile the 4 games are right below) */}
+          <div data-hero-cta="" className="hidden md:flex mt-8 flex-wrap items-center gap-3.5">
             <TextMask>
               <button
                 type="button"
@@ -1139,10 +1139,10 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </section>
 
-      {/* ==================== LIVE ARCADE MARQUEE STRIP ==================== */}
+      {/* ==================== LIVE ARCADE MARQUEE STRIP (Desktop Only) ==================== */}
       <div
         aria-hidden="true"
-        className="w-full overflow-hidden border-t-2 border-[#181818] bg-[#181818] py-2.5 text-white"
+        className="hidden md:block w-full overflow-hidden border-t-2 border-[#181818] bg-[#181818] py-2.5 text-white"
       >
         <div className="jawoo-arcade-marquee items-center">
           {[0, 1].map((dup) => (
@@ -1172,15 +1172,15 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </div>
 
-      {/* ==================== SECTION 2: LES 4 JEUX (Portfolio Grid + Curtain Reveal + Parallax) ==================== */}
+      {/* ==================== SECTION 2: LES 4 JEUX (Immediate on Mobile, Portfolio Grid on Desktop) ==================== */}
       <section
         id="catalogue"
         ref={gamesRef}
-        className="border-t-2 border-[#181818] bg-[#F7F7F7] py-12 sm:py-24 px-4 sm:px-8 md:px-12"
+        className="md:border-t-2 md:border-[#181818] md:bg-[#F7F7F7] pt-2 pb-6 md:py-24 px-4 sm:px-8 md:px-12"
       >
         <div className="mx-auto w-full max-w-[1380px]">
-          {/* Section Header (Stacked vertically per Split-Header Ban) */}
-          <div data-games-header="" className="mb-8 sm:mb-14">
+          {/* Section Header (Desktop only — on Mobile the Hero title right above introduces the 4 games) */}
+          <div data-games-header="" className="hidden md:block mb-14">
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#EF4C05] block mb-2">
               &gt; CATALOGUE OFFICIEL
             </span>
@@ -1190,13 +1190,13 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             >
               Choisissez votre table de jeu.
             </h2>
-            <p className="hidden sm:block mt-3 max-w-[54ch] text-base text-[#181818]/75">
+            <p className="mt-3 max-w-[54ch] text-base text-[#181818]/75">
               Chaque jeu possède son propre univers graphique, ses règles maison et sa connexion instantanée par code ou QR.
             </p>
           </div>
 
-          {/* 2x2 Architectural Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-9">
+          {/* 2x2 Architectural Grid (Compact cards on mobile, full cards on desktop) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-9">
             {GAMES_CATALOG.map((game, idx) => {
               const IconComp = game.icon;
               return (
@@ -1204,20 +1204,20 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   key={game.id}
                   data-game-card=""
                   onClick={() => onSelectGame(game.id)}
-                  className="group relative flex flex-col justify-between border-2 border-[#181818] bg-white shadow-[5px_5px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818] transition-shadow duration-300 hover:shadow-[10px_10px_0_0_#EF4C05] cursor-pointer"
+                  className="group relative flex flex-col justify-between border-2 border-[#181818] bg-white shadow-[4px_4px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818] transition-shadow duration-300 hover:shadow-[10px_10px_0_0_#EF4C05] cursor-pointer"
                 >
-                  {/* Top Index & Meta Strip */}
-                  <div className="flex items-center justify-between border-b-2 border-[#181818] bg-[#F7F7F7] px-3.5 sm:px-4 py-2 sm:py-2.5">
+                  {/* Top Index & Meta Strip (Desktop only to keep Mobile ultra-clean) */}
+                  <div className="hidden sm:flex items-center justify-between border-b-2 border-[#181818] bg-[#F7F7F7] px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <span
                         className="inline-block h-3 w-3 border border-[#181818]"
                         style={{ backgroundColor: game.accentBg }}
                       />
-                      <span className="font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#181818]">
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#181818]">
                         /{game.index} · {game.subtitle}
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] sm:text-xs font-bold text-[#181818]">
+                    <span className="inline-flex items-center gap-1 font-mono text-xs font-bold text-[#181818]">
                       <UsersThree weight="bold" className="h-3.5 w-3.5 text-[#EF4C05]" />
                       <span>{game.players}</span>
                     </span>
@@ -1232,27 +1232,46 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                     priority={idx < 2}
                   />
 
-                  {/* Card Body */}
-                  <div className="flex flex-1 flex-col justify-between p-4 sm:p-7">
-                    <div>
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-3xl font-black tracking-tight text-[#181818] group-hover:text-[#EF4C05] transition-colors">
+                  {/* Card Body: Single direct row on Mobile (Title + Players + Jouer), Full details on Desktop */}
+                  <div className="flex flex-1 flex-col justify-between px-4 py-3 sm:p-7">
+                    {/* Mobile Compact Row */}
+                    <div className="flex sm:hidden items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-xl font-black tracking-tight text-[#181818] leading-tight">
                           {game.title}
                         </h3>
-                        <span className="hidden sm:inline-flex items-center gap-1 border border-[#181818] bg-[#FFF0D8] px-2.5 py-1 font-mono text-[11px] font-bold uppercase text-[#181818] shrink-0">
+                        <span className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-[#181818]/70">
+                          <UsersThree weight="bold" className="h-3.5 w-3.5 text-[#EF4C05]" />
+                          <span>{game.players}</span>
+                        </span>
+                      </div>
+
+                      <span className="jawoo-rise-btn shrink-0 inline-flex h-9 items-center gap-1.5 border-2 border-[#181818] bg-[#181818] px-3.5 font-mono text-xs font-black uppercase tracking-wider text-white">
+                        <span>Jouer</span>
+                        <ArrowUpRight weight="bold" className="h-4 w-4" />
+                      </span>
+                    </div>
+
+                    {/* Desktop / Tablet Full Body */}
+                    <div className="hidden sm:block">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-3xl font-black tracking-tight text-[#181818] group-hover:text-[#EF4C05] transition-colors">
+                          {game.title}
+                        </h3>
+                        <span className="inline-flex items-center gap-1 border border-[#181818] bg-[#FFF0D8] px-2.5 py-1 font-mono text-[11px] font-bold uppercase text-[#181818] shrink-0">
                           <IconComp weight="bold" className="h-3.5 w-3.5 text-[#EF4C05]" />
                           <span>{game.mode}</span>
                         </span>
                       </div>
 
-                      <p className="hidden sm:block mt-3 text-sm sm:text-base leading-relaxed text-[#181818]/80">
+                      <p className="mt-3 text-base leading-relaxed text-[#181818]/80">
                         {game.pitch}
                       </p>
                     </div>
 
-                    <div className="mt-3 sm:mt-6 flex flex-wrap items-center justify-between gap-3 sm:border-t-2 sm:border-[#181818]/10 sm:pt-4">
+                    <div className="hidden sm:flex mt-6 flex-wrap items-center justify-between gap-3 border-t-2 border-[#181818]/10 pt-4">
                       {/* Highlights pills (desktop/tablet) */}
-                      <div className="hidden sm:flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-1.5">
                         {game.highlights.map((tag) => (
                           <span
                             key={tag}
@@ -1263,12 +1282,8 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                         ))}
                       </div>
 
-                      <span className="sm:hidden font-mono text-[11px] font-bold uppercase text-[#181818]/70">
-                        {game.mode}
-                      </span>
-
                       {/* RiseBand Action Button */}
-                      <span className="jawoo-rise-btn inline-flex h-9 sm:h-10 items-center gap-2 border-2 border-[#181818] bg-[#181818] px-4 font-mono text-xs font-black uppercase tracking-wider text-white">
+                      <span className="jawoo-rise-btn inline-flex h-10 items-center gap-2 border-2 border-[#181818] bg-[#181818] px-4 font-mono text-xs font-black uppercase tracking-wider text-white">
                         <span>Jouer</span>
                         <ArrowUpRight
                           weight="bold"
@@ -1284,11 +1299,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </section>
 
-      {/* ==================== SECTION 3: INTERACTIVE BENTO SHOWCASE (Exact jawoo.io module 87148) ==================== */}
+      {/* ==================== SECTION 3: INTERACTIVE BENTO SHOWCASE (Desktop Only) ==================== */}
       <section
         id="experience"
         ref={bentoRef}
-        className="border-t-2 border-[#181818] bg-white py-12 sm:py-24 px-4 sm:px-8 md:px-12"
+        className="hidden md:block border-t-2 border-[#181818] bg-white py-24 px-8 md:px-12"
       >
         <div className="mx-auto w-full max-w-[1380px]">
           <div data-bento-header="" className="mb-8 sm:mb-14">
@@ -1561,11 +1576,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </section>
 
-      {/* ==================== SECTION 4: ANIMATED STATS COUNTERS (Exact jawoo.io module 779420) ==================== */}
+      {/* ==================== SECTION 4: ANIMATED STATS COUNTERS (Desktop Only) ==================== */}
       <section
         id="chiffres"
         ref={statsRef}
-        className="border-t-2 border-[#181818] bg-[#F7F7F7] py-12 sm:py-20 px-4 sm:px-8 md:px-12"
+        className="hidden md:block border-t-2 border-[#181818] bg-[#F7F7F7] py-20 px-8 md:px-12"
       >
         <div className="mx-auto w-full max-w-[1380px]">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6">
@@ -1757,12 +1772,19 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </section>
 
-      {/* ==================== SECTION 6: FOOTER (Exact jawoo.io module 44604) ==================== */}
+      {/* ==================== SECTION 6: FOOTER (Minimal 1-line on Mobile, Monumental on Desktop) ==================== */}
       <footer
         ref={footerRef}
-        className="border-t-2 border-[#181818] bg-[#181818] text-white px-4 sm:px-8 md:px-12 pt-14 pb-10"
+        className="border-t-2 border-[#181818] bg-[#181818] text-white px-4 sm:px-8 md:px-12 py-5 md:pt-14 md:pb-10"
       >
-        <div className="mx-auto w-full max-w-[1380px]">
+        {/* Minimal Mobile Footer */}
+        <div className="md:hidden flex items-center justify-between gap-2 font-mono text-[11px] font-bold text-white/75">
+          <span>© 2026 SekouGaming</span>
+          <span className="text-[#F5C542]">Gratuit · Sans installation</span>
+        </div>
+
+        {/* Full Desktop Footer */}
+        <div className="hidden md:block mx-auto w-full max-w-[1380px]">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-12 border-b border-white/15">
             <div data-footer-reveal="" className="md:col-span-6">
               <div className="inline-flex items-center gap-3">
