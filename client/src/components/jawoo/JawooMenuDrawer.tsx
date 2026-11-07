@@ -204,7 +204,7 @@ export const JawooMenuDrawer: React.FC<JawooMenuDrawerProps> = ({
       aria-modal={isOpen}
       aria-hidden={!isOpen}
       aria-label="Menu de navigation SekouGaming"
-      className={`fixed inset-0 z-[85] flex flex-col justify-between overflow-y-auto bg-[#181818] text-white px-4 sm:px-8 md:px-14 py-5 sm:py-7 select-none ${
+      className={`jawoo-safe-fullscreen fixed inset-0 z-[85] flex flex-col justify-between overflow-y-auto bg-[#181818] text-white px-4 sm:px-8 md:px-14 py-5 sm:py-7 select-none ${
         isOpen ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
     >

@@ -17,6 +17,17 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preload" as="image" href="/loading/logo_chargement_sekou.png" fetchpriority="high" />
     <script>
+      // Detect PWA / iOS Home Screen standalone mode immediately for Dynamic Island safe-area
+      if (typeof window !== 'undefined') {
+        var isStandalone =
+          window.navigator.standalone === true ||
+          (window.matchMedia &&
+            (window.matchMedia('(display-mode: standalone)').matches ||
+              window.matchMedia('(display-mode: fullscreen)').matches));
+        if (isStandalone) {
+          document.documentElement.setAttribute('data-standalone', 'true');
+        }
+      }
       // Forcer la vérification de mise à jour du Service Worker dès l'arrivée
       if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(regs) {
@@ -30,7 +41,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,600..900&family=Big+Shoulders+Display:wght@700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Cinzel:wght@600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </head>
-  <body style="background-color: #181818; margin: 0;" class="bg-[#181818] text-slate-100 min-h-screen select-none overflow-x-hidden antialiased">
+  <body style="background-color: #181818; margin: 0;" class="bg-[#181818] text-slate-100 min-h-screen select-none antialiased">
     <div id="root">
       <div
         aria-busy="true"

@@ -15,9 +15,11 @@ import {
 import {
   gsap,
   SplitText,
-   useGSAP,
+  useGSAP,
   onIntroComplete,
   useScrollReveal,
+  observeElementReveal,
+  applyFrenchNonBreakingSpaces,
   revealImages,
   useParallax,
 } from '../animations/jawooEngine.js';
@@ -268,198 +270,269 @@ export const HubScreen: React.FC<HubScreenProps> = ({
     'top 92%'
   );
 
-  // 3. Games Catalogue Reveal (exact jawoo.io module 165769 + revealImages)
-  useScrollReveal(gamesRef, (el) => {
-    const heading = el.querySelector<HTMLElement>('[data-games-title]');
-    const cards = el.querySelectorAll<HTMLElement>('[data-game-card]');
-    const tl = gsap.timeline();
+  // 3. Games Catalogue Reveal (per-header + per-card scroll reveal for mobile & desktop)
+  useGSAP(
+    () => {
+      const section = gamesRef.current;
+      if (!section) return;
 
-    if (heading) {
-      const split = SplitText.create(heading, { type: 'lines,words', mask: 'lines' });
-      tl.from(
-        split.words,
-        {
-          yPercent: 110,
-          duration: 1.1,
-          ease: 'expo.out',
-          stagger: 0.06,
-        },
-        0
-      );
-    }
+      applyFrenchNonBreakingSpaces(section);
 
-    tl.from(
-      cards,
-      {
-        y: 40,
-        autoAlpha: 0,
-        duration: 1.0,
-        ease: 'expo.out',
-        stagger: 0.12,
-      },
-      0.15
-    );
+      const cleanups: Array<() => void> = [];
 
-    revealImages(el, '[data-image-reveal]', tl, 0.2);
+      const headerBlock = section.querySelector<HTMLElement>('[data-games-header]');
+      if (headerBlock) {
+        gsap.set(headerBlock, { autoAlpha: 0 });
+        cleanups.push(
+          observeElementReveal(headerBlock, (hdr) => {
+            const heading = hdr.querySelector<HTMLElement>('[data-games-title]');
+            const tl = gsap.timeline();
+            if (heading) {
+              const split = SplitText.create(heading, { type: 'lines,words', mask: 'lines' });
+              tl.from(
+                split.words,
+                {
+                  yPercent: 110,
+                  duration: 1.05,
+                  ease: 'expo.out',
+                  stagger: 0.06,
+                },
+                0
+              );
+            } else {
+              tl.from(hdr, { y: 28, duration: 0.85, ease: 'expo.out' }, 0);
+            }
+            return tl;
+          })
+        );
+      }
 
-    return tl;
-  });
-
-  // 4. Interactive Bento Showcase Reveal (exact jawoo.io module 87148)
-  useScrollReveal(bentoRef, (el) => {
-    const title = el.querySelector<HTMLElement>('[data-bento-title]');
-    const cells = el.querySelectorAll<HTMLElement>('[data-bento-cell]');
-    const codeText = el.querySelector<HTMLElement>('[data-bento-typed]');
-    const codeCursor = el.querySelector<HTMLElement>('[data-bento-caret]');
-    const svgCursor = el.querySelector<HTMLElement>('[data-bento-pointer]');
-    const joinBtn = el.querySelector<HTMLElement>('[data-bento-join-btn]');
-    const playerTags = el.querySelectorAll<HTMLElement>('[data-bento-player]');
-    const fanCards = el.querySelectorAll<HTMLElement>('[data-bento-fan]');
-    const drawPaths = el.querySelectorAll<SVGPathElement>('[data-bento-draw]');
-    const bars = el.querySelectorAll<HTMLElement>('[data-bento-bar]');
-    const gauge = el.querySelector<HTMLElement>('[data-bento-gauge]');
-
-    const tl = gsap.timeline();
-
-    if (title) {
-      const split = SplitText.create(title, { type: 'lines,words', mask: 'lines' });
-      tl.from(
-        split.words,
-        { yPercent: 110, duration: 1.1, ease: 'expo.out', stagger: 0.06 },
-        0
-      );
-    }
-
-    tl.from(
-      cells,
-      {
-        y: 36,
-        autoAlpha: 0,
-        duration: 0.95,
-        ease: 'expo.out',
-        stagger: 0.1,
-      },
-      0.15
-    );
-
-    // Cell 1 Micro-Scene: Character-by-character room code typing + cursor click + player tags pop
-    const sampleCode = 'SEKOU9';
-    if (codeText) {
-      codeText.textContent = '';
-      sampleCode.split('').forEach((_, idx) => {
-        tl.to(
-          {},
-          {
-            duration: 0.08,
-            onComplete: () => {
-              if (codeText) codeText.textContent = sampleCode.slice(0, idx + 1);
-            },
-          },
-          0.55 + idx * 0.08
+      const cards = section.querySelectorAll<HTMLElement>('[data-game-card]');
+      cards.forEach((card) => {
+        gsap.set(card, { autoAlpha: 0 });
+        cleanups.push(
+          observeElementReveal(card, (cardEl) => {
+            const tl = gsap.timeline();
+            tl.fromTo(
+              cardEl,
+              { autoAlpha: 0, y: 52, scale: 0.96 },
+              {
+                autoAlpha: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.95,
+                ease: 'expo.out',
+                clearProps: 'transform',
+              },
+              0
+            );
+            revealImages(cardEl, '[data-image-reveal]', tl, 0.05);
+            return tl;
+          })
         );
       });
-    }
 
-    if (codeCursor) {
-      tl.to(
-        codeCursor,
-        { opacity: 0, repeat: 5, yoyo: true, duration: 0.25, ease: 'steps(1)' },
-        0.5
-      );
-    }
+      return () => {
+        cleanups.forEach((fn) => fn());
+      };
+    },
+    { scope: gamesRef }
+  );
 
-    if (svgCursor) {
-      tl.fromTo(
-        svgCursor,
-        { x: 48, y: 36, autoAlpha: 0 },
-        { x: 0, y: 0, autoAlpha: 1, duration: 0.65, ease: 'power3.out' },
-        1.05
-      );
-    }
+  // 4. Interactive Bento Showcase Reveal (per-header + per-cell scroll reveal for mobile & desktop)
+  useGSAP(
+    () => {
+      const section = bentoRef.current;
+      if (!section) return;
 
-    if (joinBtn) {
-      tl.to(joinBtn, { scale: 0.94, duration: 0.1, ease: 'power2.in' }, 1.55).to(
-        joinBtn,
-        { scale: 1, backgroundColor: '#EF4C05', color: '#FFFFFF', duration: 0.2, ease: 'back.out(2)' },
-        1.65
-      );
-    }
+      applyFrenchNonBreakingSpaces(section);
 
-    if (playerTags.length) {
-      tl.from(
-        playerTags,
-        {
-          scale: 0,
-          y: 12,
-          autoAlpha: 0,
-          duration: 0.45,
-          ease: 'back.out(1.7)',
-          stagger: 0.08,
-        },
-        1.72
-      );
-    }
+      const cleanups: Array<() => void> = [];
 
-    // Cell 2 Micro-Scene: 4 Game Artifacts fan out + SVG trajectory draw
-    if (fanCards.length) {
-      tl.from(
-        fanCards,
-        {
-          scale: 0.6,
-          y: 24,
-          rotation: 0,
-          autoAlpha: 0,
-          duration: 0.65,
-          ease: 'back.out(1.6)',
-          stagger: 0.08,
-        },
-        0.65
-      );
-    }
+      const headerBlock = section.querySelector<HTMLElement>('[data-bento-header]');
+      if (headerBlock) {
+        gsap.set(headerBlock, { autoAlpha: 0 });
+        cleanups.push(
+          observeElementReveal(headerBlock, (hdr) => {
+            const title = hdr.querySelector<HTMLElement>('[data-bento-title]');
+            const tl = gsap.timeline();
+            if (title) {
+              const split = SplitText.create(title, { type: 'lines,words', mask: 'lines' });
+              tl.from(
+                split.words,
+                { yPercent: 110, duration: 1.05, ease: 'expo.out', stagger: 0.06 },
+                0
+              );
+            }
+            return tl;
+          })
+        );
+      }
 
-    if (drawPaths.length) {
-      tl.from(
-        drawPaths,
-        {
-          drawSVG: '0%',
-          duration: 0.9,
-          ease: 'power2.inOut',
-          stagger: 0.15,
-        },
-        0.8
-      );
-    }
+      const cells = section.querySelectorAll<HTMLElement>('[data-bento-cell]');
+      cells.forEach((cell) => {
+        gsap.set(cell, { autoAlpha: 0 });
+        cleanups.push(
+          observeElementReveal(cell, (cellEl) => {
+            const codeText = cellEl.querySelector<HTMLElement>('[data-bento-typed]');
+            const codeCursor = cellEl.querySelector<HTMLElement>('[data-bento-caret]');
+            const svgCursor = cellEl.querySelector<HTMLElement>('[data-bento-pointer]');
+            const joinBtn = cellEl.querySelector<HTMLElement>('[data-bento-join-btn]');
+            const playerTags = cellEl.querySelectorAll<HTMLElement>('[data-bento-player]');
+            const fanCards = cellEl.querySelectorAll<HTMLElement>('[data-bento-fan]');
+            const drawPaths = cellEl.querySelectorAll<SVGPathElement>('[data-bento-draw]');
+            const bars = cellEl.querySelectorAll<HTMLElement>('[data-bento-bar]');
+            const gauge = cellEl.querySelector<HTMLElement>('[data-bento-gauge]');
 
-    // Cell 3 Micro-Scene: Latency bars + progress gauge
-    if (bars.length) {
-      tl.from(
-        bars,
-        {
-          scaleY: 0,
-          transformOrigin: 'bottom',
-          duration: 0.55,
-          ease: 'back.out(1.5)',
-          stagger: 0.06,
-        },
-        0.7
-      );
-    }
+            const tl = gsap.timeline();
 
-    if (gauge) {
-      tl.from(
-        gauge,
-        {
-          scaleX: 0,
-          transformOrigin: 'left',
-          duration: 1.1,
-          ease: 'expo.out',
-        },
-        0.75
-      );
-    }
+            tl.fromTo(
+              cellEl,
+              { autoAlpha: 0, y: 44, scale: 0.97 },
+              {
+                autoAlpha: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.9,
+                ease: 'expo.out',
+                clearProps: 'transform',
+              },
+              0
+            );
 
-    return tl;
-  });
+            // Cell 1 Micro-Scene: Character-by-character room code typing + cursor click + player tags pop
+            const sampleCode = 'SEKOU9';
+            if (codeText) {
+              codeText.textContent = '';
+              sampleCode.split('').forEach((_, idx) => {
+                tl.to(
+                  {},
+                  {
+                    duration: 0.08,
+                    onComplete: () => {
+                      if (codeText) codeText.textContent = sampleCode.slice(0, idx + 1);
+                    },
+                  },
+                  0.35 + idx * 0.08
+                );
+              });
+            }
+
+            if (codeCursor) {
+              tl.to(
+                codeCursor,
+                { opacity: 0, repeat: 5, yoyo: true, duration: 0.25, ease: 'steps(1)' },
+                0.3
+              );
+            }
+
+            if (svgCursor) {
+              tl.fromTo(
+                svgCursor,
+                { x: 48, y: 36, autoAlpha: 0 },
+                { x: 0, y: 0, autoAlpha: 1, duration: 0.65, ease: 'power3.out' },
+                0.85
+              );
+            }
+
+            if (joinBtn) {
+              tl.to(joinBtn, { scale: 0.94, duration: 0.1, ease: 'power2.in' }, 1.35).to(
+                joinBtn,
+                {
+                  scale: 1,
+                  backgroundColor: '#EF4C05',
+                  color: '#FFFFFF',
+                  duration: 0.2,
+                  ease: 'back.out(2)',
+                },
+                1.45
+              );
+            }
+
+            if (playerTags.length) {
+              tl.from(
+                playerTags,
+                {
+                  scale: 0,
+                  y: 12,
+                  autoAlpha: 0,
+                  duration: 0.45,
+                  ease: 'back.out(1.7)',
+                  stagger: 0.08,
+                },
+                1.52
+              );
+            }
+
+            // Cell 2 Micro-Scene: 4 Game Artifacts fan out + SVG trajectory draw
+            if (fanCards.length) {
+              tl.from(
+                fanCards,
+                {
+                  scale: 0.6,
+                  y: 24,
+                  rotation: 0,
+                  autoAlpha: 0,
+                  duration: 0.65,
+                  ease: 'back.out(1.6)',
+                  stagger: 0.08,
+                },
+                0.35
+              );
+            }
+
+            if (drawPaths.length) {
+              tl.from(
+                drawPaths,
+                {
+                  drawSVG: '0%',
+                  duration: 0.9,
+                  ease: 'power2.inOut',
+                  stagger: 0.15,
+                },
+                0.5
+              );
+            }
+
+            // Cell 3 Micro-Scene: Latency bars + progress gauge
+            if (bars.length) {
+              tl.from(
+                bars,
+                {
+                  scaleY: 0,
+                  transformOrigin: 'bottom',
+                  duration: 0.55,
+                  ease: 'back.out(1.5)',
+                  stagger: 0.06,
+                },
+                0.4
+              );
+            }
+
+            if (gauge) {
+              tl.from(
+                gauge,
+                {
+                  scaleX: 0,
+                  transformOrigin: 'left',
+                  duration: 1.1,
+                  ease: 'expo.out',
+                },
+                0.45
+              );
+            }
+
+            return tl;
+          })
+        );
+      });
+
+      return () => {
+        cleanups.forEach((fn) => fn());
+      };
+    },
+    { scope: bentoRef }
+  );
 
   // 5. Stats Counters & Handwritten Arrow Reveal (exact jawoo.io module 779420)
   useScrollReveal(statsRef, (el) => {
@@ -590,12 +663,12 @@ export const HubScreen: React.FC<HubScreenProps> = ({
 
   return (
     <div className="jawoo-portal-world min-h-[100dvh] w-full overflow-x-clip select-none">
-      {/* ==================== HEADER (Exact jawoo.io module 545872) ==================== */}
+      {/* ==================== HEADER (Exact jawoo.io module 545872 + Dynamic Island Safe Area) ==================== */}
       <header
         ref={headerRef}
-        className="sticky top-0 z-40 h-16 sm:h-20 w-full border-b-2 border-[#181818] bg-white/95 backdrop-blur-sm px-4 sm:px-8 md:px-12"
+        className="jawoo-safe-navbar sticky top-0 z-40 w-full border-b-2 border-[#181818] bg-white/95 backdrop-blur-sm px-4 sm:px-8 md:px-12"
       >
-        <div className="mx-auto flex h-full w-full max-w-[1380px] items-center justify-between gap-4">
+        <div className="mx-auto flex h-16 sm:h-20 w-full max-w-[1380px] items-center justify-between gap-4">
           {/* Brand Logo */}
           <a
             href="#top"
@@ -695,7 +768,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="top"
         ref={heroRef}
-        className="relative mx-auto flex min-h-[calc(88dvh-4rem)] sm:min-h-[calc(100dvh-5rem)] w-full max-w-[1380px] flex-col justify-center px-4 sm:px-8 md:px-12 py-10 sm:py-16"
+        className="relative mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-[1380px] flex-col justify-center px-4 sm:px-8 md:px-12 py-10 sm:py-16"
       >
         <div className="max-w-4xl flex flex-col items-start text-left">
           <h1
@@ -797,7 +870,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       >
         <div className="mx-auto w-full max-w-[1380px]">
           {/* Section Header (Stacked vertically per Split-Header Ban) */}
-          <div className="mb-8 sm:mb-14">
+          <div data-games-header="" className="mb-8 sm:mb-14">
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#EF4C05] block mb-2">
               &gt; CATALOGUE OFFICIEL
             </span>
@@ -907,7 +980,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         className="border-t-2 border-[#181818] bg-white py-12 sm:py-24 px-4 sm:px-8 md:px-12"
       >
         <div className="mx-auto w-full max-w-[1380px]">
-          <div className="mb-8 sm:mb-14">
+          <div data-bento-header="" className="mb-8 sm:mb-14">
             <h2
               data-bento-title=""
               className="font-['Bricolage_Grotesque',_sans-serif] text-2xl sm:text-5xl font-black tracking-tight text-[#181818]"

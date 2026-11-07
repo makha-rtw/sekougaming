@@ -140,7 +140,7 @@ export const JawooIntroLoader: React.FC<JawooIntroLoaderProps> = ({ onReady }) =
       role="status"
       aria-live="polite"
       aria-label="Chargement de SekouGaming"
-      className="fixed inset-0 z-[100] flex flex-col justify-between bg-[#181818] px-5 py-6 sm:px-10 sm:py-8 text-white select-none"
+      className="jawoo-safe-fullscreen fixed inset-0 z-[100] flex flex-col justify-between bg-[#181818] px-5 py-6 sm:px-10 sm:py-8 text-white select-none"
     >
       {/* Top Row: Masked Brand Name + Status */}
       <div className="flex items-center justify-between gap-4">

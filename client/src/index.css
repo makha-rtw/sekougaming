@@ -32,6 +32,35 @@
 }
 
 /* Safe area padding utilities for iPhone notch / Dynamic Island / status bar / mobile browser */
+.jawoo-safe-navbar {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.jawoo-safe-fullscreen {
+  padding-top: max(env(safe-area-inset-top, 0px), 20px);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+}
+
+@media (max-width: 639px) {
+  html[data-standalone="true"] .jawoo-safe-navbar {
+    padding-top: max(env(safe-area-inset-top, 0px), 56px);
+  }
+  html[data-standalone="true"] .jawoo-safe-fullscreen {
+    padding-top: max(calc(env(safe-area-inset-top, 0px) + 12px), 62px);
+    padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 12px), 28px);
+  }
+}
+
+@media all and (display-mode: standalone), all and (display-mode: fullscreen) {
+  .jawoo-safe-navbar {
+    padding-top: max(env(safe-area-inset-top, 0px), 56px);
+  }
+  .jawoo-safe-fullscreen {
+    padding-top: max(calc(env(safe-area-inset-top, 0px) + 12px), 62px);
+    padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 12px), 28px);
+  }
+}
+
 .pt-safe {
   padding-top: 78px;
   padding-top: max(calc(env(safe-area-inset-top, 0px) + 24px), 78px);
@@ -50,6 +79,13 @@
 }
 
 @media (min-width: 640px) {
+  .jawoo-safe-navbar {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .jawoo-safe-fullscreen {
+    padding-top: max(env(safe-area-inset-top, 0px), 28px);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 28px);
+  }
   .pt-safe {
     padding-top: 16px;
     padding-top: max(env(safe-area-inset-top, 0px), 16px);

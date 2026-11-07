@@ -188,15 +188,75 @@ export function applyFrenchNonBreakingSpaces(root: HTMLElement): void {
 }
 
 /**
+ * Helper that triggers a paused GSAP timeline/tween once when `el` enters the viewport,
+ * using both ScrollTrigger and native IntersectionObserver so mobile Safari,
+ * iOS Home Screen PWA (standalone), Android Chrome, and Desktop always fire reliably.
+ */
+export function observeElementReveal<T extends HTMLElement = HTMLElement>(
+  el: T,
+  buildTimeline: (target: T) => gsap.core.Timeline | gsap.core.Tween,
+  start = 'top 85%'
+): () => void {
+  let st: ScrollTrigger | undefined;
+  let io: IntersectionObserver | undefined;
+  let anim: gsap.core.Timeline | gsap.core.Tween | undefined;
+  let hasPlayed = false;
+
+  const playOnce = () => {
+    if (hasPlayed || !anim) return;
+    hasPlayed = true;
+    anim.play();
+    io?.disconnect();
+  };
+
+  const cleanupReveal = onPageReveal(() => {
+    gsap.set(el, { autoAlpha: 1 });
+    anim = buildTimeline(el).pause(0);
+
+    st = ScrollTrigger.create({
+      trigger: el,
+      start,
+      once: true,
+      onEnter: playOnce,
+    });
+
+    if (typeof window !== 'undefined' && 'IntersectionObserver' in window) {
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              playOnce();
+              break;
+            }
+          }
+        },
+        {
+          threshold: 0.12,
+          rootMargin: '0px 0px -10% 0px',
+        }
+      );
+      io.observe(el);
+    }
+  });
+
+  return () => {
+    cleanupReveal();
+    io?.disconnect();
+    st?.kill();
+    anim?.kill();
+  };
+}
+
+/**
  * Exact replica of jawoo.io's useScrollReveal hook (module 616937):
  * - Immediately sets autoAlpha: 0 to avoid FOUC
  * - Waits for onPageReveal
- * - Builds paused GSAP timeline and triggers it once when entering viewport
+ * - Builds paused GSAP timeline at progress(0) and triggers it once when entering viewport
  */
 export function useScrollReveal<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T | null>,
   buildTimeline: (el: T) => gsap.core.Timeline | gsap.core.Tween,
-  start = 'top 86%'
+  start = 'top 85%'
 ): void {
   useIsoLayoutEffect(() => {
     const el = ref.current;
@@ -210,33 +270,7 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
     () => {
       const el = ref.current;
       if (!el) return;
-
-      let st: ScrollTrigger | undefined;
-      let anim: gsap.core.Timeline | gsap.core.Tween | undefined;
-
-      const cleanup = onPageReveal(() => {
-        anim = buildTimeline(el).pause();
-        gsap.set(el, { autoAlpha: 1 });
-        st = ScrollTrigger.create({
-          trigger: el,
-          start,
-          once: true,
-          animation: anim,
-          onEnter: () => {
-            anim?.play();
-          },
-        });
-        const rect = el.getBoundingClientRect();
-        if (rect.top <= window.innerHeight * 0.9) {
-          anim?.play();
-        }
-      });
-
-      return () => {
-        cleanup();
-        st?.kill();
-        anim?.kill();
-      };
+      return observeElementReveal(el, buildTimeline, start);
     },
     { scope: ref }
   );
