@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   ArrowUpRight,
   UsersThree,
@@ -11,6 +11,8 @@ import {
   Lightning,
   QrCode,
   Play,
+  Sun,
+  Moon,
 } from '@phosphor-icons/react';
 import {
   gsap,
@@ -157,10 +159,33 @@ const ParallaxArtwork: React.FC<{
   );
 };
 
+const PORTAL_THEME_STORAGE_KEY = 'sekou_portal_theme_v1';
+
 export const HubScreen: React.FC<HubScreenProps> = ({
   onSelectGame,
   onOpenMenu,
 }) => {
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem(PORTAL_THEME_STORAGE_KEY) === 'dark';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PORTAL_THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
+    } catch {
+      // ignore storage errors
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    sounds.buttonClick();
+    setIsDark((prev) => !prev);
+  };
+
   const headerRef = useRef<HTMLElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const gamesRef = useRef<HTMLElement>(null);
@@ -789,11 +814,18 @@ export const HubScreen: React.FC<HubScreenProps> = ({
   };
 
   return (
-    <div className="jawoo-portal-world min-h-[100dvh] w-full overflow-x-clip select-none">
+    <div
+      data-theme={isDark ? 'dark' : 'light'}
+      className="jawoo-portal-world min-h-[100dvh] w-full overflow-x-clip select-none"
+    >
       {/* ==================== HEADER (Exact jawoo.io module 545872 + Dynamic Island Safe Area) ==================== */}
       <header
         ref={headerRef}
-        className="jawoo-safe-navbar sticky top-0 z-40 w-full border-b-2 border-[#181818] bg-white/95 backdrop-blur-sm px-4 sm:px-8 md:px-12"
+        className={`jawoo-safe-navbar sticky top-0 z-40 w-full border-b-2 backdrop-blur-sm px-4 sm:px-8 md:px-12 transition-colors duration-300 ${
+          isDark
+            ? 'border-white/20 bg-[#0D1016]/95'
+            : 'border-[#181818] bg-white/95'
+        }`}
       >
         <div className="mx-auto flex h-16 sm:h-20 w-full max-w-[1380px] items-center justify-between gap-4">
           {/* Brand Logo */}
@@ -813,7 +845,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                 className="h-full w-full object-cover"
               />
             </div>
-            <span className="font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-black tracking-tight text-[#181818]">
+            <span
+              className={`font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-black tracking-tight transition-colors ${
+                isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+              }`}
+            >
               SekouGaming
             </span>
           </a>
@@ -824,7 +860,9 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               <button
                 type="button"
                 onClick={() => scrollToSection('catalogue')}
-                className="text-sm font-bold text-[#181818] hover:text-[#EF4C05] transition-colors cursor-pointer"
+                className={`text-sm font-bold hover:text-[#EF4C05] transition-colors cursor-pointer ${
+                  isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                }`}
               >
                 Les 4 Jeux
               </button>
@@ -833,7 +871,9 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               <button
                 type="button"
                 onClick={() => scrollToSection('experience')}
-                className="text-sm font-bold text-[#181818] hover:text-[#EF4C05] transition-colors cursor-pointer"
+                className={`text-sm font-bold hover:text-[#EF4C05] transition-colors cursor-pointer ${
+                  isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                }`}
               >
                 L’Expérience
               </button>
@@ -842,7 +882,9 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               <button
                 type="button"
                 onClick={() => scrollToSection('chiffres')}
-                className="text-sm font-bold text-[#181818] hover:text-[#EF4C05] transition-colors cursor-pointer"
+                className={`text-sm font-bold hover:text-[#EF4C05] transition-colors cursor-pointer ${
+                  isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                }`}
               >
                 Chiffres
               </button>
@@ -851,20 +893,57 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               <button
                 type="button"
                 onClick={() => scrollToSection('etapes')}
-                className="text-sm font-bold text-[#181818] hover:text-[#EF4C05] transition-colors cursor-pointer"
+                className={`text-sm font-bold hover:text-[#EF4C05] transition-colors cursor-pointer ${
+                  isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                }`}
               >
                 Comment jouer
               </button>
             </TextMask>
           </nav>
 
-          {/* Right Actions: Quick Launch + Fullscreen Menu Trigger */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Right Actions: Theme Switch (Sombre/Clair) + Quick Launch + Fullscreen Menu Trigger */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Dark / Light Switch Button */}
+            <TextMask data-header-reveal="">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                aria-pressed={isDark}
+                title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                className={`inline-flex h-10 items-center gap-2 border-2 px-2.5 sm:px-3.5 font-mono text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                  isDark
+                    ? 'border-[#F6F0E2] bg-[#161C28] text-[#F5C542] shadow-[3px_3px_0_0_#EF4C05] hover:bg-[#1F2737]'
+                    : 'border-[#181818] bg-[#FFF0D8] text-[#181818] shadow-[3px_3px_0_0_#181818] hover:bg-[#F5C542]'
+                }`}
+              >
+                <span
+                  className={`flex h-6 w-6 items-center justify-center border transition-colors ${
+                    isDark
+                      ? 'border-[#F5C542]/50 bg-[#0D1016] text-[#F5C542]'
+                      : 'border-[#181818] bg-white text-[#EF4C05]'
+                  }`}
+                >
+                  {isDark ? (
+                    <Moon weight="fill" className="h-3.5 w-3.5" />
+                  ) : (
+                    <Sun weight="fill" className="h-3.5 w-3.5" />
+                  )}
+                </span>
+                <span className="hidden sm:inline">{isDark ? 'Sombre' : 'Clair'}</span>
+              </button>
+            </TextMask>
+
             <TextMask data-header-reveal="" className="hidden sm:block">
               <button
                 type="button"
                 onClick={() => scrollToSection('catalogue')}
-                className="jawoo-rise-btn inline-flex h-10 items-center gap-2 border-2 border-[#181818] bg-white px-4 text-xs font-black uppercase tracking-wider text-[#181818] hover:text-white cursor-pointer"
+                className={`jawoo-rise-btn inline-flex h-10 items-center gap-2 border-2 px-4 text-xs font-black uppercase tracking-wider hover:text-white cursor-pointer ${
+                  isDark
+                    ? 'border-[#F6F0E2] bg-[#161C28] text-[#F6F0E2]'
+                    : 'border-[#181818] bg-white text-[#181818]'
+                }`}
               >
                 <span>Choisir un jeu</span>
                 <ArrowUpRight weight="bold" className="h-4 w-4" />
@@ -880,7 +959,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                     onOpenMenu();
                   }}
                   aria-label="Ouvrir le menu plein écran"
-                  className="jawoo-rise-btn inline-flex h-10 items-center gap-2 border-2 border-[#181818] bg-[#181818] px-4 text-xs font-black uppercase tracking-wider text-white cursor-pointer"
+                  className={`jawoo-rise-btn inline-flex h-10 items-center gap-2 border-2 px-4 text-xs font-black uppercase tracking-wider text-white cursor-pointer ${
+                    isDark
+                      ? 'border-[#F6F0E2] bg-[#EF4C05]'
+                      : 'border-[#181818] bg-[#181818]'
+                  }`}
                 >
                   <span>Menu</span>
                   <Plus weight="bold" className="h-4 w-4" />
@@ -925,10 +1008,24 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             data-depth="1.3"
             className="absolute right-4 top-3 md:right-[36%] md:top-12"
           >
-            <div className="grid h-9 w-9 sm:h-12 sm:w-12 grid-cols-2 place-items-center border-2 border-[#181818] bg-white p-1.5 shadow-[3px_3px_0_0_#181818] sm:shadow-[4px_4px_0_0_#181818] rotate-12">
+            <div
+              className={`grid h-9 w-9 sm:h-12 sm:w-12 grid-cols-2 place-items-center border-2 p-1.5 rotate-12 transition-colors ${
+                isDark
+                  ? 'border-[#F6F0E2] bg-[#161C28] shadow-[3px_3px_0_0_#EF4C05]'
+                  : 'border-[#181818] bg-white shadow-[3px_3px_0_0_#181818] sm:shadow-[4px_4px_0_0_#181818]'
+              }`}
+            >
               <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#EF4C05]" />
-              <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#181818]" />
-              <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#181818]" />
+              <span
+                className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${
+                  isDark ? 'bg-[#F6F0E2]' : 'bg-[#181818]'
+                }`}
+              />
+              <span
+                className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${
+                  isDark ? 'bg-[#F6F0E2]' : 'bg-[#181818]'
+                }`}
+              />
               <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#EF4C05]" />
             </div>
           </div>
@@ -1041,38 +1138,64 @@ export const HubScreen: React.FC<HubScreenProps> = ({
 
         <div className="relative z-20 max-w-4xl flex flex-col items-start text-left">
           {/* Top Live Arcade Pill (Desktop only) */}
-          <div className="hidden md:inline-flex mb-4 items-center gap-2 border-2 border-[#181818] bg-white px-3 py-1 shadow-[3px_3px_0_0_#181818]">
+          <div
+            className={`hidden md:inline-flex mb-4 items-center gap-2 border-2 px-3 py-1 transition-colors ${
+              isDark
+                ? 'border-white/25 bg-[#161C28] shadow-[3px_3px_0_0_#EF4C05]'
+                : 'border-[#181818] bg-white shadow-[3px_3px_0_0_#181818]'
+            }`}
+          >
             <span className="h-2.5 w-2.5 bg-[#099250] border border-[#181818]" />
-            <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#181818]">
+            <span
+              className={`font-mono text-[11px] font-black uppercase tracking-wider ${
+                isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+              }`}
+            >
               PLATEFORME DE JEUX MULTIJOUEURS · 4 UNIVERS
             </span>
           </div>
 
           <h1
             data-hero-title=""
-            className="font-['Bricolage_Grotesque',_sans-serif] text-[1.95rem] sm:text-6xl xl:text-[4.65rem] font-black tracking-tight leading-[1.08] text-[#181818] pr-12 md:pr-0"
+            className={`font-['Bricolage_Grotesque',_sans-serif] text-[1.95rem] sm:text-6xl xl:text-[4.65rem] font-black tracking-tight leading-[1.08] pr-12 md:pr-0 transition-colors ${
+              isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+            }`}
           >
             Quatre jeux cultes.{' '}
             <span className="block mt-1">
               Un salon{' '}
-              <span className="relative inline-block border-2 border-[#181818] bg-[#FFF0D8] px-2.5 sm:px-3 pb-0.5 sm:pb-1 text-[#EF4C05] align-baseline">
+              <span
+                className={`relative inline-block border-2 px-2.5 sm:px-3 pb-0.5 sm:pb-1 align-baseline transition-colors ${
+                  isDark
+                    ? 'border-[#F5C542] bg-[#1F1815] text-[#F5C542]'
+                    : 'border-[#181818] bg-[#FFF0D8] text-[#EF4C05]'
+                }`}
+              >
                 instantané.
                 {/* 4 Figma Selection Handles */}
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -top-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 border-[#181818] bg-white"
+                  className={`pointer-events-none absolute -top-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
+                    isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                  }`}
                 />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -top-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 border-[#181818] bg-white"
+                  className={`pointer-events-none absolute -top-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
+                    isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                  }`}
                 />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -bottom-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 border-[#181818] bg-white"
+                  className={`pointer-events-none absolute -bottom-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
+                    isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                  }`}
                 />
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -bottom-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 border-[#181818] bg-white"
+                  className={`pointer-events-none absolute -bottom-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
+                    isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                  }`}
                 />
                 {/* Floating Animated SVG Cursor Badge (Desktop only) */}
                 <span
@@ -1100,7 +1223,9 @@ export const HubScreen: React.FC<HubScreenProps> = ({
 
           <p
             data-hero-sub=""
-            className="hidden md:block mt-7 max-w-[46ch] text-base sm:text-lg font-medium leading-relaxed text-[#181818]/75"
+            className={`hidden md:block mt-7 max-w-[46ch] text-base sm:text-lg font-medium leading-relaxed transition-colors ${
+              isDark ? 'text-[#F6F0E2]/75' : 'text-[#181818]/75'
+            }`}
           >
             Ouvrez une table en trois secondes sur téléphone ou ordinateur et partagez le code à vos amis.
           </p>
@@ -1111,7 +1236,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               <button
                 type="button"
                 onClick={() => scrollToSection('catalogue')}
-                className="jawoo-rise-btn group inline-flex h-12 sm:h-13 items-center gap-3 border-2 border-[#181818] bg-[#181818] px-6 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-[5px_5px_0_0_#EF4C05] cursor-pointer"
+                className={`jawoo-rise-btn group inline-flex h-12 sm:h-13 items-center gap-3 border-2 px-6 text-xs sm:text-sm font-black uppercase tracking-wider text-white cursor-pointer ${
+                  isDark
+                    ? 'border-[#F6F0E2] bg-[#EF4C05] shadow-[5px_5px_0_0_#F5C542]'
+                    : 'border-[#181818] bg-[#181818] shadow-[5px_5px_0_0_#EF4C05]'
+                }`}
               >
                 <span>Choisir un jeu</span>
                 <ArrowUpRight
@@ -1129,7 +1258,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                     sounds.buttonClick();
                     onOpenMenu();
                   }}
-                  className="jawoo-rise-btn inline-flex h-12 sm:h-13 items-center gap-2 border-2 border-[#181818] bg-white px-5 text-xs sm:text-sm font-black uppercase tracking-wider text-[#181818] hover:text-white cursor-pointer"
+                  className={`jawoo-rise-btn inline-flex h-12 sm:h-13 items-center gap-2 border-2 px-5 text-xs sm:text-sm font-black uppercase tracking-wider hover:text-white cursor-pointer ${
+                    isDark
+                      ? 'border-[#F6F0E2] bg-[#161C28] text-[#F6F0E2]'
+                      : 'border-[#181818] bg-white text-[#181818]'
+                  }`}
                 >
                   <span>Menu rapide</span>
                 </button>
@@ -1176,7 +1309,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="catalogue"
         ref={gamesRef}
-        className="md:border-t-2 md:border-[#181818] md:bg-[#F7F7F7] pt-2 pb-6 md:py-24 px-4 sm:px-8 md:px-12"
+        className={`md:border-t-2 pt-2 pb-6 md:py-24 px-4 sm:px-8 md:px-12 transition-colors duration-300 ${
+          isDark
+            ? 'md:border-white/15 md:bg-[#131822]'
+            : 'md:border-[#181818] md:bg-[#F7F7F7]'
+        }`}
       >
         <div className="mx-auto w-full max-w-[1380px]">
           {/* Section Header (Desktop only — on Mobile the Hero title right above introduces the 4 games) */}
@@ -1186,11 +1323,17 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             </span>
             <h2
               data-games-title=""
-              className="font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-5xl font-black tracking-tight text-[#181818]"
+              className={`font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-5xl font-black tracking-tight transition-colors ${
+                isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+              }`}
             >
               Choisissez votre table de jeu.
             </h2>
-            <p className="mt-3 max-w-[54ch] text-base text-[#181818]/75">
+            <p
+              className={`mt-3 max-w-[54ch] text-base transition-colors ${
+                isDark ? 'text-[#F6F0E2]/75' : 'text-[#181818]/75'
+              }`}
+            >
               Chaque jeu possède son propre univers graphique, ses règles maison et sa connexion instantanée par code ou QR.
             </p>
           </div>
@@ -1204,20 +1347,38 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   key={game.id}
                   data-game-card=""
                   onClick={() => onSelectGame(game.id)}
-                  className="group relative flex flex-col justify-between border-2 border-[#181818] bg-white shadow-[4px_4px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818] transition-shadow duration-300 hover:shadow-[10px_10px_0_0_#EF4C05] cursor-pointer"
+                  className={`group relative flex flex-col justify-between border-2 transition-all duration-300 hover:shadow-[10px_10px_0_0_#EF4C05] cursor-pointer ${
+                    isDark
+                      ? 'border-white/25 bg-[#161C28] shadow-[4px_4px_0_0_#000000] sm:shadow-[6px_6px_0_0_#000000] hover:border-[#F5C542]'
+                      : 'border-[#181818] bg-white shadow-[4px_4px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818]'
+                  }`}
                 >
                   {/* Top Index & Meta Strip (Desktop only to keep Mobile ultra-clean) */}
-                  <div className="hidden sm:flex items-center justify-between border-b-2 border-[#181818] bg-[#F7F7F7] px-4 py-2.5">
+                  <div
+                    className={`hidden sm:flex items-center justify-between border-b-2 px-4 py-2.5 transition-colors ${
+                      isDark
+                        ? 'border-white/20 bg-[#0D1016]'
+                        : 'border-[#181818] bg-[#F7F7F7]'
+                    }`}
+                  >
                     <div className="flex items-center gap-2">
                       <span
                         className="inline-block h-3 w-3 border border-[#181818]"
                         style={{ backgroundColor: game.accentBg }}
                       />
-                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#181818]">
+                      <span
+                        className={`font-mono text-xs font-bold uppercase tracking-wider ${
+                          isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                        }`}
+                      >
                         /{game.index} · {game.subtitle}
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1 font-mono text-xs font-bold text-[#181818]">
+                    <span
+                      className={`inline-flex items-center gap-1 font-mono text-xs font-bold ${
+                        isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                      }`}
+                    >
                       <UsersThree weight="bold" className="h-3.5 w-3.5 text-[#EF4C05]" />
                       <span>{game.players}</span>
                     </span>
@@ -1237,16 +1398,30 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                     {/* Mobile Compact Row */}
                     <div className="flex sm:hidden items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-xl font-black tracking-tight text-[#181818] leading-tight">
+                        <h3
+                          className={`font-['Bricolage_Grotesque',_sans-serif] text-xl font-black tracking-tight leading-tight ${
+                            isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                          }`}
+                        >
                           {game.title}
                         </h3>
-                        <span className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-[#181818]/70">
+                        <span
+                          className={`mt-0.5 inline-flex items-center gap-1.5 font-mono text-[11px] font-bold ${
+                            isDark ? 'text-[#F6F0E2]/70' : 'text-[#181818]/70'
+                          }`}
+                        >
                           <UsersThree weight="bold" className="h-3.5 w-3.5 text-[#EF4C05]" />
                           <span>{game.players}</span>
                         </span>
                       </div>
 
-                      <span className="jawoo-rise-btn shrink-0 inline-flex h-9 items-center gap-1.5 border-2 border-[#181818] bg-[#181818] px-3.5 font-mono text-xs font-black uppercase tracking-wider text-white">
+                      <span
+                        className={`jawoo-rise-btn shrink-0 inline-flex h-9 items-center gap-1.5 border-2 px-3.5 font-mono text-xs font-black uppercase tracking-wider text-white ${
+                          isDark
+                            ? 'border-[#F6F0E2] bg-[#EF4C05]'
+                            : 'border-[#181818] bg-[#181818]'
+                        }`}
+                      >
                         <span>Jouer</span>
                         <ArrowUpRight weight="bold" className="h-4 w-4" />
                       </span>
@@ -1255,27 +1430,51 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                     {/* Desktop / Tablet Full Body */}
                     <div className="hidden sm:block">
                       <div className="flex items-center justify-between gap-3">
-                        <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-3xl font-black tracking-tight text-[#181818] group-hover:text-[#EF4C05] transition-colors">
+                        <h3
+                          className={`font-['Bricolage_Grotesque',_sans-serif] text-3xl font-black tracking-tight transition-colors ${
+                            isDark
+                              ? 'text-[#F6F0E2] group-hover:text-[#F5C542]'
+                              : 'text-[#181818] group-hover:text-[#EF4C05]'
+                          }`}
+                        >
                           {game.title}
                         </h3>
-                        <span className="inline-flex items-center gap-1 border border-[#181818] bg-[#FFF0D8] px-2.5 py-1 font-mono text-[11px] font-bold uppercase text-[#181818] shrink-0">
+                        <span
+                          className={`inline-flex items-center gap-1 border px-2.5 py-1 font-mono text-[11px] font-bold uppercase shrink-0 ${
+                            isDark
+                              ? 'border-white/25 bg-[#0D1016] text-[#F6F0E2]'
+                              : 'border-[#181818] bg-[#FFF0D8] text-[#181818]'
+                          }`}
+                        >
                           <IconComp weight="bold" className="h-3.5 w-3.5 text-[#EF4C05]" />
                           <span>{game.mode}</span>
                         </span>
                       </div>
 
-                      <p className="mt-3 text-base leading-relaxed text-[#181818]/80">
+                      <p
+                        className={`mt-3 text-base leading-relaxed ${
+                          isDark ? 'text-[#F6F0E2]/80' : 'text-[#181818]/80'
+                        }`}
+                      >
                         {game.pitch}
                       </p>
                     </div>
 
-                    <div className="hidden sm:flex mt-6 flex-wrap items-center justify-between gap-3 border-t-2 border-[#181818]/10 pt-4">
+                    <div
+                      className={`hidden sm:flex mt-6 flex-wrap items-center justify-between gap-3 border-t-2 pt-4 ${
+                        isDark ? 'border-white/15' : 'border-[#181818]/10'
+                      }`}
+                    >
                       {/* Highlights pills (desktop/tablet) */}
                       <div className="flex flex-wrap gap-1.5">
                         {game.highlights.map((tag) => (
                           <span
                             key={tag}
-                            className="border border-[#181818] bg-[#F7F7F7] px-2.5 py-1 font-mono text-[11px] font-bold uppercase text-[#181818]"
+                            className={`border px-2.5 py-1 font-mono text-[11px] font-bold uppercase ${
+                              isDark
+                                ? 'border-white/20 bg-[#0D1016] text-[#F6F0E2]'
+                                : 'border-[#181818] bg-[#F7F7F7] text-[#181818]'
+                            }`}
                           >
                             {tag}
                           </span>
@@ -1283,7 +1482,13 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                       </div>
 
                       {/* RiseBand Action Button */}
-                      <span className="jawoo-rise-btn inline-flex h-10 items-center gap-2 border-2 border-[#181818] bg-[#181818] px-4 font-mono text-xs font-black uppercase tracking-wider text-white">
+                      <span
+                        className={`jawoo-rise-btn inline-flex h-10 items-center gap-2 border-2 px-4 font-mono text-xs font-black uppercase tracking-wider text-white ${
+                          isDark
+                            ? 'border-[#F6F0E2] bg-[#EF4C05]'
+                            : 'border-[#181818] bg-[#181818]'
+                        }`}
+                      >
                         <span>Jouer</span>
                         <ArrowUpRight
                           weight="bold"
@@ -1303,17 +1508,27 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="experience"
         ref={bentoRef}
-        className="hidden md:block border-t-2 border-[#181818] bg-white py-24 px-8 md:px-12"
+        className={`hidden md:block border-t-2 py-24 px-8 md:px-12 transition-colors duration-300 ${
+          isDark
+            ? 'border-white/15 bg-[#0D1016]'
+            : 'border-[#181818] bg-white'
+        }`}
       >
         <div className="mx-auto w-full max-w-[1380px]">
           <div data-bento-header="" className="mb-8 sm:mb-14">
             <h2
               data-bento-title=""
-              className="font-['Bricolage_Grotesque',_sans-serif] text-2xl sm:text-5xl font-black tracking-tight text-[#181818]"
+              className={`font-['Bricolage_Grotesque',_sans-serif] text-2xl sm:text-5xl font-black tracking-tight transition-colors ${
+                isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+              }`}
             >
               Conçu pour les vraies soirées entre amis.
             </h2>
-            <p className="hidden sm:block mt-3 max-w-[54ch] text-base text-[#181818]/75">
+            <p
+              className={`hidden sm:block mt-3 max-w-[54ch] text-base transition-colors ${
+                isDark ? 'text-[#F6F0E2]/75' : 'text-[#181818]/75'
+              }`}
+            >
               Pas de compte obligatoire, pas d’application à télécharger. Tout fonctionne directement dans le navigateur.
             </p>
           </div>
@@ -1401,28 +1616,49 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               </div>
             </div>
 
-            {/* CELL 2 (7 Cols - Crisp White): 4 Physical Worlds Fan & DrawSVG */}
+            {/* CELL 2 (7 Cols - Crisp White / Dark Slate): 4 Physical Worlds Fan & DrawSVG */}
             <div
               data-bento-cell=""
-              className="md:col-span-7 flex flex-col justify-between border-2 border-[#181818] bg-white p-5 sm:p-7 shadow-[5px_5px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818]"
+              className={`md:col-span-7 flex flex-col justify-between border-2 p-5 sm:p-7 transition-colors ${
+                isDark
+                  ? 'border-white/25 bg-[#161C28] shadow-[5px_5px_0_0_#000000] sm:shadow-[6px_6px_0_0_#000000]'
+                  : 'border-[#181818] bg-white shadow-[5px_5px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818]'
+              }`}
             >
               <div>
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#EF4C05]">
                     02 // QUATRE UNIVERS PHYSIQUES
                   </span>
-                  <Sparkle weight="bold" className="h-5 w-5 text-[#181818]" />
+                  <Sparkle
+                    weight="bold"
+                    className={`h-5 w-5 ${isDark ? 'text-[#F5C542]' : 'text-[#181818]'}`}
+                  />
                 </div>
-                <h3 className="mt-2 font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-3xl font-black tracking-tight text-[#181818]">
+                <h3
+                  className={`mt-2 font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-3xl font-black tracking-tight ${
+                    isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                  }`}
+                >
                   Chaque jeu possède sa propre identité visuelle.
                 </h3>
-                <p className="hidden sm:block mt-2 max-w-[52ch] text-sm text-[#181818]/75 leading-relaxed">
+                <p
+                  className={`hidden sm:block mt-2 max-w-[52ch] text-sm leading-relaxed ${
+                    isDark ? 'text-[#F6F0E2]/75' : 'text-[#181818]/75'
+                  }`}
+                >
                   Salon feutré à quatre couleurs pour Sekouno, parchemin narré pour Loups-Garous, échiquier de tournoi pour Polychess et affiche pop pour Sekou Bomb.
                 </p>
               </div>
 
               {/* Choreographed SVG + Artifacts Scene */}
-              <div className="relative mt-5 sm:mt-6 overflow-hidden border-2 border-[#181818] bg-[#F7F7F7] p-3.5 sm:p-5">
+              <div
+                className={`relative mt-5 sm:mt-6 overflow-hidden border-2 p-3.5 sm:p-5 transition-colors ${
+                  isDark
+                    ? 'border-white/20 bg-[#0D1016]'
+                    : 'border-[#181818] bg-[#F7F7F7]'
+                }`}
+              >
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 500 90"
@@ -1580,55 +1816,95 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="chiffres"
         ref={statsRef}
-        className="hidden md:block border-t-2 border-[#181818] bg-[#F7F7F7] py-20 px-8 md:px-12"
+        className={`hidden md:block border-t-2 py-20 px-8 md:px-12 transition-colors duration-300 ${
+          isDark
+            ? 'border-white/15 bg-[#131822]'
+            : 'border-[#181818] bg-[#F7F7F7]'
+        }`}
       >
         <div className="mx-auto w-full max-w-[1380px]">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6">
             <div
               data-stat-card=""
-              className="border-2 border-[#181818] bg-white p-4 sm:p-6 shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]"
+              className={`border-2 p-4 sm:p-6 transition-colors ${
+                isDark
+                  ? 'border-white/25 bg-[#161C28] shadow-[4px_4px_0_0_#000000] sm:shadow-[5px_5px_0_0_#000000]'
+                  : 'border-[#181818] bg-white shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]'
+              }`}
             >
-              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#181818]/60">
+              <span
+                className={`font-mono text-[10px] sm:text-xs font-bold uppercase ${
+                  isDark ? 'text-[#F6F0E2]/60' : 'text-[#181818]/60'
+                }`}
+              >
                 /01 · JEUX
               </span>
               <div
                 data-stat-num=""
                 data-target="4"
                 data-suffix=""
-                className="mt-1.5 sm:mt-3 font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-6xl font-black tracking-tight text-[#181818] tabular-nums"
+                className={`mt-1.5 sm:mt-3 font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-6xl font-black tracking-tight tabular-nums ${
+                  isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                }`}
               >
                 4
               </div>
-              <p className="hidden sm:block mt-2 text-sm font-semibold text-[#181818]/80">
+              <p
+                className={`hidden sm:block mt-2 text-sm font-semibold ${
+                  isDark ? 'text-[#F6F0E2]/80' : 'text-[#181818]/80'
+                }`}
+              >
                 Jeux multijoueurs complets réunis sous le même toit.
               </p>
             </div>
 
             <div
               data-stat-card=""
-              className="border-2 border-[#181818] bg-white p-4 sm:p-6 shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]"
+              className={`border-2 p-4 sm:p-6 transition-colors ${
+                isDark
+                  ? 'border-white/25 bg-[#161C28] shadow-[4px_4px_0_0_#000000] sm:shadow-[5px_5px_0_0_#000000]'
+                  : 'border-[#181818] bg-white shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]'
+              }`}
             >
-              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#181818]/60">
+              <span
+                className={`font-mono text-[10px] sm:text-xs font-bold uppercase ${
+                  isDark ? 'text-[#F6F0E2]/60' : 'text-[#181818]/60'
+                }`}
+              >
                 /02 · JOUEURS MAX
               </span>
               <div
                 data-stat-num=""
                 data-target="18"
                 data-suffix=""
-                className="mt-1.5 sm:mt-3 font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-6xl font-black tracking-tight text-[#181818] tabular-nums"
+                className={`mt-1.5 sm:mt-3 font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-6xl font-black tracking-tight tabular-nums ${
+                  isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                }`}
               >
                 18
               </div>
-              <p className="hidden sm:block mt-2 text-sm font-semibold text-[#181818]/80">
+              <p
+                className={`hidden sm:block mt-2 text-sm font-semibold ${
+                  isDark ? 'text-[#F6F0E2]/80' : 'text-[#181818]/80'
+                }`}
+              >
                 Joueurs maximum autour d’une même partie de Loups-Garous.
               </p>
             </div>
 
             <div
               data-stat-card=""
-              className="border-2 border-[#181818] bg-white p-4 sm:p-6 shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]"
+              className={`border-2 p-4 sm:p-6 transition-colors ${
+                isDark
+                  ? 'border-white/25 bg-[#161C28] shadow-[4px_4px_0_0_#000000] sm:shadow-[5px_5px_0_0_#000000]'
+                  : 'border-[#181818] bg-white shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]'
+              }`}
             >
-              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#181818]/60">
+              <span
+                className={`font-mono text-[10px] sm:text-xs font-bold uppercase ${
+                  isDark ? 'text-[#F6F0E2]/60' : 'text-[#181818]/60'
+                }`}
+              >
                 /03 · OUVERTURE
               </span>
               <div
@@ -1639,7 +1915,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               >
                 3s
               </div>
-              <p className="hidden sm:block mt-2 text-sm font-semibold text-[#181818]/80">
+              <p
+                className={`hidden sm:block mt-2 text-sm font-semibold ${
+                  isDark ? 'text-[#F6F0E2]/80' : 'text-[#181818]/80'
+                }`}
+              >
                 Temps moyen pour ouvrir une salle et inviter sa table.
               </p>
             </div>
@@ -1699,20 +1979,29 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="etapes"
         ref={stepsRef}
-        className="hidden md:block border-t-2 border-[#181818] bg-white py-16 sm:py-24 px-4 sm:px-8 md:px-12"
+        className={`hidden md:block border-t-2 py-16 sm:py-24 px-4 sm:px-8 md:px-12 transition-colors duration-300 ${
+          isDark
+            ? 'border-white/15 bg-[#0D1016]'
+            : 'border-[#181818] bg-white'
+        }`}
       >
         <div className="mx-auto w-full max-w-[1380px]">
           <div className="mb-10 sm:mb-12">
             <h2
               data-steps-title=""
-              className="font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-5xl font-black tracking-tight text-[#181818]"
+              className={`font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-5xl font-black tracking-tight transition-colors ${
+                isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+              }`}
             >
               Trois secondes pour lancer la soirée.
             </h2>
           </div>
 
           <div>
-            <div data-step-line="" className="h-[2px] w-full bg-[#181818]" />
+            <div
+              data-step-line=""
+              className={`h-[2px] w-full ${isDark ? 'bg-white/20' : 'bg-[#181818]'}`}
+            />
 
             {[
               {
@@ -1740,17 +2029,27 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               <div key={step.num}>
                 <div
                   data-step-row=""
-                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6 sm:py-8 transition-colors hover:bg-[#FFF0D8]/50 px-2"
+                  className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6 sm:py-8 transition-colors px-2 ${
+                    isDark ? 'hover:bg-white/5' : 'hover:bg-[#FFF0D8]/50'
+                  }`}
                 >
                   <div className="flex items-baseline gap-4 sm:gap-8">
                     <span className="font-mono text-sm font-black text-[#EF4C05]">
                       /{step.num}
                     </span>
                     <div>
-                      <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-black tracking-tight text-[#181818]">
+                      <h3
+                        className={`font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-black tracking-tight ${
+                          isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
+                        }`}
+                      >
                         {step.title}
                       </h3>
-                      <p className="mt-1 max-w-[56ch] text-sm sm:text-base text-[#181818]/75">
+                      <p
+                        className={`mt-1 max-w-[56ch] text-sm sm:text-base ${
+                          isDark ? 'text-[#F6F0E2]/75' : 'text-[#181818]/75'
+                        }`}
+                      >
                         {step.desc}
                       </p>
                     </div>
@@ -1759,13 +2058,20 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   <button
                     type="button"
                     onClick={() => onSelectGame(step.game)}
-                    className="jawoo-rise-btn self-start sm:self-center shrink-0 inline-flex items-center gap-2 border-2 border-[#181818] bg-white px-4 py-2 font-mono text-xs font-black uppercase tracking-wider text-[#181818] hover:text-white cursor-pointer"
+                    className={`jawoo-rise-btn self-start sm:self-center shrink-0 inline-flex items-center gap-2 border-2 px-4 py-2 font-mono text-xs font-black uppercase tracking-wider hover:text-white cursor-pointer ${
+                      isDark
+                        ? 'border-[#F6F0E2] bg-[#161C28] text-[#F6F0E2]'
+                        : 'border-[#181818] bg-white text-[#181818]'
+                    }`}
                   >
                     <Play weight="fill" className="h-3.5 w-3.5" />
                     <span>{step.actionLabel}</span>
                   </button>
                 </div>
-                <div data-step-line="" className="h-[2px] w-full bg-[#181818]" />
+                <div
+                  data-step-line=""
+                  className={`h-[2px] w-full ${isDark ? 'bg-white/20' : 'bg-[#181818]'}`}
+                />
               </div>
             ))}
           </div>

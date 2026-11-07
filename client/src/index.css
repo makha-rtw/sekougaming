@@ -334,6 +334,17 @@ html.lenis body {
   color: var(--jw-ink);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   color-scheme: light;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.jawoo-portal-world[data-theme="dark"] {
+  --jw-bg: #0D1016;
+  --jw-bg-muted: #131822;
+  --jw-ink: #F6F0E2;
+  background-color: var(--jw-bg);
+  background-image: radial-gradient(rgba(246, 240, 226, 0.14) 1.25px, transparent 1.25px);
+  color: var(--jw-ink);
+  color-scheme: dark;
 }
 
 @keyframes jawooMarquee {
