@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
   ArrowUpRight,
   UsersThree,
@@ -144,7 +144,6 @@ const ParallaxArtwork: React.FC<{
 export const HubScreen: React.FC<HubScreenProps> = ({
   onSelectGame,
   onOpenMenu,
-  onQuickJoinRoom,
 }) => {
   const headerRef = useRef<HTMLElement>(null);
   const heroRef = useRef<HTMLElement>(null);
@@ -153,9 +152,6 @@ export const HubScreen: React.FC<HubScreenProps> = ({
   const statsRef = useRef<HTMLElement>(null);
   const stepsRef = useRef<HTMLElement>(null);
   const footerRef = useRef<HTMLElement>(null);
-
-  const [quickGame, setQuickGame] = useState<GameId>('sekouno');
-  const [quickCode, setQuickCode] = useState('');
 
   // 1. Header Entrance on Intro Complete (exact jawoo.io module 545872)
   useGSAP(
@@ -194,7 +190,6 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       const subEl = el.querySelector<HTMLElement>('[data-hero-sub]');
       const ctas = el.querySelectorAll<HTMLElement>('[data-hero-cta] [data-reveal]');
       const cursorBadge = el.querySelector<HTMLElement>('[data-hero-cursor]');
-      const quickPanel = el.querySelector<HTMLElement>('[data-hero-panel]');
 
       const tl = gsap.timeline();
 
@@ -242,19 +237,6 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             stagger: 0.08,
           },
           0.45
-        );
-      }
-
-      if (quickPanel) {
-        tl.from(
-          quickPanel,
-          {
-            y: 36,
-            autoAlpha: 0,
-            duration: 1.0,
-            ease: 'expo.out',
-          },
-          0.3
         );
       }
 
@@ -598,17 +580,6 @@ export const HubScreen: React.FC<HubScreenProps> = ({
     'top 92%'
   );
 
-  const handleQuickJoinSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sounds.buttonClick();
-    const trimmed = quickCode.trim().toUpperCase();
-    if (trimmed.length === 6 && onQuickJoinRoom) {
-      onQuickJoinRoom(quickGame, trimmed);
-    } else {
-      onSelectGame(quickGame);
-    }
-  };
-
   const scrollToSection = (id: string) => {
     sounds.buttonClick();
     const target = document.getElementById(id);
@@ -724,200 +695,96 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="top"
         ref={heroRef}
-        className="relative mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-[1380px] flex-col justify-center px-4 sm:px-8 md:px-12 pt-8 pb-12 lg:py-14"
+        className="relative mx-auto flex min-h-[calc(88dvh-4rem)] sm:min-h-[calc(100dvh-5rem)] w-full max-w-[1380px] flex-col justify-center px-4 sm:px-8 md:px-12 py-10 sm:py-16"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-          {/* Left Column: SplitText Headline + Figma Selection Box + Subtext + Primary CTA */}
-          <div className="lg:col-span-7 flex flex-col items-start text-left">
-            <h1
-              data-hero-title=""
-              className="font-['Bricolage_Grotesque',_sans-serif] text-[2.65rem] sm:text-6xl xl:text-[4.35rem] font-black tracking-tight leading-[1.06] text-[#181818]"
-            >
-              Quatre jeux cultes.{' '}
-              <span className="block mt-1">
-                Un salon{' '}
-                <span className="relative inline-block border-2 border-[#181818] bg-[#FFF0D8] px-3 pb-1 text-[#EF4C05] align-baseline">
-                  instantané.
-                  {/* 4 Figma Selection Handles */}
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-1.5 -left-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
-                  />
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-1.5 -right-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
-                  />
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -bottom-1.5 -left-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
-                  />
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -bottom-1.5 -right-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
-                  />
-                  {/* Floating Animated SVG Cursor Badge */}
-                  <span
-                    data-hero-cursor=""
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -right-2 -bottom-7 sm:-right-6 sm:-bottom-8 z-20 inline-flex items-center gap-1 border-2 border-[#181818] bg-[#F5C542] px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#181818] shadow-[3px_3px_0_0_#181818]"
+        <div className="max-w-4xl flex flex-col items-start text-left">
+          <h1
+            data-hero-title=""
+            className="font-['Bricolage_Grotesque',_sans-serif] text-[2.55rem] sm:text-6xl xl:text-[4.65rem] font-black tracking-tight leading-[1.06] text-[#181818]"
+          >
+            Quatre jeux cultes.{' '}
+            <span className="block mt-1.5">
+              Un salon{' '}
+              <span className="relative inline-block border-2 border-[#181818] bg-[#FFF0D8] px-3 pb-1 text-[#EF4C05] align-baseline">
+                instantané.
+                {/* 4 Figma Selection Handles */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -top-1.5 -left-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -top-1.5 -right-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-1.5 -left-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-1.5 -right-1.5 h-2.5 w-2.5 border-2 border-[#181818] bg-white"
+                />
+                {/* Floating Animated SVG Cursor Badge */}
+                <span
+                  data-hero-cursor=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-2 -bottom-7 sm:-right-6 sm:-bottom-8 z-20 inline-flex items-center gap-1 border-2 border-[#181818] bg-[#F5C542] px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#181818] shadow-[3px_3px_0_0_#181818]"
+                >
+                  <svg
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    className=" -ml-1 -mt-3 h-4 w-4 text-[#181818]"
                   >
-                    <svg
-                      viewBox="0 0 18 18"
-                      fill="none"
-                      className=" -ml-1 -mt-3 h-4 w-4 text-[#181818]"
-                    >
-                      <path
-                        d="M2 2L8.2 15.5L10.5 9.8L16.2 7.5L2 2Z"
-                        fill="#EF4C05"
-                        stroke="#181818"
-                        strokeWidth="1.8"
-                      />
-                    </svg>
-                    <span>2 à 18 joueurs</span>
-                  </span>
+                    <path
+                      d="M2 2L8.2 15.5L10.5 9.8L16.2 7.5L2 2Z"
+                      fill="#EF4C05"
+                      stroke="#181818"
+                      strokeWidth="1.8"
+                    />
+                  </svg>
+                  <span>2 à 18 joueurs</span>
                 </span>
               </span>
-            </h1>
+            </span>
+          </h1>
 
-            <p
-              data-hero-sub=""
-              className="mt-6 max-w-[46ch] text-base sm:text-lg font-medium leading-relaxed text-[#181818]/75"
-            >
-              Ouvrez une table en trois secondes sur téléphone ou ordinateur et partagez le code à vos amis.
-            </p>
+          <p
+            data-hero-sub=""
+            className="mt-7 max-w-[46ch] text-base sm:text-lg font-medium leading-relaxed text-[#181818]/75"
+          >
+            Ouvrez une table en trois secondes sur téléphone ou ordinateur et partagez le code à vos amis.
+          </p>
 
-            {/* Primary CTA + Direct Game Buttons */}
-            <div data-hero-cta="" className="mt-8 flex flex-wrap items-center gap-3.5">
+          {/* Primary CTA + Direct Game Button */}
+          <div data-hero-cta="" className="mt-8 flex flex-wrap items-center gap-3.5">
+            <TextMask>
+              <button
+                type="button"
+                onClick={() => scrollToSection('catalogue')}
+                className="jawoo-rise-btn group inline-flex h-12 sm:h-13 items-center gap-3 border-2 border-[#181818] bg-[#181818] px-6 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-[5px_5px_0_0_#EF4C05] cursor-pointer"
+              >
+                <span>Choisir un jeu</span>
+                <ArrowUpRight
+                  weight="bold"
+                  className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-0.5"
+                />
+              </button>
+            </TextMask>
+
+            {onOpenMenu && (
               <TextMask>
                 <button
                   type="button"
-                  onClick={() => scrollToSection('catalogue')}
-                  className="jawoo-rise-btn group inline-flex h-13 items-center gap-3 border-2 border-[#181818] bg-[#181818] px-6 text-sm font-black uppercase tracking-wider text-white shadow-[5px_5px_0_0_#EF4C05] cursor-pointer"
+                  onClick={() => {
+                    sounds.buttonClick();
+                    onOpenMenu();
+                  }}
+                  className="jawoo-rise-btn inline-flex h-12 sm:h-13 items-center gap-2 border-2 border-[#181818] bg-white px-5 text-xs sm:text-sm font-black uppercase tracking-wider text-[#181818] hover:text-white cursor-pointer"
                 >
-                  <span>Choisir un jeu</span>
-                  <ArrowUpRight
-                    weight="bold"
-                    className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-0.5"
-                  />
+                  <span>Menu rapide</span>
                 </button>
               </TextMask>
-
-              <TextMask>
-                <button
-                  type="button"
-                  onClick={() => onSelectGame('sekouno')}
-                  className="jawoo-rise-btn inline-flex h-13 items-center gap-2 border-2 border-[#181818] bg-white px-5 text-sm font-black uppercase tracking-wider text-[#181818] hover:text-white cursor-pointer"
-                >
-                  <span>Lancer Sekouno</span>
-                </button>
-              </TextMask>
-            </div>
-          </div>
-
-          {/* Right Column: Direct Quick-Switch & Room Code Ticket Box */}
-          <div className="lg:col-span-5">
-            <div
-              data-hero-panel=""
-              className="border-2 border-[#181818] bg-[#F7F7F7] p-5 sm:p-6 shadow-[8px_8px_0_0_#181818]"
-            >
-              <div className="flex items-center justify-between border-b-2 border-[#181818] pb-3.5">
-                <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#181818]">
-                  &gt; ACCÈS DIRECT AU SALON
-                </span>
-                <span className="border border-[#181818] bg-[#F5C542] px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-[#181818]">
-                  EN LIGNE
-                </span>
-              </div>
-
-              {/* 4 Instant Game Selector Buttons */}
-              <div className="mt-4 grid grid-cols-2 gap-2.5">
-                {GAMES_CATALOG.map((g) => {
-                  const selected = quickGame === g.id;
-                  return (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => {
-                        sounds.buttonClick();
-                        setQuickGame(g.id);
-                      }}
-                      onDoubleClick={() => onSelectGame(g.id)}
-                      className={`group flex flex-col items-start justify-between border-2 border-[#181818] p-3 text-left transition-all cursor-pointer ${
-                        selected
-                          ? 'bg-[#181818] text-white shadow-[3px_3px_0_0_#EF4C05]'
-                          : 'bg-white text-[#181818] hover:bg-[#FFF0D8]'
-                      }`}
-                    >
-                      <div className="flex w-full items-center justify-between">
-                        <span
-                          className={`font-mono text-[10px] font-bold ${
-                            selected ? 'text-[#EF4C05]' : 'text-[#181818]/60'
-                          }`}
-                        >
-                          /{g.index}
-                        </span>
-                        <span
-                          className="h-2.5 w-2.5 border border-[#181818]"
-                          style={{ backgroundColor: g.accentBg }}
-                        />
-                      </div>
-                      <span className="mt-1.5 font-['Bricolage_Grotesque',_sans-serif] text-base font-extrabold tracking-tight">
-                        {g.title}
-                      </span>
-                      <span
-                        className={`text-[11px] font-medium ${
-                          selected ? 'text-white/75' : 'text-[#181818]/65'
-                        }`}
-                      >
-                        {g.players}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Quick Launch or Room Code Input */}
-              <form onSubmit={handleQuickJoinSubmit} className="mt-4 space-y-3">
-                <div>
-                  <label
-                    htmlFor="portal-room-code"
-                    className="block font-mono text-[11px] font-bold uppercase tracking-wider text-[#181818] mb-1.5"
-                  >
-                    Code de table (optionnel pour rejoindre)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      id="portal-room-code"
-                      type="text"
-                      maxLength={6}
-                      value={quickCode}
-                      onChange={(e) => setQuickCode(e.target.value.toUpperCase())}
-                      placeholder="EX: K7X9Q2"
-                      className="h-11 w-full border-2 border-[#181818] bg-white px-3 font-mono text-sm font-bold uppercase tracking-widest text-[#181818] placeholder:text-[#181818]/35 focus:outline-none focus:ring-2 focus:ring-[#EF4C05]"
-                    />
-                    <button
-                      type="submit"
-                      className="jawoo-rise-btn shrink-0 border-2 border-[#181818] bg-[#EF4C05] jawoo-rise-btn-dark px-4 h-11 font-mono text-xs font-black uppercase tracking-wider text-white cursor-pointer"
-                    >
-                      {quickCode.trim().length === 6 ? 'Rejoindre' : 'Ouvrir'}
-                    </button>
-                  </div>
-                </div>
-              </form>
-
-              {/* Direct Launch Bar */}
-              <div className="mt-4 pt-3 border-t border-[#181818]/15 flex items-center justify-between text-xs font-semibold text-[#181818]/75">
-                <span>Sélection : {GAMES_CATALOG.find((g) => g.id === quickGame)?.title}</span>
-                <button
-                  type="button"
-                  onClick={() => onSelectGame(quickGame)}
-                  className="inline-flex items-center gap-1 font-mono text-xs font-bold uppercase text-[#EF4C05] hover:underline cursor-pointer"
-                >
-                  <span>Entrer dans le jeu</span>
-                  <ArrowUpRight weight="bold" className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -926,11 +793,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="catalogue"
         ref={gamesRef}
-        className="border-t-2 border-[#181818] bg-[#F7F7F7] py-16 sm:py-24 px-4 sm:px-8 md:px-12"
+        className="border-t-2 border-[#181818] bg-[#F7F7F7] py-12 sm:py-24 px-4 sm:px-8 md:px-12"
       >
         <div className="mx-auto w-full max-w-[1380px]">
           {/* Section Header (Stacked vertically per Split-Header Ban) */}
-          <div className="mb-10 sm:mb-14">
+          <div className="mb-8 sm:mb-14">
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#EF4C05] block mb-2">
               &gt; CATALOGUE OFFICIEL
             </span>
@@ -940,13 +807,13 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             >
               Choisissez votre table de jeu.
             </h2>
-            <p className="mt-3 max-w-[54ch] text-base text-[#181818]/75">
+            <p className="hidden sm:block mt-3 max-w-[54ch] text-base text-[#181818]/75">
               Chaque jeu possède son propre univers graphique, ses règles maison et sa connexion instantanée par code ou QR.
             </p>
           </div>
 
           {/* 2x2 Architectural Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-7 sm:gap-9">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-9">
             {GAMES_CATALOG.map((game, idx) => {
               const IconComp = game.icon;
               return (
@@ -954,20 +821,20 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   key={game.id}
                   data-game-card=""
                   onClick={() => onSelectGame(game.id)}
-                  className="group relative flex flex-col justify-between border-2 border-[#181818] bg-white shadow-[6px_6px_0_0_#181818] transition-shadow duration-300 hover:shadow-[10px_10px_0_0_#EF4C05] cursor-pointer"
+                  className="group relative flex flex-col justify-between border-2 border-[#181818] bg-white shadow-[5px_5px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818] transition-shadow duration-300 hover:shadow-[10px_10px_0_0_#EF4C05] cursor-pointer"
                 >
                   {/* Top Index & Meta Strip */}
-                  <div className="flex items-center justify-between border-b-2 border-[#181818] bg-[#F7F7F7] px-4 py-2.5">
+                  <div className="flex items-center justify-between border-b-2 border-[#181818] bg-[#F7F7F7] px-3.5 sm:px-4 py-2 sm:py-2.5">
                     <div className="flex items-center gap-2">
                       <span
                         className="inline-block h-3 w-3 border border-[#181818]"
                         style={{ backgroundColor: game.accentBg }}
                       />
-                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#181818]">
+                      <span className="font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#181818]">
                         /{game.index} · {game.subtitle}
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1 font-mono text-xs font-bold text-[#181818]">
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] sm:text-xs font-bold text-[#181818]">
                       <UsersThree weight="bold" className="h-3.5 w-3.5 text-[#EF4C05]" />
                       <span>{game.players}</span>
                     </span>
@@ -982,26 +849,26 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   />
 
                   {/* Card Body */}
-                  <div className="flex flex-1 flex-col justify-between p-5 sm:p-7">
+                  <div className="flex flex-1 flex-col justify-between p-4 sm:p-7">
                     <div>
-                      <div className="flex items-start justify-between gap-4">
-                        <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-2xl sm:text-3xl font-black tracking-tight text-[#181818] group-hover:text-[#EF4C05] transition-colors">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-3xl font-black tracking-tight text-[#181818] group-hover:text-[#EF4C05] transition-colors">
                           {game.title}
                         </h3>
-                        <span className="inline-flex items-center gap-1 border border-[#181818] bg-[#FFF0D8] px-2.5 py-1 font-mono text-[11px] font-bold uppercase text-[#181818] shrink-0">
+                        <span className="hidden sm:inline-flex items-center gap-1 border border-[#181818] bg-[#FFF0D8] px-2.5 py-1 font-mono text-[11px] font-bold uppercase text-[#181818] shrink-0">
                           <IconComp weight="bold" className="h-3.5 w-3.5 text-[#EF4C05]" />
                           <span>{game.mode}</span>
                         </span>
                       </div>
 
-                      <p className="mt-3 text-sm sm:text-base leading-relaxed text-[#181818]/80">
+                      <p className="hidden sm:block mt-3 text-sm sm:text-base leading-relaxed text-[#181818]/80">
                         {game.pitch}
                       </p>
                     </div>
 
-                    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t-2 border-[#181818]/10 pt-4">
-                      {/* Highlights pills */}
-                      <div className="flex flex-wrap gap-1.5">
+                    <div className="mt-3 sm:mt-6 flex flex-wrap items-center justify-between gap-3 sm:border-t-2 sm:border-[#181818]/10 sm:pt-4">
+                      {/* Highlights pills (desktop/tablet) */}
+                      <div className="hidden sm:flex flex-wrap gap-1.5">
                         {game.highlights.map((tag) => (
                           <span
                             key={tag}
@@ -1012,9 +879,13 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                         ))}
                       </div>
 
+                      <span className="sm:hidden font-mono text-[11px] font-bold uppercase text-[#181818]/70">
+                        {game.mode}
+                      </span>
+
                       {/* RiseBand Action Button */}
-                      <span className="jawoo-rise-btn inline-flex h-10 items-center gap-2 border-2 border-[#181818] bg-[#181818] px-4 font-mono text-xs font-black uppercase tracking-wider text-white">
-                        <span>Lancer</span>
+                      <span className="jawoo-rise-btn inline-flex h-9 sm:h-10 items-center gap-2 border-2 border-[#181818] bg-[#181818] px-4 font-mono text-xs font-black uppercase tracking-wider text-white">
+                        <span>Jouer</span>
                         <ArrowUpRight
                           weight="bold"
                           className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
@@ -1033,27 +904,27 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="experience"
         ref={bentoRef}
-        className="border-t-2 border-[#181818] bg-white py-16 sm:py-24 px-4 sm:px-8 md:px-12"
+        className="border-t-2 border-[#181818] bg-white py-12 sm:py-24 px-4 sm:px-8 md:px-12"
       >
         <div className="mx-auto w-full max-w-[1380px]">
-          <div className="mb-10 sm:mb-14">
+          <div className="mb-8 sm:mb-14">
             <h2
               data-bento-title=""
-              className="font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-5xl font-black tracking-tight text-[#181818]"
+              className="font-['Bricolage_Grotesque',_sans-serif] text-2xl sm:text-5xl font-black tracking-tight text-[#181818]"
             >
               Conçu pour les vraies soirées entre amis.
             </h2>
-            <p className="mt-3 max-w-[54ch] text-base text-[#181818]/75">
+            <p className="hidden sm:block mt-3 max-w-[54ch] text-base text-[#181818]/75">
               Pas de compte obligatoire, pas d’application à télécharger. Tout fonctionne directement dans le navigateur.
             </p>
           </div>
 
           {/* 4-Cell Bento Grid with Diverse Backgrounds & Choreographed SVG Micro-Scenes */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6">
             {/* CELL 1 (5 Cols - Dark #181818): Live Room Code Typing & Cursor Click */}
             <div
               data-bento-cell=""
-              className="md:col-span-5 flex flex-col justify-between border-2 border-[#181818] bg-[#181818] p-6 sm:p-7 text-white shadow-[6px_6px_0_0_#EF4C05]"
+              className="md:col-span-5 flex flex-col justify-between border-2 border-[#181818] bg-[#181818] p-5 sm:p-7 text-white shadow-[5px_5px_0_0_#EF4C05] sm:shadow-[6px_6px_0_0_#EF4C05]"
             >
               <div>
                 <div className="flex items-center justify-between">
@@ -1062,18 +933,18 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   </span>
                   <QrCode weight="bold" className="h-5 w-5 text-[#EF4C05]" />
                 </div>
-                <h3 className="mt-2 font-['Bricolage_Grotesque',_sans-serif] text-2xl font-black tracking-tight">
+                <h3 className="mt-2 font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-black tracking-tight">
                   Code à 6 lettres ou QR Code.
                 </h3>
-                <p className="mt-2 text-sm text-white/75 leading-relaxed">
+                <p className="hidden sm:block mt-2 text-sm text-white/75 leading-relaxed">
                   Un joueur ouvre la table et affiche son billet d’invitation. Les autres rejoignent en un scan.
                 </p>
               </div>
 
               {/* Animated Micro-Scene: Typing Code + Clicking Cursor + Popping Player Tags */}
-              <div className="relative mt-6 border-2 border-white/20 bg-[#222222] p-4">
+              <div className="relative mt-5 sm:mt-6 border-2 border-white/20 bg-[#222222] p-3.5 sm:p-4">
                 <div className="flex items-center justify-between gap-2 border-2 border-white bg-[#181818] px-3 py-2">
-                  <div className="flex items-center font-mono text-lg font-black tracking-[0.22em] text-[#F5C542]">
+                  <div className="flex items-center font-mono text-base sm:text-lg font-black tracking-[0.22em] text-[#F5C542]">
                     <span data-bento-typed="">SEKOU9</span>
                     <span
                       data-bento-caret=""
@@ -1134,7 +1005,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             {/* CELL 2 (7 Cols - Crisp White): 4 Physical Worlds Fan & DrawSVG */}
             <div
               data-bento-cell=""
-              className="md:col-span-7 flex flex-col justify-between border-2 border-[#181818] bg-white p-6 sm:p-7 shadow-[6px_6px_0_0_#181818]"
+              className="md:col-span-7 flex flex-col justify-between border-2 border-[#181818] bg-white p-5 sm:p-7 shadow-[5px_5px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818]"
             >
               <div>
                 <div className="flex items-center justify-between">
@@ -1143,16 +1014,16 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   </span>
                   <Sparkle weight="bold" className="h-5 w-5 text-[#181818]" />
                 </div>
-                <h3 className="mt-2 font-['Bricolage_Grotesque',_sans-serif] text-2xl sm:text-3xl font-black tracking-tight text-[#181818]">
+                <h3 className="mt-2 font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-3xl font-black tracking-tight text-[#181818]">
                   Chaque jeu possède sa propre identité visuelle.
                 </h3>
-                <p className="mt-2 max-w-[52ch] text-sm text-[#181818]/75 leading-relaxed">
+                <p className="hidden sm:block mt-2 max-w-[52ch] text-sm text-[#181818]/75 leading-relaxed">
                   Salon feutré à quatre couleurs pour Sekouno, parchemin narré pour Loups-Garous, échiquier de tournoi pour Polychess et affiche pop pour Sekou Bomb.
                 </p>
               </div>
 
               {/* Choreographed SVG + Artifacts Scene */}
-              <div className="relative mt-6 overflow-hidden border-2 border-[#181818] bg-[#F7F7F7] p-4 sm:p-5">
+              <div className="relative mt-5 sm:mt-6 overflow-hidden border-2 border-[#181818] bg-[#F7F7F7] p-3.5 sm:p-5">
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 500 90"
@@ -1169,66 +1040,66 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   />
                 </svg>
 
-                <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                   <button
                     type="button"
                     data-bento-fan=""
                     onClick={() => onSelectGame('sekouno')}
-                    className="border-2 border-[#181818] bg-[#D92D20] p-3 text-left text-white shadow-[3px_3px_0_0_#181818] hover:-translate-y-1 transition-transform cursor-pointer"
+                    className="border-2 border-[#181818] bg-[#D92D20] p-2.5 sm:p-3 text-left text-white shadow-[3px_3px_0_0_#181818] hover:-translate-y-1 transition-transform cursor-pointer"
                   >
                     <span className="font-mono text-[10px] font-bold uppercase block opacity-80">
                       CARTE
                     </span>
-                    <span className="mt-2 block text-2xl font-black">+4</span>
-                    <span className="mt-1 block font-mono text-[11px] font-bold">Sekouno</span>
+                    <span className="mt-1 sm:mt-2 block text-xl sm:text-2xl font-black">+4</span>
+                    <span className="mt-0.5 sm:mt-1 block font-mono text-[11px] font-bold">Sekouno</span>
                   </button>
 
                   <button
                     type="button"
                     data-bento-fan=""
                     onClick={() => onSelectGame('loup_garou')}
-                    className="border-2 border-[#181818] bg-[#2F4ACB] p-3 text-left text-white shadow-[3px_3px_0_0_#181818] hover:-translate-y-1 transition-transform cursor-pointer"
+                    className="border-2 border-[#181818] bg-[#2F4ACB] p-2.5 sm:p-3 text-left text-white shadow-[3px_3px_0_0_#181818] hover:-translate-y-1 transition-transform cursor-pointer"
                   >
                     <span className="font-mono text-[10px] font-bold uppercase block opacity-80">
                       GRIMOIRE
                     </span>
-                    <span className="mt-2 block text-2xl font-black">NUIT 1</span>
-                    <span className="mt-1 block font-mono text-[11px] font-bold">Loups-Garous</span>
+                    <span className="mt-1 sm:mt-2 block text-xl sm:text-2xl font-black">NUIT 1</span>
+                    <span className="mt-0.5 sm:mt-1 block font-mono text-[11px] font-bold">Loups-Garous</span>
                   </button>
 
                   <button
                     type="button"
                     data-bento-fan=""
                     onClick={() => onSelectGame('polychess')}
-                    className="border-2 border-[#181818] bg-[#099250] p-3 text-left text-white shadow-[3px_3px_0_0_#181818] hover:-translate-y-1 transition-transform cursor-pointer"
+                    className="border-2 border-[#181818] bg-[#099250] p-2.5 sm:p-3 text-left text-white shadow-[3px_3px_0_0_#181818] hover:-translate-y-1 transition-transform cursor-pointer"
                   >
                     <span className="font-mono text-[10px] font-bold uppercase block opacity-80">
                       FIDE ELO
                     </span>
-                    <span className="mt-2 block text-2xl font-black">1500</span>
-                    <span className="mt-1 block font-mono text-[11px] font-bold">Polychess</span>
+                    <span className="mt-1 sm:mt-2 block text-xl sm:text-2xl font-black">1500</span>
+                    <span className="mt-0.5 sm:mt-1 block font-mono text-[11px] font-bold">Polychess</span>
                   </button>
 
                   <button
                     type="button"
                     data-bento-fan=""
                     onClick={() => onSelectGame('sekou_bomb')}
-                    className="border-2 border-[#181818] bg-[#F5C542] p-3 text-left text-[#181818] shadow-[3px_3px_0_0_#181818] hover:-translate-y-1 transition-transform cursor-pointer"
+                    className="border-2 border-[#181818] bg-[#F5C542] p-2.5 sm:p-3 text-left text-[#181818] shadow-[3px_3px_0_0_#181818] hover:-translate-y-1 transition-transform cursor-pointer"
                   >
                     <span className="font-mono text-[10px] font-bold uppercase block opacity-80">
                       SYLLABE
                     </span>
-                    <span className="mt-2 block text-2xl font-black">[TRE]</span>
-                    <span className="mt-1 block font-mono text-[11px] font-bold">Sekou Bomb</span>
+                    <span className="mt-1 sm:mt-2 block text-xl sm:text-2xl font-black">[TRE]</span>
+                    <span className="mt-0.5 sm:mt-1 block font-mono text-[11px] font-bold">Sekou Bomb</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* CELL 3 (7 Cols - Warm Yellow #F5C542): Real-Time Engine & Latency Bars */}
+            {/* CELL 3 (7 Cols - Warm Yellow #F5C542): Desktop/Tablet Only to keep Mobile concise */}
             <div
               data-bento-cell=""
-              className="md:col-span-7 flex flex-col justify-between border-2 border-[#181818] bg-[#F5C542] p-6 sm:p-7 text-[#181818] shadow-[6px_6px_0_0_#181818]"
+              className="hidden md:flex md:col-span-7 flex-col justify-between border-2 border-[#181818] bg-[#F5C542] p-6 sm:p-7 text-[#181818] shadow-[6px_6px_0_0_#181818]"
             >
               <div>
                 <div className="flex items-center justify-between">
@@ -1268,10 +1139,10 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               </div>
             </div>
 
-            {/* CELL 4 (5 Cols - Cobalt Blue #2F4ACB): Mobile + Desktop PWA */}
+            {/* CELL 4 (5 Cols - Cobalt Blue #2F4ACB): Desktop/Tablet Only to keep Mobile concise */}
             <div
               data-bento-cell=""
-              className="md:col-span-5 flex flex-col justify-between border-2 border-[#181818] bg-[#2F4ACB] p-6 sm:p-7 text-white shadow-[6px_6px_0_0_#181818]"
+              className="hidden md:flex md:col-span-5 flex-col justify-between border-2 border-[#181818] bg-[#2F4ACB] p-6 sm:p-7 text-white shadow-[6px_6px_0_0_#181818]"
             >
               <div>
                 <div className="flex items-center justify-between">
@@ -1310,66 +1181,66 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       <section
         id="chiffres"
         ref={statsRef}
-        className="border-t-2 border-[#181818] bg-[#F7F7F7] py-16 sm:py-20 px-4 sm:px-8 md:px-12"
+        className="border-t-2 border-[#181818] bg-[#F7F7F7] py-12 sm:py-20 px-4 sm:px-8 md:px-12"
       >
         <div className="mx-auto w-full max-w-[1380px]">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6">
             <div
               data-stat-card=""
-              className="border-2 border-[#181818] bg-white p-6 shadow-[5px_5px_0_0_#181818]"
+              className="border-2 border-[#181818] bg-white p-4 sm:p-6 shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]"
             >
-              <span className="font-mono text-xs font-bold uppercase text-[#181818]/60">
-                /01 · UNIVERS
+              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#181818]/60">
+                /01 · JEUX
               </span>
               <div
                 data-stat-num=""
                 data-target="4"
                 data-suffix=""
-                className="mt-3 font-['Bricolage_Grotesque',_sans-serif] text-5xl sm:text-6xl font-black tracking-tight text-[#181818] tabular-nums"
+                className="mt-1.5 sm:mt-3 font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-6xl font-black tracking-tight text-[#181818] tabular-nums"
               >
                 4
               </div>
-              <p className="mt-2 text-sm font-semibold text-[#181818]/80">
+              <p className="hidden sm:block mt-2 text-sm font-semibold text-[#181818]/80">
                 Jeux multijoueurs complets réunis sous le même toit.
               </p>
             </div>
 
             <div
               data-stat-card=""
-              className="border-2 border-[#181818] bg-white p-6 shadow-[5px_5px_0_0_#181818]"
+              className="border-2 border-[#181818] bg-white p-4 sm:p-6 shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]"
             >
-              <span className="font-mono text-xs font-bold uppercase text-[#181818]/60">
-                /02 · CAPACITÉ
+              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#181818]/60">
+                /02 · JOUEURS MAX
               </span>
               <div
                 data-stat-num=""
                 data-target="18"
                 data-suffix=""
-                className="mt-3 font-['Bricolage_Grotesque',_sans-serif] text-5xl sm:text-6xl font-black tracking-tight text-[#181818] tabular-nums"
+                className="mt-1.5 sm:mt-3 font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-6xl font-black tracking-tight text-[#181818] tabular-nums"
               >
                 18
               </div>
-              <p className="mt-2 text-sm font-semibold text-[#181818]/80">
+              <p className="hidden sm:block mt-2 text-sm font-semibold text-[#181818]/80">
                 Joueurs maximum autour d’une même partie de Loups-Garous.
               </p>
             </div>
 
             <div
               data-stat-card=""
-              className="border-2 border-[#181818] bg-white p-6 shadow-[5px_5px_0_0_#181818]"
+              className="border-2 border-[#181818] bg-white p-4 sm:p-6 shadow-[4px_4px_0_0_#181818] sm:shadow-[5px_5px_0_0_#181818]"
             >
-              <span className="font-mono text-xs font-bold uppercase text-[#181818]/60">
-                /03 · VITESSE
+              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#181818]/60">
+                /03 · OUVERTURE
               </span>
               <div
                 data-stat-num=""
                 data-target="3"
                 data-suffix="s"
-                className="mt-3 font-['Bricolage_Grotesque',_sans-serif] text-5xl sm:text-6xl font-black tracking-tight text-[#EF4C05] tabular-nums"
+                className="mt-1.5 sm:mt-3 font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-6xl font-black tracking-tight text-[#EF4C05] tabular-nums"
               >
                 3s
               </div>
-              <p className="mt-2 text-sm font-semibold text-[#181818]/80">
+              <p className="hidden sm:block mt-2 text-sm font-semibold text-[#181818]/80">
                 Temps moyen pour ouvrir une salle et inviter sa table.
               </p>
             </div>
@@ -1377,32 +1248,32 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             {/* Highlighted Card with SVG Handwritten Arrow (exact jawoo.io About highlight card) */}
             <div
               data-stat-card=""
-              className="relative border-2 border-[#181818] bg-[#181818] p-6 text-white shadow-[6px_6px_0_0_#EF4C05]"
+              className="relative border-2 border-[#181818] bg-[#181818] p-4 sm:p-6 text-white shadow-[4px_4px_0_0_#EF4C05] sm:shadow-[6px_6px_0_0_#EF4C05]"
             >
-              <span className="font-mono text-xs font-bold uppercase text-[#F5C542]">
-                /04 · ACCÈS LIBRE
+              <span className="font-mono text-[10px] sm:text-xs font-bold uppercase text-[#F5C542]">
+                /04 · GRATUIT
               </span>
               <div
                 data-stat-num=""
                 data-target="100"
                 data-suffix="%"
-                className="mt-3 font-['Bricolage_Grotesque',_sans-serif] text-5xl sm:text-6xl font-black tracking-tight text-white tabular-nums"
+                className="mt-1.5 sm:mt-3 font-['Bricolage_Grotesque',_sans-serif] text-4xl sm:text-6xl font-black tracking-tight text-white tabular-nums"
               >
                 100%
               </div>
-              <p className="mt-2 text-sm font-semibold text-white/80">
+              <p className="hidden sm:block mt-2 text-sm font-semibold text-white/80">
                 Gratuit, sans publicité intrusive ni téléchargement.
               </p>
 
               {/* Animated SVG Note & Drawn Arrow */}
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-2 sm:mt-3 flex items-center gap-2">
                 <span
                   data-stat-note=""
-                  className="font-mono text-[11px] font-bold text-[#F5C542]"
+                  className="font-mono text-[10px] sm:text-[11px] font-bold text-[#F5C542]"
                 >
                   Zéro friction
                 </span>
-                <svg viewBox="0 0 60 24" fill="none" className="h-5 w-12">
+                <svg viewBox="0 0 60 24" fill="none" className="h-4 w-10 sm:h-5 sm:w-12">
                   <path
                     data-stat-arrow=""
                     d="M2 18 C 20 18, 35 6, 54 8"
@@ -1425,11 +1296,11 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </section>
 
-      {/* ==================== SECTION 5: 3-STEP PROCESS (Exact jawoo.io Services module 361220) ==================== */}
+      {/* ==================== SECTION 5: 3-STEP PROCESS (Desktop/Tablet Only to keep Mobile light) ==================== */}
       <section
         id="etapes"
         ref={stepsRef}
-        className="border-t-2 border-[#181818] bg-white py-16 sm:py-24 px-4 sm:px-8 md:px-12"
+        className="hidden md:block border-t-2 border-[#181818] bg-white py-16 sm:py-24 px-4 sm:px-8 md:px-12"
       >
         <div className="mx-auto w-full max-w-[1380px]">
           <div className="mb-10 sm:mb-12">
