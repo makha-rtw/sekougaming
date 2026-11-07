@@ -15,7 +15,19 @@ export { gsap, ScrollTrigger, SplitText, DrawSVGPlugin, useGSAP };
  * 1. LIFECYCLE EVENT BUS (Exact replica of jawoo.io modules 91672 & 332911)
  * ========================================================================== */
 
-let introCompleted = false;
+let introCompleted = (() => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const swReloadTs = Number(sessionStorage.getItem('sekou_sw_reload_ts') || '0');
+    const alreadyDone = sessionStorage.getItem('sekou_intro_done') === '1';
+    if (alreadyDone && Date.now() - swReloadTs < 10_000) {
+      return true;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return false;
+})();
 const introListeners = new Set<() => void>();
 
 export function isIntroComplete(): boolean {
@@ -25,6 +37,11 @@ export function isIntroComplete(): boolean {
 export function markIntroComplete(): void {
   if (introCompleted) return;
   introCompleted = true;
+  try {
+    sessionStorage.setItem('sekou_intro_done', '1');
+  } catch {
+    // ignore storage errors
+  }
   introListeners.forEach((cb) => {
     try {
       cb();

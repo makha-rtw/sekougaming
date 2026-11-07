@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   gsap,
   useGSAP,
+  isIntroComplete,
   markIntroComplete,
 } from '../../animations/jawooEngine.js';
 import { preloadPortalAssets } from '../PlatformSplashScreen.js';
@@ -13,27 +14,31 @@ interface JawooIntroLoaderProps {
 
 /**
  * Exact replica of jawoo.io's IntroLoader (module 156554) adapted for SekouGaming:
+ * - Runs strictly ONCE upon initial entry onto the site
  * - Full-screen #181818 curtain
  * - Top-left masked brand signature & bottom-right giant 0% -> 100% counter
  * - Center SekouGaming emblem whose opacity tracks m.value / 100
- * - Frame-accurate lerp (0.08) on gsap.ticker
+ * - Frame-accurate lerp (0.09) on gsap.ticker
  * - Staggered yPercent: -110 text exit (expo.in) + yPercent: -100 curtain lift (expo.inOut)
  */
 export const JawooIntroLoader: React.FC<JawooIntroLoaderProps> = ({ onReady }) => {
+  const [done, setDone] = useState<boolean>(() => isIntroComplete());
   const loaderRef = useRef<HTMLDivElement>(null);
   const counterRef = useRef<HTMLSpanElement>(null);
   const logoWrapRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (done || isIntroComplete()) return;
     document.documentElement.style.overflow = 'hidden';
     return () => {
       document.documentElement.style.overflow = '';
     };
-  }, []);
+  }, [done]);
 
   useGSAP(
     () => {
+      if (done || isIntroComplete()) return;
       const loader = loaderRef.current;
       if (!loader) return;
 
@@ -44,6 +49,7 @@ export const JawooIntroLoader: React.FC<JawooIntroLoaderProps> = ({ onReady }) =
         gsap.set(loader, { display: 'none' });
         document.documentElement.style.overflow = '';
         markIntroComplete();
+        setDone(true);
         onReady?.();
         return;
       }
@@ -119,6 +125,7 @@ export const JawooIntroLoader: React.FC<JawooIntroLoaderProps> = ({ onReady }) =
             .add(() => {
               document.documentElement.style.overflow = '';
               markIntroComplete();
+              setDone(true);
             });
         }
       };
@@ -132,8 +139,12 @@ export const JawooIntroLoader: React.FC<JawooIntroLoaderProps> = ({ onReady }) =
         gsap.ticker.remove(tick);
       };
     },
-    { scope: loaderRef }
+    { scope: loaderRef, dependencies: [done] }
   );
+
+  if (done) {
+    return null;
+  }
 
   return (
     <div

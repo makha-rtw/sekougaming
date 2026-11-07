@@ -22,21 +22,23 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children, enabled = 
 
   useEffect(() => {
     function update(time: number) {
-      lenisRef.current?.lenis?.raf(time * 1000);
+      if (enabled) {
+        lenisRef.current?.lenis?.raf(time * 1000);
+      }
     }
     gsap.ticker.add(update);
     gsap.ticker.lagSmoothing(0);
     return () => {
       gsap.ticker.remove(update);
     };
-  }, []);
-
-  if (!enabled) {
-    return <>{children}</>;
-  }
+  }, [enabled]);
 
   return (
-    <ReactLenis root options={{ autoRaf: false }} ref={lenisRef}>
+    <ReactLenis
+      root
+      options={{ autoRaf: false, allowNestedScroll: true }}
+      ref={lenisRef}
+    >
       <ScrollTriggerSync />
       {children}
     </ReactLenis>
