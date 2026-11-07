@@ -528,7 +528,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             );
 
             // Cell 1 Micro-Scene: Character-by-character room code typing + cursor click + player tags pop
-            const sampleCode = 'SEKOU9';
+            const sampleCode = 'SKO9';
             if (codeText) {
               codeText.textContent = '';
               sampleCode.split('').forEach((_, idx) => {
@@ -1333,7 +1333,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   <QrCode weight="bold" className="h-5 w-5 text-[#EF4C05]" />
                 </div>
                 <h3 className="mt-2 font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-black tracking-tight">
-                  Code à 6 lettres ou QR Code.
+                  Code à 4 caractères ou QR Code.
                 </h3>
                 <p className="hidden sm:block mt-2 text-sm text-white/75 leading-relaxed">
                   Un joueur ouvre la table et affiche son billet d’invitation. Les autres rejoignent en un scan.
@@ -1344,7 +1344,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               <div className="relative mt-5 sm:mt-6 border-2 border-white/20 bg-[#222222] p-3.5 sm:p-4">
                 <div className="flex items-center justify-between gap-2 border-2 border-white bg-[#181818] px-3 py-2">
                   <div className="flex items-center font-mono text-base sm:text-lg font-black tracking-[0.22em] text-[#F5C542]">
-                    <span data-bento-typed="">SEKOU9</span>
+                    <span data-bento-typed="">SKO9</span>
                     <span
                       data-bento-caret=""
                       className="ml-0.5 inline-block h-5 w-[2px] bg-[#EF4C05]"
@@ -1725,7 +1725,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               {
                 num: '02',
                 title: 'Partagez le billet de table',
-                desc: 'Affichez le QR Code ou dictez le code à 6 caractères à vos amis présents ou en vocal.',
+                desc: 'Affichez le QR Code ou dictez le code à 4 caractères à vos amis présents ou en vocal.',
                 actionLabel: 'Ouvrir Sekou Bomb',
                 game: 'sekou_bomb' as GameId,
               },

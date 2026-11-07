@@ -55,7 +55,7 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
       setShowOnlineModal(false);
       onCreatePrivate(selectedTimeControl);
     } else {
-      if (joinCodeInput.trim().length === 6) {
+      if (joinCodeInput.trim().length === 4) {
         setShowOnlineModal(false);
         onJoinPrivate(joinCodeInput.trim().toUpperCase());
       }
@@ -320,14 +320,14 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
               /* Join Private Room Code Input */
               <div className="mb-4">
                 <label className="block text-xs font-bold text-slate-300 mb-2">
-                  Code de la partie privée (6 lettres)
+                  Code de la partie privée (4 caractères)
                 </label>
                 <input
                   type="text"
                   value={joinCodeInput}
                   onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                  placeholder="Ex: CH8K2M"
-                  maxLength={6}
+                  placeholder="Ex: CH8K"
+                  maxLength={4}
                   className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-center font-mono font-black text-lg tracking-widest text-white uppercase placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
@@ -345,7 +345,7 @@ export const PolychessMainScreen: React.FC<PolychessMainScreenProps> = ({
               <button
                 type="button"
                 onClick={handleStartOnline}
-                disabled={onlineTab === 'join_private' && joinCodeInput.trim().length !== 6}
+                disabled={onlineTab === 'join_private' && joinCodeInput.trim().length !== 4}
                 className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 hover:brightness-110 active:scale-95 text-xs font-black uppercase text-white shadow-lg cursor-pointer disabled:opacity-50"
               >
                 {onlineTab === 'quick'

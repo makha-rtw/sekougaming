@@ -24,7 +24,7 @@ export class SekouBombManager {
     let code = '';
     do {
       code = '';
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 4; i++) {
         code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
       }
     } while (this.rooms.has(code));

@@ -355,10 +355,10 @@ export class RoomManager {
   }
 
   private generateRoomCode(): string {
-    // 6 chars alphanumeric without ambiguous characters (no 0, O, 1, I, L)
+    // 4 chars alphanumeric without ambiguous characters (no 0, O, 1, I, L)
     const chars = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
     let result = '';
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;

@@ -73,10 +73,10 @@ export function setupSekouBombSockets(io: Server): SekouBombManager {
           const cleanedCode = String(roomCode || '')
             .trim()
             .toUpperCase();
-          if (!/^[A-Z0-9]{6}$/.test(cleanedCode)) {
+          if (!/^[A-Z0-9]{4}$/.test(cleanedCode)) {
             return callback?.({
               success: false,
-              error: 'Code de salon invalide (6 caractères requis).',
+              error: 'Code de salon invalide (4 caractères requis).',
               errorCode: 'invalid_code',
             });
           }

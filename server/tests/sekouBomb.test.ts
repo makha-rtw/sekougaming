@@ -291,12 +291,12 @@ describe('SEKOU BOMB — Tests Automatisés Complets (Section 13)', () => {
           )
         );
         expect(createRes.success).toBe(true);
-        expect(createRes.roomCode).toHaveLength(6);
+        expect(createRes.roomCode).toHaveLength(4);
         const roomCode = createRes.roomCode;
 
         // 2. Invalid room code rejected
         const badJoinRes: any = await new Promise((r) =>
-          c2.emit('bomb_join_room', { roomCode: 'ZZZZZZ', playerName: 'Guest2' }, r)
+          c2.emit('bomb_join_room', { roomCode: 'ZZZZ', playerName: 'Guest2' }, r)
         );
         expect(badJoinRes.success).toBe(false);
         expect(badJoinRes.errorCode).toBe('room_not_found');

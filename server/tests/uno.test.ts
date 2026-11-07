@@ -15,7 +15,7 @@ describe('Sekou-Gaming — Sekouno Test Suite', () => {
     const room1 = roomManager.createRoom();
     const room2 = roomManager.createRoom();
     expect(room1.code).toBeDefined();
-    expect(room1.code.length).toBe(6);
+    expect(room1.code.length).toBe(4);
     expect(room1.code).not.toBe(room2.code);
   });
 

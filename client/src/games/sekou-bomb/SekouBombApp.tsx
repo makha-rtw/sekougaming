@@ -431,11 +431,11 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
       );
       return;
     }
-    if (trimmedCode.length !== 6) {
+    if (trimmedCode.length !== 4) {
       setErrorBanner(
         uiLang === 'fr'
-          ? 'Le code du salon doit comporter 6 caractères.'
-          : 'Room code must be 6 characters.'
+          ? 'Le code du salon doit comporter 4 caractères.'
+          : 'Room code must be 4 characters.'
       );
       return;
     }
@@ -935,12 +935,12 @@ export const SekouBombApp: React.FC<SekouBombAppProps> = ({
                           htmlFor="bomb-join-code-input"
                           className="block text-xs font-black uppercase text-black mb-1.5"
                         >
-                          {t.roomCodeLabel} (6 {uiLang === 'fr' ? 'lettres' : 'letters'})
+                          {t.roomCodeLabel} (4 {uiLang === 'fr' ? 'caractères' : 'characters'})
                         </label>
                         <input
                           id="bomb-join-code-input"
                           type="text"
-                          maxLength={6}
+                          maxLength={4}
                           autoCapitalize="characters"
                           autoComplete="off"
                           spellCheck={false}

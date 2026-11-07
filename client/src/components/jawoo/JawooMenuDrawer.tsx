@@ -377,7 +377,7 @@ export const JawooMenuDrawer: React.FC<JawooMenuDrawerProps> = ({
           &gt; SEKOUGAMING STUDIO // ACCÈS INSTANTANÉ SUR MOBILE &amp; ORDINATEUR
         </span>
         <span data-menu-fade="" className="font-mono uppercase tracking-wider text-[#F5C542]">
-          ZÉRO TÉLÉCHARGEMENT · CODES SALON 6 LETTRES
+          ZÉRO TÉLÉCHARGEMENT · CODES SALON 4 CARACTÈRES
         </span>
       </div>
     </div>

@@ -114,9 +114,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       onCreateRoom(name);
     } else {
       const code = roomCode.trim().toUpperCase();
-      if (!code || code.length !== 6) {
+      if (!code || code.length !== 4) {
         sounds.penalty();
-        setLocalError('Saisissez un code de table valide à 6 caractères.');
+        setLocalError('Saisissez un code de table valide à 4 caractères.');
         return;
       }
       sounds.playCard();
@@ -423,7 +423,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     htmlFor="sekouno-room-code"
                     className="block font-sekouno-mono text-xs font-bold uppercase tracking-wider text-[#D9D0BE]"
                   >
-                    Code de la table (6 caractères)
+                    Code de la table (4 caractères)
                   </label>
                   <input
                     id="sekouno-room-code"
@@ -435,8 +435,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     onChange={(e) =>
                       setRoomCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())
                     }
-                    placeholder="EX : 8XF2M9"
-                    maxLength={6}
+                    placeholder="EX : 8XF2"
+                    maxLength={4}
                     required
                     className="w-full px-4 py-3 bg-[#0D1017] border border-[#F6F0E2]/20 focus:border-[#D4A548] rounded-[8px] text-[#D4A548] font-sekouno-mono font-bold text-xl uppercase tracking-[0.28em] text-center placeholder:text-[#D9D0BE]/35 placeholder:text-sm placeholder:tracking-wider outline-none transition-[border-color]"
                   />

@@ -161,7 +161,7 @@ describe('POLYCHESS Online Socket.IO Multiplayer & Matchmaking', () => {
     client2.disconnect();
   });
 
-  it('creates and joins a private room with 6-char code', async () => {
+  it('creates and joins a private room with 4-char code', async () => {
     const hostClient: ClientSocket = Client(`http://localhost:${port}`);
     const guestClient: ClientSocket = Client(`http://localhost:${port}`);
 
@@ -176,7 +176,7 @@ describe('POLYCHESS Online Socket.IO Multiplayer & Matchmaking', () => {
     });
     expect(createRes.success).toBe(true);
     expect(createRes.roomCode).toBeDefined();
-    expect(createRes.roomCode.length).toBe(6);
+    expect(createRes.roomCode.length).toBe(4);
 
     // Guest joins private room
     const hostStatePromise = new Promise<any>((resolve) => {

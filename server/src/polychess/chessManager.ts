@@ -472,12 +472,12 @@ export class ChessManager {
 
   // Private Rooms
   public createPrivateRoom(user: UserPublic, socketId: string, timeControl: TimeControlKey): string {
-    // Generate 6-char room code
+    // Generate 4-char room code
     let roomCode = '';
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     do {
       roomCode = '';
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 4; i++) {
         roomCode += chars[Math.floor(Math.random() * chars.length)];
       }
     } while (this.privateRooms.has(roomCode));
