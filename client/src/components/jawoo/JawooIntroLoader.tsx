@@ -42,18 +42,6 @@ export const JawooIntroLoader: React.FC<JawooIntroLoaderProps> = ({ onReady }) =
       const loader = loaderRef.current;
       if (!loader) return;
 
-      if (
-        typeof window !== 'undefined' &&
-        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      ) {
-        gsap.set(loader, { display: 'none' });
-        document.documentElement.style.overflow = '';
-        markIntroComplete();
-        setDone(true);
-        onReady?.();
-        return;
-      }
-
       let isAssetsLoaded = false;
       let isMinTimeReached = false;
       let targetValue = 0;

@@ -320,15 +320,43 @@ export const JawooMenuDrawer: React.FC<JawooMenuDrawerProps> = ({
                   </div>
                 </div>
 
-                {/* Right Meta & Arrow */}
-                <div className="flex items-center gap-4 shrink-0">
+                {/* Right Meta, Mobile Tilted Preview Cards & Arrow */}
+                <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                  {/* Mobile Miniature Fan-Out Tilted Cards */}
+                  <div
+                    data-menu-fade=""
+                    aria-hidden="true"
+                    className="relative flex items-center h-11 w-16 lg:hidden pointer-events-none"
+                  >
+                    <div
+                      style={{ backgroundColor: item.cards[0].bg }}
+                      className="absolute left-0 top-0.5 h-10 w-8 overflow-hidden border border-white shadow-[2px_2px_0_0_#000] -rotate-8 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-active:-translate-y-1.5"
+                    >
+                      <img
+                        src={item.cards[0].image}
+                        alt=""
+                        className="h-full w-full object-cover opacity-90"
+                      />
+                    </div>
+                    <div
+                      style={{ backgroundColor: item.cards[1].bg }}
+                      className="absolute left-5 top-1 h-10 w-8 overflow-hidden border border-white shadow-[2px_2px_0_0_#000] rotate-6 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-active:-translate-y-1.5"
+                    >
+                      <img
+                        src={item.cards[1].image}
+                        alt=""
+                        className="h-full w-full object-cover opacity-90"
+                      />
+                    </div>
+                  </div>
+
                   <TextMask
                     data-menu-reveal=""
                     className="hidden sm:block font-mono text-xs uppercase tracking-wider text-white/55"
                   >
                     {item.players}
                   </TextMask>
-                  <span className="inline-flex h-10 w-10 items-center justify-center border-2 border-white/25 bg-white/5 text-white transition-all duration-300 group-hover:border-[#EF4C05] group-hover:bg-[#EF4C05]">
+                  <span className="inline-flex h-10 w-10 items-center justify-center border-2 border-white/25 bg-white/5 text-white transition-all duration-300 group-hover:border-[#EF4C05] group-hover:bg-[#EF4C05] group-active:border-[#EF4C05] group-active:bg-[#EF4C05]">
                     <ArrowUpRight
                       weight="bold"
                       className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

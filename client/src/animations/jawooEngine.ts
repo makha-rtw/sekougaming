@@ -7,6 +7,10 @@ import { useGSAP } from '@gsap/react';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger, SplitText, DrawSVGPlugin, useGSAP);
+  ScrollTrigger.config({
+    ignoreMobileResize: true,
+    autoRefreshEvents: 'visibilitychange,DOMContentLoaded,load,resize',
+  });
 }
 
 export { gsap, ScrollTrigger, SplitText, DrawSVGPlugin, useGSAP };
@@ -50,6 +54,11 @@ export function markIntroComplete(): void {
     }
   });
   introListeners.clear();
+  if (typeof window !== 'undefined') {
+    window.requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+  }
 }
 
 export function onIntroComplete(cb: () => void): () => void {
@@ -94,6 +103,11 @@ export function notifyPageReveal(): void {
       console.error(err);
     }
   });
+  if (typeof window !== 'undefined') {
+    window.requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+  }
 }
 
 export function onPageChange(cb: () => void): () => void {
@@ -143,16 +157,6 @@ export function triggerJawooTransition(
   onSwap: () => void,
   subtitle?: string
 ): void {
-  if (
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  ) {
-    onSwap();
-    notifyPageChange();
-    notifyPageReveal();
-    return;
-  }
-
   if (registeredTransitionHandler) {
     registeredTransitionHandler({ label, subtitle, onSwap });
   } else {
@@ -192,19 +196,11 @@ export function applyFrenchNonBreakingSpaces(root: HTMLElement): void {
 export function useScrollReveal<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T | null>,
   buildTimeline: (el: T) => gsap.core.Timeline | gsap.core.Tween,
-  start = 'top 82%'
+  start = 'top 86%'
 ): void {
   useIsoLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    ) {
-      gsap.set(el, { autoAlpha: 1 });
-      return;
-    }
 
     applyFrenchNonBreakingSpaces(el);
     gsap.set(el, { autoAlpha: 0 });
@@ -214,14 +210,6 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
     () => {
       const el = ref.current;
       if (!el) return;
-
-      if (
-        typeof window !== 'undefined' &&
-        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      ) {
-        gsap.set(el, { autoAlpha: 1 });
-        return;
-      }
 
       let st: ScrollTrigger | undefined;
       let anim: gsap.core.Timeline | gsap.core.Tween | undefined;
@@ -233,10 +221,15 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
           trigger: el,
           start,
           once: true,
+          animation: anim,
           onEnter: () => {
             anim?.play();
           },
         });
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= window.innerHeight * 0.9) {
+          anim?.play();
+        }
       });
 
       return () => {
@@ -311,12 +304,6 @@ export function useParallax<T extends HTMLElement = HTMLElement>(
   useGSAP(() => {
     const el = ref.current;
     if (!el || !intensity) return;
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    ) {
-      return;
-    }
 
     const trigger = el.parentElement ?? el;
     const getOffset = () => trigger.offsetHeight * (intensity / 100);
@@ -362,13 +349,6 @@ export function useScreenEnterChoreography<T extends HTMLElement = HTMLElement>(
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    ) {
-      return;
-    }
 
     applyFrenchNonBreakingSpaces(root);
 

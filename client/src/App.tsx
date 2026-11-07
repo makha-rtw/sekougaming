@@ -433,7 +433,7 @@ export const App: React.FC = () => {
         onSelectGame={handleSelectGame}
       />
 
-      <div className="relative min-h-[100dvh] w-full overflow-x-hidden">
+      <div className="relative min-h-[100dvh] w-full overflow-x-clip">
         {activeGame === 'hub' && (
           <HubScreen
             onSelectGame={(game) => handleSelectGame(game)}

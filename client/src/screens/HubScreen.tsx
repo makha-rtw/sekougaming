@@ -166,13 +166,6 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       const logo = header.querySelector('[data-header-logo]');
       const reveals = header.querySelectorAll('[data-header-reveal] [data-reveal]');
 
-      if (
-        typeof window !== 'undefined' &&
-        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      ) {
-        return;
-      }
-
       gsap.set(logo, { autoAlpha: 0 });
       gsap.set(reveals, { yPercent: 110 });
 
@@ -273,6 +266,16 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             autoAlpha: 0,
             duration: 0.55,
             ease: 'back.out(1.8)',
+            onComplete: () => {
+              gsap.to(cursorBadge, {
+                y: -4,
+                x: 3,
+                duration: 2.2,
+                repeat: -1,
+                yoyo: true,
+                ease: 'sine.inOut',
+              });
+            },
           },
           0.75
         );
@@ -615,7 +618,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
   };
 
   return (
-    <div className="jawoo-portal-world min-h-[100dvh] w-full overflow-x-hidden select-none">
+    <div className="jawoo-portal-world min-h-[100dvh] w-full overflow-x-clip select-none">
       {/* ==================== HEADER (Exact jawoo.io module 545872) ==================== */}
       <header
         ref={headerRef}
@@ -756,7 +759,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                   <span
                     data-hero-cursor=""
                     aria-hidden="true"
-                    className="pointer-events-none absolute -right-6 -bottom-8 z-20 hidden sm:inline-flex items-center gap-1 border-2 border-[#181818] bg-[#F5C542] px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[#181818] shadow-[3px_3px_0_0_#181818]"
+                    className="pointer-events-none absolute -right-2 -bottom-7 sm:-right-6 sm:-bottom-8 z-20 inline-flex items-center gap-1 border-2 border-[#181818] bg-[#F5C542] px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#181818] shadow-[3px_3px_0_0_#181818]"
                   >
                     <svg
                       viewBox="0 0 18 18"
