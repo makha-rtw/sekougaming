@@ -42,6 +42,7 @@ interface GameCatalogItem {
   pitch: string;
   image: string;
   accentBg: string;
+  tokenBadge: string;
   focus: string;
   players: string;
   mode: string;
@@ -59,6 +60,7 @@ const GAMES_CATALOG: GameCatalogItem[] = [
       'Cumul de pénalités +2 et +4, Contre-UNO en direct et interdiction de finir sur une carte noire.',
     image: '/hub/sekouno.jpg',
     accentBg: '#D92D20',
+    tokenBadge: '🃏 CARTE +4',
     focus: '50% 42%',
     players: '2 à 15 joueurs',
     mode: 'Temps réel',
@@ -74,6 +76,7 @@ const GAMES_CATALOG: GameCatalogItem[] = [
       'Distribution secrète, narration vocale automatique de la nuit et 21 rôles configurables.',
     image: '/hub/loupgarou.jpg',
     accentBg: '#2F4ACB',
+    tokenBadge: '☾ 21 RÔLES',
     focus: '55% 28%',
     players: '6 à 18 joueurs',
     mode: '1 seul téléphone',
@@ -89,6 +92,7 @@ const GAMES_CATALOG: GameCatalogItem[] = [
       'Duel sur le même écran ou en ligne avec pendule officielle, classement Elo et historique.',
     image: '/hub/polychess.jpg',
     accentBg: '#099250',
+    tokenBadge: '♞ ELO FIDE',
     focus: '50% 48%',
     players: '2 joueurs',
     mode: 'En ligne & Local',
@@ -104,6 +108,7 @@ const GAMES_CATALOG: GameCatalogItem[] = [
       'Trouvez un mot valide contenant la syllabe imposée avant que la mèche n’atteigne zéro.',
     image: '/hub/sekoubomb.jpg',
     accentBg: '#EF4C05',
+    tokenBadge: '💣 CHRONO',
     focus: '50% 42%',
     players: '2 à 16 joueurs',
     mode: 'FR & EN en direct',
@@ -116,8 +121,9 @@ const ParallaxArtwork: React.FC<{
   src: string;
   focus: string;
   fallbackColor: string;
+  tokenBadge: string;
   priority?: boolean;
-}> = ({ src, focus, fallbackColor, priority }) => {
+}> = ({ src, focus, fallbackColor, tokenBadge, priority }) => {
   const parallaxRef = useRef<HTMLDivElement>(null);
   useParallax(parallaxRef, 6);
 
@@ -139,6 +145,14 @@ const ParallaxArtwork: React.FC<{
           }}
         />
       </div>
+      {/* Tactile Game Token Overlay Badge */}
+      <span
+        data-card-token=""
+        style={{ backgroundColor: fallbackColor }}
+        className="pointer-events-none absolute right-3 bottom-3 z-10 inline-flex items-center gap-1.5 border-2 border-[#181818] px-2.5 py-1 font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white shadow-[3px_3px_0_0_#181818]"
+      >
+        {tokenBadge}
+      </span>
     </div>
   );
 };
@@ -184,7 +198,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
     { scope: headerRef }
   );
 
-  // 2. Hero Scroll/Page Reveal (exact jawoo.io module 322504)
+  // 2. Hero Scroll/Page Reveal + Floating Gaming Tokens & Mouse 3D Parallax
   useScrollReveal(
     heroRef,
     (el) => {
@@ -192,6 +206,8 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       const subEl = el.querySelector<HTMLElement>('[data-hero-sub]');
       const ctas = el.querySelectorAll<HTMLElement>('[data-hero-cta] [data-reveal]');
       const cursorBadge = el.querySelector<HTMLElement>('[data-hero-cursor]');
+      const gameTokens = el.querySelectorAll<HTMLElement>('[data-hero-token]');
+      const geoShapes = el.querySelectorAll<HTMLElement>('[data-hero-geo]');
 
       const tl = gsap.timeline();
 
@@ -242,6 +258,61 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         );
       }
 
+      if (gameTokens.length) {
+        tl.from(
+          gameTokens,
+          {
+            scale: 0,
+            y: 36,
+            autoAlpha: 0,
+            duration: 0.75,
+            ease: 'back.out(1.75)',
+            stagger: 0.09,
+            onComplete: () => {
+              gameTokens.forEach((token, idx) => {
+                const floatInner = token.querySelector<HTMLElement>('[data-token-float]') || token;
+                gsap.to(floatInner, {
+                  y: idx % 2 === 0 ? -11 : 11,
+                  rotation: idx % 2 === 0 ? 4 : -4,
+                  duration: 2.3 + idx * 0.35,
+                  repeat: -1,
+                  yoyo: true,
+                  ease: 'sine.inOut',
+                });
+              });
+            },
+          },
+          0.32
+        );
+      }
+
+      if (geoShapes.length) {
+        tl.from(
+          geoShapes,
+          {
+            scale: 0,
+            rotation: -45,
+            autoAlpha: 0,
+            duration: 0.7,
+            ease: 'back.out(1.6)',
+            stagger: 0.07,
+            onComplete: () => {
+              geoShapes.forEach((shape, idx) => {
+                gsap.to(shape, {
+                  y: idx % 2 === 0 ? 9 : -9,
+                  rotation: idx % 2 === 0 ? '+=18' : '-=18',
+                  duration: 3.1 + idx * 0.4,
+                  repeat: -1,
+                  yoyo: true,
+                  ease: 'sine.inOut',
+                });
+              });
+            },
+          },
+          0.48
+        );
+      }
+
       if (cursorBadge) {
         tl.from(
           cursorBadge,
@@ -268,6 +339,53 @@ export const HubScreen: React.FC<HubScreenProps> = ({
       return tl;
     },
     'top 92%'
+  );
+
+  // Interactive 3D Mouse Parallax on Hero Gaming Tokens
+  useGSAP(
+    () => {
+      const hero = heroRef.current;
+      if (!hero) return;
+
+      const tokens = Array.from(
+        hero.querySelectorAll<HTMLElement>('[data-hero-token], [data-hero-geo]')
+      );
+      if (!tokens.length) return;
+
+      const setters = tokens.map((el) => {
+        const depth = parseFloat(el.getAttribute('data-depth') || '1');
+        return {
+          depth,
+          xTo: gsap.quickTo(el, 'x', { duration: 0.65, ease: 'power3.out' }),
+          yTo: gsap.quickTo(el, 'y', { duration: 0.65, ease: 'power3.out' }),
+        };
+      });
+
+      const onMouseMove = (e: MouseEvent) => {
+        const rect = hero.getBoundingClientRect();
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;
+        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        setters.forEach(({ depth, xTo, yTo }) => {
+          xTo(nx * 28 * depth);
+          yTo(ny * 22 * depth);
+        });
+      };
+
+      const onMouseLeave = () => {
+        setters.forEach(({ xTo, yTo }) => {
+          xTo(0);
+          yTo(0);
+        });
+      };
+
+      hero.addEventListener('mousemove', onMouseMove);
+      hero.addEventListener('mouseleave', onMouseLeave);
+      return () => {
+        hero.removeEventListener('mousemove', onMouseMove);
+        hero.removeEventListener('mouseleave', onMouseLeave);
+      };
+    },
+    { scope: heroRef }
   );
 
   // 3. Games Catalogue Reveal (per-header + per-card scroll reveal for mobile & desktop)
@@ -327,6 +445,15 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               0
             );
             revealImages(cardEl, '[data-image-reveal]', tl, 0.05);
+            const badge = cardEl.querySelector<HTMLElement>('[data-card-token]');
+            if (badge) {
+              tl.fromTo(
+                badge,
+                { scale: 0, rotation: -12, autoAlpha: 0 },
+                { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.55, ease: 'back.out(2)' },
+                0.55
+              );
+            }
             return tl;
           })
         );
@@ -764,13 +891,163 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </header>
 
-      {/* ==================== SECTION 1: HERO (Exact jawoo.io module 322504) ==================== */}
+      {/* ==================== SECTION 1: HERO (Exact jawoo.io module 322504 + Animated Gaming Background) ==================== */}
       <section
         id="top"
         ref={heroRef}
         className="relative mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-[1380px] flex-col justify-center px-4 sm:px-8 md:px-12 py-10 sm:py-16"
       >
-        <div className="max-w-4xl flex flex-col items-start text-left">
+        {/* ==================== ANIMATED GAMING PLATFORM BACKGROUND LAYER ==================== */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          {/* 1. Floating Geometric Arcade D-Pad Crosshair (Top-Left) */}
+          <div
+            data-hero-geo=""
+            data-depth="0.9"
+            className="absolute left-3 top-4 sm:left-10 sm:top-10 opacity-90"
+          >
+            <svg viewBox="0 0 56 56" className="h-9 w-9 sm:h-12 sm:w-12 drop-shadow-[3px_3px_0_#181818]">
+              <path
+                d="M20 6H36V20H50V36H36V50H20V36H6V20H20V6Z"
+                fill="#F5C542"
+                stroke="#181818"
+                strokeWidth="3"
+              />
+              <circle cx="28" cy="28" r="3.5" fill="#181818" />
+            </svg>
+          </div>
+
+          {/* 2. Floating 6-Sided Die Token (Bottom-Left / Center-Right) */}
+          <div
+            data-hero-geo=""
+            data-depth="1.3"
+            className="absolute right-6 top-6 sm:right-[36%] sm:top-12"
+          >
+            <div className="grid h-10 w-10 sm:h-12 sm:w-12 grid-cols-2 place-items-center border-2 border-[#181818] bg-white p-1.5 shadow-[4px_4px_0_0_#181818] rotate-12">
+              <span className="h-2 w-2 rounded-full bg-[#EF4C05]" />
+              <span className="h-2 w-2 rounded-full bg-[#181818]" />
+              <span className="h-2 w-2 rounded-full bg-[#181818]" />
+              <span className="h-2 w-2 rounded-full bg-[#EF4C05]" />
+            </div>
+          </div>
+
+          {/* 3. Token A: Sekouno +4 Playing Card (Top-Right) */}
+          <button
+            type="button"
+            tabIndex={-1}
+            data-hero-token=""
+            data-depth="1.4"
+            onClick={() => onSelectGame('sekouno')}
+            className="pointer-events-auto absolute right-3 top-20 sm:right-10 sm:top-14 z-10 cursor-pointer group"
+          >
+            <div
+              data-token-float=""
+              className="flex h-24 w-17 sm:h-36 sm:w-26 flex-col justify-between border-2 border-[#181818] bg-[#D92D20] p-2 sm:p-2.5 text-white shadow-[4px_4px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818] -rotate-12 transition-transform group-hover:scale-105"
+            >
+              <span className="font-mono text-xs sm:text-base font-black leading-none">+4</span>
+              <div className="mx-auto flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center border-2 border-[#181818] bg-[#F5C542] rotate-45 shadow-[2px_2px_0_0_#181818]">
+                <span className="-rotate-45 font-mono text-[9px] sm:text-xs font-black text-[#181818]">
+                  UNO
+                </span>
+              </div>
+              <span className="self-end font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider">
+                SEKOUNO
+              </span>
+            </div>
+          </button>
+
+          {/* 4. Token B: Sekou Bomb Chrono Tile (Bottom-Right) */}
+          <button
+            type="button"
+            tabIndex={-1}
+            data-hero-token=""
+            data-depth="1.7"
+            onClick={() => onSelectGame('sekou_bomb')}
+            className="pointer-events-auto absolute right-3 bottom-6 sm:right-14 sm:bottom-14 z-10 cursor-pointer group"
+          >
+            <div
+              data-token-float=""
+              className="flex flex-col gap-1 border-2 border-[#181818] bg-[#F5C542] p-2.5 sm:p-3.5 text-[#181818] shadow-[4px_4px_0_0_#181818] sm:shadow-[6px_6px_0_0_#181818] rotate-6 transition-transform group-hover:scale-105"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="bg-[#181818] px-1.5 py-0.5 font-mono text-[9px] sm:text-[10px] font-black text-[#F5C542]">
+                  💣 03.8s
+                </span>
+                <span className="h-2.5 w-2.5 rounded-full bg-[#EF4C05] animate-ping" />
+              </div>
+              <span className="font-mono text-sm sm:text-xl font-black tracking-widest">
+                [KAR]
+              </span>
+              <span className="font-mono text-[9px] font-bold uppercase text-[#181818]/75">
+                SEKOU BOMB
+              </span>
+            </div>
+          </button>
+
+          {/* 5. Token C: Polychess Knight & Elo Tile (Desktop Right-Center) */}
+          <button
+            type="button"
+            tabIndex={-1}
+            data-hero-token=""
+            data-depth="1.15"
+            onClick={() => onSelectGame('polychess')}
+            className="pointer-events-auto hidden lg:block absolute right-72 top-24 z-10 cursor-pointer group"
+          >
+            <div
+              data-token-float=""
+              className="flex items-center gap-3 border-2 border-[#181818] bg-[#099250] px-3.5 py-2.5 text-white shadow-[5px_5px_0_0_#181818] rotate-6 transition-transform group-hover:scale-105"
+            >
+              <span className="flex h-9 w-9 items-center justify-center border-2 border-[#181818] bg-white text-xl text-[#181818]">
+                ♞
+              </span>
+              <div className="text-left">
+                <span className="block font-mono text-[10px] font-bold uppercase text-[#F5C542]">
+                  POLYCHESS
+                </span>
+                <span className="block font-mono text-sm font-black">1850 ELO</span>
+              </div>
+            </div>
+          </button>
+
+          {/* 6. Token D: Loups-Garous Grimoire Moon Card (Desktop Bottom-Center-Right / Mobile Bottom-Left) */}
+          <button
+            type="button"
+            tabIndex={-1}
+            data-hero-token=""
+            data-depth="1.25"
+            onClick={() => onSelectGame('loup_garou')}
+            className="pointer-events-auto absolute left-4 bottom-4 sm:left-auto sm:right-80 sm:bottom-16 z-10 cursor-pointer group"
+          >
+            <div
+              data-token-float=""
+              className="flex items-center gap-2 sm:gap-2.5 border-2 border-[#181818] bg-[#2F4ACB] px-2.5 py-1.5 sm:px-3.5 sm:py-2.5 text-white shadow-[4px_4px_0_0_#181818] -rotate-6 transition-transform group-hover:scale-105"
+            >
+              <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center border border-white/40 bg-[#181818] text-sm sm:text-base text-[#F5C542]">
+                ☾
+              </span>
+              <div className="text-left">
+                <span className="block font-mono text-[9px] sm:text-[10px] font-bold uppercase text-[#F5C542]">
+                  GRIMOIRE
+                </span>
+                <span className="block font-mono text-xs sm:text-sm font-black">
+                  LOUPS-GAROUS
+                </span>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div className="relative z-20 max-w-4xl flex flex-col items-start text-left">
+          {/* Top Live Arcade Pill */}
+          <div className="mb-4 inline-flex items-center gap-2 border-2 border-[#181818] bg-white px-3 py-1 shadow-[3px_3px_0_0_#181818]">
+            <span className="h-2.5 w-2.5 bg-[#099250] border border-[#181818]" />
+            <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#181818]">
+              PLATEFORME DE JEUX MULTIJOUEURS · 4 UNIVERS
+            </span>
+          </div>
+
           <h1
             data-hero-title=""
             className="font-['Bricolage_Grotesque',_sans-serif] text-[2.55rem] sm:text-6xl xl:text-[4.65rem] font-black tracking-tight leading-[1.06] text-[#181818]"
@@ -862,6 +1139,39 @@ export const HubScreen: React.FC<HubScreenProps> = ({
         </div>
       </section>
 
+      {/* ==================== LIVE ARCADE MARQUEE STRIP ==================== */}
+      <div
+        aria-hidden="true"
+        className="w-full overflow-hidden border-t-2 border-[#181818] bg-[#181818] py-2.5 text-white"
+      >
+        <div className="jawoo-arcade-marquee items-center">
+          {[0, 1].map((dup) => (
+            <div key={dup} className="flex items-center gap-6 px-3 font-mono text-xs font-black uppercase tracking-widest">
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block h-2.5 w-2.5 bg-[#D92D20]" />
+                <span>🃏 SEKOUNO · SURENCHÈRE +2 / +4</span>
+              </span>
+              <span className="text-[#F5C542]">✦</span>
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block h-2.5 w-2.5 bg-[#2F4ACB]" />
+                <span>☾ LOUPS-GAROUS · 21 RÔLES &amp; VOIX NARRÉE</span>
+              </span>
+              <span className="text-[#EF4C05]">✦</span>
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block h-2.5 w-2.5 bg-[#099250]" />
+                <span>♞ POLYCHESS · CADENCES FIDE &amp; ELO</span>
+              </span>
+              <span className="text-[#F5C542]">✦</span>
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block h-2.5 w-2.5 bg-[#EF4C05]" />
+                <span>💣 SEKOU BOMB · SURVIE LEXICALE FR/EN</span>
+              </span>
+              <span className="text-[#EF4C05]">✦</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ==================== SECTION 2: LES 4 JEUX (Portfolio Grid + Curtain Reveal + Parallax) ==================== */}
       <section
         id="catalogue"
@@ -913,11 +1223,12 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                     </span>
                   </div>
 
-                  {/* Artwork with Clip-Path Curtain Reveal + Scroll Parallax */}
+                  {/* Artwork with Clip-Path Curtain Reveal + Scroll Parallax + Game Token Badge */}
                   <ParallaxArtwork
                     src={game.image}
                     focus={game.focus}
                     fallbackColor={game.accentBg}
+                    tokenBadge={game.tokenBadge}
                     priority={idx < 2}
                   />
 

@@ -329,9 +329,30 @@ html.lenis body {
   --jw-yellow: #F5C542;
   --jw-blue: #2F4ACB;
   background-color: var(--jw-bg);
+  background-image: radial-gradient(rgba(24, 24, 24, 0.14) 1.25px, transparent 1.25px);
+  background-size: 26px 26px;
   color: var(--jw-ink);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   color-scheme: light;
+}
+
+@keyframes jawooMarquee {
+  0% {
+    transform: translate3d(0%, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.jawoo-arcade-marquee {
+  display: flex;
+  width: max-content;
+  animation: jawooMarquee 26s linear infinite;
+}
+
+.jawoo-arcade-marquee:hover {
+  animation-play-state: paused;
 }
 
 .jawoo-portal-world ::selection {
