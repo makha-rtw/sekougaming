@@ -39,6 +39,14 @@
 .jawoo-safe-fullscreen {
   padding-top: max(env(safe-area-inset-top, 0px), 20px);
   padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+[data-image-reveal] {
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 @media (max-width: 639px) {

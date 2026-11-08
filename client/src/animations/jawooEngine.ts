@@ -303,23 +303,26 @@ export function revealImages(
     { clipPath: 'inset(100% 0% 0% 0%)' },
     {
       clipPath: 'inset(0% 0% 0% 0%)',
-      duration: 1.2,
-      ease: 'expo.inOut',
-      stagger: 0.12,
+      duration: 0.85,
+      ease: 'expo.out',
+      stagger: 0.08,
+      clearProps: 'clipPath',
     },
     position
   );
 
   if (imgs.length) {
-    tl.from(
+    tl.fromTo(
       imgs,
+      { scale: 1.15 },
       {
-        scale: 1.3,
-        duration: 1.6,
+        scale: 1,
+        duration: 1.0,
         ease: 'expo.out',
-        stagger: 0.12,
+        stagger: 0.08,
+        clearProps: 'transform',
       },
-      typeof position === 'number' ? position + 0.2 : '+=0.2'
+      typeof position === 'number' ? position + 0.1 : '+=0.1'
     );
   }
 

@@ -42,89 +42,119 @@ export const JawooIntroLoader: React.FC<JawooIntroLoaderProps> = ({ onReady }) =
       const loader = loaderRef.current;
       if (!loader) return;
 
+      const state = { value: 0 };
+      let hasFinished = false;
+
+      const finishIntro = () => {
+        if (hasFinished) return;
+        hasFinished = true;
+
+        if (counterRef.current) counterRef.current.textContent = '100';
+        if (logoWrapRef.current) logoWrapRef.current.style.opacity = '1';
+        if (progressBarRef.current) progressBarRef.current.style.transform = 'scaleX(1)';
+
+        onReady?.();
+
+        const revealNodes = loader.querySelectorAll('[data-intro-reveal] [data-reveal]');
+        const tl = gsap.timeline();
+
+        // 1. Snappy fade/slide exit of loader text & logo
+        tl.to(revealNodes, {
+          yPercent: -100,
+          autoAlpha: 0,
+          duration: 0.32,
+          ease: 'power2.in',
+          stagger: 0.02,
+        })
+          .to(
+            logoWrapRef.current,
+            {
+              autoAlpha: 0,
+              scale: 0.95,
+              duration: 0.25,
+              ease: 'power2.in',
+            },
+            0
+          )
+          // 2. Lift the dark curtain smoothly (0.75s expo.inOut)
+          .to(
+            loader,
+            {
+              yPercent: -100,
+              duration: 0.75,
+              ease: 'expo.inOut',
+              force3D: true,
+            },
+            '-=0.1'
+          )
+          // 3. Trigger markIntroComplete() WHILE the curtain is lifting, so content underneath is ALREADY revealing
+          .add(() => {
+            markIntroComplete();
+          }, '-=0.55')
+          .set(loader, { display: 'none' })
+          .add(() => {
+            document.documentElement.style.overflow = '';
+            setDone(true);
+          });
+      };
+
+      // Tween smoothly from 0 to 90 over 0.9s
+      const initialTween = gsap.to(state, {
+        value: 90,
+        duration: 0.9,
+        ease: 'power2.out',
+        onUpdate: () => {
+          const rounded = Math.min(99, Math.round(state.value));
+          if (counterRef.current) counterRef.current.textContent = String(rounded);
+          if (logoWrapRef.current) logoWrapRef.current.style.opacity = String(state.value / 100);
+          if (progressBarRef.current) progressBarRef.current.style.transform = `scaleX(${state.value / 100})`;
+        },
+      });
+
       let isAssetsLoaded = false;
       let isMinTimeReached = false;
-      let targetValue = 0;
-      const state = { value: 0 };
+
+      const maybeComplete = () => {
+        if (!isAssetsLoaded || !isMinTimeReached || hasFinished) return;
+        initialTween.kill();
+        gsap.to(state, {
+          value: 100,
+          duration: 0.28,
+          ease: 'power1.out',
+          onUpdate: () => {
+            const rounded = Math.round(state.value);
+            if (counterRef.current) counterRef.current.textContent = String(rounded);
+            if (logoWrapRef.current) logoWrapRef.current.style.opacity = String(state.value / 100);
+            if (progressBarRef.current) progressBarRef.current.style.transform = `scaleX(${state.value / 100})`;
+          },
+          onComplete: () => {
+            finishIntro();
+          },
+        });
+      };
 
       const minTimer = window.setTimeout(() => {
         isMinTimeReached = true;
-      }, 1500);
+        maybeComplete();
+      }, 900);
 
       const safetyTimer = window.setTimeout(() => {
         isAssetsLoaded = true;
         isMinTimeReached = true;
-      }, 3600);
+        maybeComplete();
+      }, 2400);
 
       const { promise, unsubscribe } = preloadPortalAssets();
       promise.finally(() => {
         isAssetsLoaded = true;
+        maybeComplete();
       });
-
-      const tick = () => {
-        const delta = gsap.ticker.deltaRatio() / 60;
-        if (isAssetsLoaded && isMinTimeReached) {
-          targetValue = 100;
-        } else if (isAssetsLoaded) {
-          targetValue = Math.min(92, targetValue + delta * 60);
-        } else {
-          targetValue = Math.min(85, targetValue + delta * 30);
-        }
-
-        state.value += (targetValue - state.value) * 0.09;
-
-        const rounded = Math.round(state.value);
-        if (counterRef.current) {
-          counterRef.current.textContent = String(rounded);
-        }
-        if (logoWrapRef.current) {
-          logoWrapRef.current.style.opacity = String(state.value / 100);
-        }
-        if (progressBarRef.current) {
-          progressBarRef.current.style.transform = `scaleX(${Math.min(1, state.value / 100)})`;
-        }
-
-        if (state.value > 99.5) {
-          gsap.ticker.remove(tick);
-          if (counterRef.current) counterRef.current.textContent = '100';
-          if (logoWrapRef.current) logoWrapRef.current.style.opacity = '1';
-          if (progressBarRef.current) progressBarRef.current.style.transform = 'scaleX(1)';
-
-          onReady?.();
-
-          const revealNodes = loader.querySelectorAll('[data-intro-reveal] [data-reveal]');
-          const tl = gsap.timeline();
-          tl.to(revealNodes, {
-            yPercent: -110,
-            duration: 0.6,
-            ease: 'expo.in',
-            stagger: 0.05,
-          })
-            .to(
-              loader,
-              {
-                yPercent: -100,
-                duration: 0.9,
-                ease: 'expo.inOut',
-              },
-              '-=0.1'
-            )
-            .set(loader, { display: 'none' })
-            .add(() => {
-              document.documentElement.style.overflow = '';
-              markIntroComplete();
-              setDone(true);
-            });
-        }
-      };
-
-      gsap.ticker.add(tick);
 
       return () => {
         window.clearTimeout(minTimer);
         window.clearTimeout(safetyTimer);
         unsubscribe();
-        gsap.ticker.remove(tick);
+        initialTween.kill();
       };
     },
     { scope: loaderRef, dependencies: [done] }

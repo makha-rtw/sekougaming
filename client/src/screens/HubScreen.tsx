@@ -228,6 +228,7 @@ export const HubScreen: React.FC<HubScreenProps> = ({
     heroRef,
     (el) => {
       const titleEl = el.querySelector<HTMLElement>('[data-hero-title]');
+      const titleLines = el.querySelectorAll<HTMLElement>('[data-hero-line]');
       const subEl = el.querySelector<HTMLElement>('[data-hero-sub]');
       const ctas = el.querySelectorAll<HTMLElement>('[data-hero-cta] [data-reveal]');
       const cursorBadge = el.querySelector<HTMLElement>('[data-hero-cursor]');
@@ -236,37 +237,43 @@ export const HubScreen: React.FC<HubScreenProps> = ({
 
       const tl = gsap.timeline();
 
-      if (titleEl) {
-        const splitTitle = SplitText.create(titleEl, {
-          type: 'lines,words',
-          mask: 'lines',
-        });
+      if (titleLines.length) {
         tl.from(
-          splitTitle.words,
+          titleLines,
           {
             yPercent: 110,
-            duration: 1.2,
+            duration: 0.95,
             ease: 'expo.out',
             stagger: 0.08,
+            clearProps: 'transform',
+          },
+          0
+        );
+      } else if (titleEl) {
+        tl.from(
+          titleEl,
+          {
+            y: 28,
+            autoAlpha: 0,
+            duration: 0.85,
+            ease: 'expo.out',
+            clearProps: 'transform,opacity',
           },
           0
         );
       }
 
       if (subEl) {
-        const splitSub = SplitText.create(subEl, {
-          type: 'lines',
-          mask: 'lines',
-        });
         tl.from(
-          splitSub.lines,
+          subEl,
           {
-            yPercent: 110,
-            duration: 1.0,
+            y: 20,
+            autoAlpha: 0,
+            duration: 0.75,
             ease: 'expo.out',
-            stagger: 0.08,
+            clearProps: 'transform,opacity',
           },
-          0.35
+          0.2
         );
       }
 
@@ -275,11 +282,12 @@ export const HubScreen: React.FC<HubScreenProps> = ({
           ctas,
           {
             yPercent: 110,
-            duration: 1.0,
+            duration: 0.8,
             ease: 'expo.out',
-            stagger: 0.08,
+            stagger: 0.06,
+            clearProps: 'transform',
           },
-          0.45
+          0.28
         );
       }
 
@@ -458,12 +466,12 @@ export const HubScreen: React.FC<HubScreenProps> = ({
             const tl = gsap.timeline();
             tl.fromTo(
               cardEl,
-              { autoAlpha: 0, y: 52, scale: 0.96 },
+              { autoAlpha: 0, y: 32, scale: 0.98 },
               {
                 autoAlpha: 1,
                 y: 0,
                 scale: 1,
-                duration: 0.95,
+                duration: 0.75,
                 ease: 'expo.out',
                 clearProps: 'transform',
               },
@@ -475,8 +483,8 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               tl.fromTo(
                 badge,
                 { scale: 0, rotation: -12, autoAlpha: 0 },
-                { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.55, ease: 'back.out(2)' },
-                0.55
+                { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.45, ease: 'back.out(1.8)' },
+                0.35
               );
             }
             return tl;
@@ -1161,43 +1169,46 @@ export const HubScreen: React.FC<HubScreenProps> = ({
               isDark ? 'text-[#F6F0E2]' : 'text-[#181818]'
             }`}
           >
-            Quatre jeux cultes.{' '}
-            <span className="block mt-1">
-              Un salon{' '}
-              <span
-                className={`relative inline-block border-2 px-2.5 sm:px-3 pb-0.5 sm:pb-1 align-baseline transition-colors ${
-                  isDark
-                    ? 'border-[#F5C542] bg-[#1F1815] text-[#F5C542]'
-                    : 'border-[#181818] bg-[#FFF0D8] text-[#EF4C05]'
-                }`}
-              >
-                instantané.
-                {/* 4 Figma Selection Handles */}
+            <span className="block overflow-hidden pb-1">
+              <span data-hero-line="" className="block">Quatre jeux cultes.</span>
+            </span>
+            <span className="block overflow-hidden pb-1.5 mt-0.5 sm:mt-1">
+              <span data-hero-line="" className="block">
+                Un salon{' '}
                 <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute -top-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
-                    isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                  className={`relative inline-block border-2 px-2.5 sm:px-3 pb-0.5 sm:pb-1 align-baseline transition-colors ${
+                    isDark
+                      ? 'border-[#F5C542] bg-[#1F1815] text-[#F5C542]'
+                      : 'border-[#181818] bg-[#FFF0D8] text-[#EF4C05]'
                   }`}
-                />
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute -top-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
-                    isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
-                  }`}
-                />
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute -bottom-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
-                    isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
-                  }`}
-                />
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute -bottom-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
-                    isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
-                  }`}
-                />
-                {/* Floating Animated SVG Cursor Badge (Desktop only) */}
+                >
+                  instantané.
+                  {/* 4 Figma Selection Handles */}
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute -top-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
+                      isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                    }`}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute -top-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
+                      isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                    }`}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute -bottom-1.5 -left-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
+                      isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                    }`}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute -bottom-1.5 -right-1.5 h-2 w-2 sm:h-2.5 sm:w-2.5 border-2 ${
+                      isDark ? 'border-[#F5C542] bg-[#0D1016]' : 'border-[#181818] bg-white'
+                    }`}
+                  />
+                  {/* Floating Animated SVG Cursor Badge (Desktop only) */}
                 <span
                   data-hero-cursor=""
                   aria-hidden="true"
@@ -1219,7 +1230,8 @@ export const HubScreen: React.FC<HubScreenProps> = ({
                 </span>
               </span>
             </span>
-          </h1>
+          </span>
+        </h1>
 
           <p
             data-hero-sub=""

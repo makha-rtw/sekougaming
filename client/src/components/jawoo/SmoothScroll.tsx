@@ -27,7 +27,7 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children, enabled = 
       }
     }
     gsap.ticker.add(update);
-    gsap.ticker.lagSmoothing(0);
+    gsap.ticker.lagSmoothing(500, 33);
     return () => {
       gsap.ticker.remove(update);
     };
